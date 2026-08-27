@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Star } from "lucide-react-native";
 
-import { Card, PrimaryButton } from "@/components";
+import { Card, PrimaryButton, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
 import { getEspecialidad, getMedico } from "@/services";
 import { useTheme } from "@/theme";
@@ -49,7 +49,7 @@ export default function MedicoProfileScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={styles.titleRow}>
-          <Text style={[styles.nombre, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>
+          <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
             Dra. {medico.nombre} {medico.apellido}
           </Text>
           <View style={styles.ratingBadge}>

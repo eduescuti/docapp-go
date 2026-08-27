@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Calendar, FileText, Stethoscope } from "lucide-react-native";
 
-import { Card, ScreenContainer, StatusBadge } from "@/components";
+import { Card, ScreenContainer, StatusBadge, Text } from "@/components";
 import { Estudio, Medico, OrdenLaboratorio } from "@/domain";
 import { getMedico, getPacienteActual, listEstudiosPaciente, listOrdenesPaciente } from "@/services";
 import { useTheme } from "@/theme";
@@ -44,7 +44,7 @@ export default function EstudiosScreen() {
 
   return (
     <ScreenContainer scroll={false} style={{ paddingTop: insets.top + 16 }}>
-      <Text style={[styles.title, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>Mis Estudios</Text>
+      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Mis Estudios</Text>
 
       <View style={[styles.tabSwitch, { backgroundColor: theme.colors.muted, borderColor: theme.colors.border }]}>
         <TabButton label="Resultados" active={tab === "resultados"} onPress={() => setTab("resultados")} />

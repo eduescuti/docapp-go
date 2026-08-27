@@ -3,10 +3,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { addDays, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ArrowLeft, MapPin } from "lucide-react-native";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Card, PrimaryButton } from "@/components";
+import { Card, PrimaryButton, Text } from "@/components";
 import { Institucion, Medico, Sede } from "@/domain";
 import { crearTurno, getInstitucion, getMedico, getPacienteActual } from "@/services";
 import { useTheme } from "@/theme";
@@ -83,7 +83,7 @@ export default function ReservarScreen() {
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Volver" hitSlop={8}>
             <ArrowLeft size={20} color={theme.colors.foreground} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>
+          <Text variant="heading" style={[styles.headerTitle, { color: theme.colors.foreground }]}>
             Reservar turno
           </Text>
         </View>

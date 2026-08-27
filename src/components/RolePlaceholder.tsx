@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { useRouter } from "expo-router";
 
@@ -10,6 +10,7 @@ import { Card } from "./Card";
 import { IconBadge } from "./IconBadge";
 import { PrimaryButton } from "./PrimaryButton";
 import { ScreenContainer } from "./ScreenContainer";
+import { Text } from "./Text";
 
 interface RolePlaceholderProps {
   icon: LucideIcon;
@@ -28,7 +29,7 @@ export function RolePlaceholder({ icon, titulo, descripcion, funcionalidades }: 
     <ScreenContainer>
       <View style={styles.header}>
         <IconBadge icon={icon} size={56} />
-        <Text style={[styles.titulo, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>{titulo}</Text>
+        <Text variant="heading" style={[styles.titulo, { color: theme.colors.foreground }]}>{titulo}</Text>
         <Text style={[styles.descripcion, { color: theme.colors.mutedForeground }]}>{descripcion}</Text>
       </View>
 

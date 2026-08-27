@@ -1,3 +1,4 @@
+export * from "./Text";
 export * from "./Card";
 export * from "./PrimaryButton";
 export * from "./Chip";

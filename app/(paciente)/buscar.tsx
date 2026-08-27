@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, StyleSheet, TextInput, View } from "react-native";
 import { Search, SlidersHorizontal, Star } from "lucide-react-native";
 
-import { Avatar, Card, Chip, ScreenContainer } from "@/components";
+import { Avatar, Card, Chip, ScreenContainer, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
 import { listEspecialidades, searchMedicos, getPacienteActual } from "@/services";
 import { useTheme } from "@/theme";
@@ -39,7 +39,7 @@ export default function BuscarScreen() {
 
   return (
     <ScreenContainer scroll={false} style={styles.container}>
-      <Text style={[styles.title, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>Buscar</Text>
+      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Buscar</Text>
 
       <View style={styles.searchRow}>
         <View style={[styles.searchInputWrapper, { backgroundColor: theme.colors.muted, borderColor: theme.colors.border }]}>

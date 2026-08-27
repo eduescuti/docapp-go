@@ -1,7 +1,8 @@
 import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { useTheme } from "@/theme";
+import { Text } from "./Text";
 
 interface PrimaryButtonProps {
   label: string;
@@ -46,10 +47,8 @@ export function PrimaryButton({
         <ActivityIndicator color={isOutline ? theme.colors.primary : theme.colors.primaryForeground} />
       ) : (
         <Text
-          style={[
-            styles.label,
-            { color: isOutline ? theme.colors.primary : theme.colors.primaryForeground, fontFamily: theme.fonts.heading },
-          ]}
+          variant="heading"
+          style={[styles.label, { color: isOutline ? theme.colors.primary : theme.colors.primaryForeground }]}
         >
           {label}
         </Text>

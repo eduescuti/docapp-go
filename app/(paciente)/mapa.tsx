@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { ArrowLeft, MapPin } from "lucide-react-native";
 
-import { Card } from "@/components";
+import { Card, Text } from "@/components";
 import { Institucion } from "@/domain";
 import { getPacienteActual, listInstituciones } from "@/services";
 import { useTheme } from "@/theme";

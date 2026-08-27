@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo } from "react";
 import { useColorScheme } from "react-native";
 
 import { Theme, ThemeId, themes } from "./tokens";
@@ -6,23 +6,20 @@ import { Theme, ThemeId, themes } from "./tokens";
 interface ThemeContextValue {
   theme: Theme;
   themeId: ThemeId;
-  setThemeId: (id: ThemeId) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
- * Tema C es el modo oscuro de la app (CLAUDE.md §7): si el sistema pide modo
- * oscuro y el usuario no eligió tema manualmente, arrancamos en C.
+ * Minimalista (A) es el modo claro y Premium (C) el modo oscuro (CLAUDE.md §7):
+ * el tema activo sigue siempre el modo del sistema, sin selector manual. Cálido
+ * (B) queda definido en tokens.ts pero fuera de uso hasta que se decida reactivarlo.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [themeId, setThemeId] = useState<ThemeId>(systemScheme === "dark" ? "C" : "A");
+  const themeId: ThemeId = systemScheme === "dark" ? "C" : "A";
 
-  const value = useMemo<ThemeContextValue>(
-    () => ({ theme: themes[themeId], themeId, setThemeId }),
-    [themeId],
-  );
+  const value = useMemo<ThemeContextValue>(() => ({ theme: themes[themeId], themeId }), [themeId]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

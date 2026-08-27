@@ -15,13 +15,13 @@ import {
   Star,
   Stethoscope,
 } from "lucide-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { Avatar, Card, Chip, ScreenContainer } from "@/components";
+import { Avatar, Card, ScreenContainer, Text } from "@/components";
 import { Paciente, PlanMedico } from "@/domain";
 import { getPacienteActual, getPlanMedico } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
-import { ThemeId, themes, useTheme } from "@/theme";
+import { useTheme } from "@/theme";
 import { iniciales } from "@/utils/format";
 
 interface MenuItem {
@@ -45,7 +45,7 @@ const ITEMS: MenuItem[] = [
 ];
 
 export default function MenuScreen() {
-  const { theme, themeId, setThemeId } = useTheme();
+  const { theme } = useTheme();
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -68,7 +68,7 @@ export default function MenuScreen() {
 
   return (
     <ScreenContainer>
-      <Text style={[styles.title, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>Menú</Text>
+      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Menú</Text>
 
       <Card style={styles.profileCard}>
         <Avatar iniciales={paciente ? iniciales(paciente.nombre, paciente.apellido) : "--"} size={56} />
@@ -90,13 +90,6 @@ export default function MenuScreen() {
             </View>
             <Text style={[styles.gridLabel, { color: theme.colors.foreground }]}>{item.label}</Text>
           </Card>
-        ))}
-      </View>
-
-      <Text style={[styles.sectionLabel, { color: theme.colors.mutedForeground }]}>Tema visual</Text>
-      <View style={styles.themeRow}>
-        {(Object.keys(themes) as ThemeId[]).map((id) => (
-          <Chip key={id} label={themes[id].name} selected={themeId === id} onPress={() => setThemeId(id)} />
         ))}
       </View>
 
@@ -128,8 +121,6 @@ const styles = StyleSheet.create({
   },
   gridIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   gridLabel: { fontSize: 13, fontWeight: "600", textAlign: "center" },
-  sectionLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", marginBottom: 12 },
-  themeRow: { flexDirection: "row", gap: 8, marginBottom: 28 },
   logoutCard: { marginBottom: 24 },
   logoutRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   logoutLeft: { flexDirection: "row", alignItems: "center", gap: 12 },

@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Calendar, Clock } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Card, PrimaryButton, ScreenContainer, StatusBadge } from "@/components";
+import { Card, PrimaryButton, ScreenContainer, StatusBadge, Text } from "@/components";
 import { Medico, Turno } from "@/domain";
 import { cancelarTurno, getMedico, getPacienteActual, listTurnosPaciente } from "@/services";
 import { useTheme } from "@/theme";
@@ -64,7 +64,7 @@ export default function TurnosScreen() {
 
   return (
     <ScreenContainer scroll={false} style={{ paddingTop: insets.top + 16 }}>
-      <Text style={[styles.title, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>Mis Turnos</Text>
+      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Mis Turnos</Text>
 
       <View style={[styles.tabSwitch, { backgroundColor: theme.colors.muted, borderColor: theme.colors.border }]}>
         <TabButton label="Próximos" active={filtro === "proximos"} onPress={() => setFiltro("proximos")} />

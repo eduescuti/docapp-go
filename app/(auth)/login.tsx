@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { HeartPulse } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Card, Chip, PrimaryButton } from "@/components";
+import { Card, Chip, PrimaryButton, Text } from "@/components";
 import { useAuth, Rol } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
 import { planesMedicosMock } from "@/mocks";
@@ -36,10 +36,10 @@ export default function LoginScreen() {
         <View style={[styles.iconWrapper, { backgroundColor: theme.colors.primary, borderRadius: theme.radii.lg }]}>
           <HeartPulse size={36} color={theme.colors.primaryForeground} />
         </View>
-        <Text style={[styles.title, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>
+        <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
           DocApp Go
         </Text>
-        <Text style={[styles.subtitle, { color: theme.colors.mutedForeground, fontFamily: theme.fonts.body }]}>
+        <Text style={[styles.subtitle, { color: theme.colors.mutedForeground }]}>
           Gestioná tus turnos, estudios y recetas en una sola app.
         </Text>
       </View>
@@ -51,7 +51,7 @@ export default function LoginScreen() {
       </View>
 
       <Card style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.colors.foreground, fontFamily: theme.fonts.heading }]}>
+        <Text variant="heading" style={[styles.cardTitle, { color: theme.colors.foreground }]}>
           Ingresar a mi cuenta
         </Text>
 

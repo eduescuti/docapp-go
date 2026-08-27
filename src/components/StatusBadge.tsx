@@ -1,7 +1,8 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { useTheme } from "@/theme";
+import { Text } from "./Text";
 import { EstadoEstudio } from "@/domain/laboratorio";
 import { EstadoTurno } from "@/domain/turno";
 
