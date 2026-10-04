@@ -1,13 +1,40 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Calendar, FileText, Home, Menu as MenuIcon, Search } from "lucide-react-native";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
+
+/** Rutas del grupo que no aparecen como pestaña (se abren desde otras pantallas). */
+const RUTAS_OCULTAS = [
+  "medico/[id]",
+  "reservar/[medicoId]",
+  "mapa",
+  "cuenta/perfil",
+  "cuenta/plan",
+  "cuenta/recetas",
+  "cuenta/ordenes",
+  "cuenta/medicos-favoritos",
+  "cuenta/instituciones-favoritas",
+  "cuenta/notificaciones",
+  "cuenta/historial",
+  "cuenta/feedback",
+  "cuenta/calificar/[turnoId]",
+  "cuenta/seguridad",
+  "cuenta/configuracion",
+  "cuenta/ayuda",
+];
 
 export default function PacienteLayout() {
   const { theme } = useTheme();
+  const { rol } = useAuth();
+
+  // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
+  if (rol !== "paciente") return <Redirect href="/" />;
 
   return (
     <Tabs
+      // "history": volver regresa a la pantalla anterior (p. ej. al Menú), no siempre a Inicio.
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
@@ -62,9 +89,9 @@ export default function PacienteLayout() {
           tabBarIcon: ({ color, size }) => <MenuIcon color={color} size={size} />,
         }}
       />
-      <Tabs.Screen name="medico/[id]" options={{ href: null }} />
-      <Tabs.Screen name="reservar/[medicoId]" options={{ href: null }} />
-      <Tabs.Screen name="mapa" options={{ href: null }} />
+      {RUTAS_OCULTAS.map((name) => (
+        <Tabs.Screen key={name} name={name} options={{ href: null }} />
+      ))}
     </Tabs>
   );
 }

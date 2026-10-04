@@ -8,6 +8,7 @@ import { Card, PrimaryButton, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
 import { getEspecialidad, getMedico } from "@/services";
 import { useTheme } from "@/theme";
+import { nombreConTitulo } from "@/utils/format";
 
 export default function MedicoProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,10 +48,10 @@ export default function MedicoProfileScreen() {
         </Pressable>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         <View style={styles.titleRow}>
           <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
-            Dra. {medico.nombre} {medico.apellido}
+            {nombreConTitulo(medico)}
           </Text>
           <View style={styles.ratingBadge}>
             <Star size={14} color="#EAB308" fill="#EAB308" />

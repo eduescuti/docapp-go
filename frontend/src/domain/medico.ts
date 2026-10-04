@@ -5,11 +5,17 @@ export interface HorarioAtencion {
   sedeId: string;
 }
 
+/** Define el título con el que se muestra al profesional ("Dr." / "Dra."). */
+export type Genero = "femenino" | "masculino";
+
 export interface Medico {
   id: string;
   nombre: string;
   apellido: string;
+  genero: Genero;
   matricula: string;
+  /** Profesión de la salud según el padrón ("Médico", "Enfermero", ...). No todos son médicos. */
+  profesion: string;
   especialidadId: string;
   subespecialidad?: string;
   institucionesIds: string[];

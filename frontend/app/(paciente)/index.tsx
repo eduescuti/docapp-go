@@ -1,10 +1,20 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { Bell, Calendar, Clock, FileText, MapPin, Search, Stethoscope } from "lucide-react-native";
 
-import { Avatar, Card, IconBadge, PrimaryButton, ScreenContainer, SectionHeader, StatusBadge, Text } from "@/components";
-import { Especialidad, Institucion, Medico, Paciente, Sede, Turno } from "@/domain";
+import {
+  Avatar,
+  Card,
+  IconBadge,
+  NotificacionesSheet,
+  PrimaryButton,
+  ScreenContainer,
+  SectionHeader,
+  StatusBadge,
+  Text,
+} from "@/components";
+import { Especialidad, Institucion, Medico, Notificacion, Paciente, Sede, Turno } from "@/domain";
 import {
   getEspecialidad,
   getInstitucion,
@@ -12,9 +22,12 @@ import {
   getPacienteActual,
   getProximoTurno,
   listInstituciones,
+  listNotificacionesPaciente,
+  marcarNotificacionLeida,
+  marcarTodasLeidas,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { formatFechaCorta, iniciales } from "@/utils/format";
+import { formatFechaCorta, iniciales, nombreConTitulo } from "@/utils/format";
 
 interface ProximoTurnoInfo {
   turno: Turno;
@@ -31,6 +44,12 @@ export default function HomeScreen() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [proximo, setProximo] = useState<ProximoTurnoInfo | null>(null);
   const [institucionCercana, setInstitucionCercana] = useState<{ nombre: string; direccion: string } | null>(null);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [panelAbierto, setPanelAbierto] = useState(false);
+
+  const recargarNotificaciones = useCallback(async (pacienteId: string) => {
+    setNotificaciones(await listNotificacionesPaciente(pacienteId));
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +59,7 @@ export default function HomeScreen() {
         const p = await getPacienteActual();
         if (!activo) return;
         setPaciente(p);
+        recargarNotificaciones(p.id);
 
         const turno = await getProximoTurno(p.id);
         if (turno) {
@@ -65,8 +85,10 @@ export default function HomeScreen() {
       return () => {
         activo = false;
       };
-    }, []),
+    }, [recargarNotificaciones]),
   );
+
+  const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   return (
     <ScreenContainer>
@@ -79,14 +101,44 @@ export default function HomeScreen() {
             ¿Cómo te sentís?
           </Text>
         </View>
-        <View
-          style={[styles.bellButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
-          accessibilityLabel="Notificaciones"
+        <Pressable
+          onPress={() => setPanelAbierto(true)}
+          accessibilityRole="button"
+          accessibilityLabel={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
+          style={({ pressed }) => [
+            styles.bellButton,
+            { borderColor: theme.colors.border, backgroundColor: theme.colors.card, opacity: pressed ? 0.8 : 1 },
+          ]}
         >
           <Bell size={20} color={theme.colors.foreground} />
-          <View style={[styles.dot, { backgroundColor: theme.colors.danger }]} />
-        </View>
+          {noLeidas > 0 && (
+            <View style={[styles.badge, { backgroundColor: theme.colors.danger, borderColor: theme.colors.card }]}>
+              <Text style={styles.badgeText}>{noLeidas}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
+
+      <NotificacionesSheet
+        visible={panelAbierto}
+        notificaciones={notificaciones}
+        onClose={() => setPanelAbierto(false)}
+        onPressNotificacion={async (n) => {
+          if (!n.leida && paciente) {
+            await marcarNotificacionLeida(n.id);
+            recargarNotificaciones(paciente.id);
+          }
+        }}
+        onMarcarTodas={async () => {
+          if (!paciente) return;
+          await marcarTodasLeidas(paciente.id);
+          recargarNotificaciones(paciente.id);
+        }}
+        onVerTodas={() => {
+          setPanelAbierto(false);
+          router.push("/cuenta/notificaciones");
+        }}
+      />
 
       <View style={styles.section}>
         <SectionHeader title="Próximo turno" />
@@ -98,7 +150,7 @@ export default function HomeScreen() {
                 <Avatar uri={proximo.medico.avatarUrl} iniciales={iniciales(proximo.medico.nombre, proximo.medico.apellido)} />
                 <View>
                   <Text style={[styles.doctorName, { color: theme.colors.foreground }]}>
-                    Dr. {proximo.medico.nombre} {proximo.medico.apellido}
+                    {nombreConTitulo(proximo.medico)}
                   </Text>
                   <Text style={[styles.doctorSpecialty, { color: theme.colors.mutedForeground }]}>
                     {[proximo.especialidad?.nombre, proximo.institucion?.nombre].filter(Boolean).join(" · ")}
@@ -209,7 +261,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dot: { position: "absolute", top: 10, right: 11, width: 7, height: 7, borderRadius: 4 },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
   section: { marginBottom: 28 },
   accentBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
   turnoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },

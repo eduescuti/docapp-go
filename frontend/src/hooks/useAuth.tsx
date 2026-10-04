@@ -1,31 +1,42 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-export type Rol = "paciente" | "doctor" | "admin";
+import { Rol, Sesion } from "@/domain";
+import { cerrarSesion, iniciarSesion } from "@/services";
+
+export type { Rol };
 
 interface AuthState {
   isAuthenticated: boolean;
+  sesion: Sesion | null;
   rol: Rol | null;
-  login: (rol: Rol) => void;
+  /** Valida DNI + contraseña contra el backend (hoy, el mock de `authService`). Lanza error si no coinciden. */
+  login: (dni: string, password: string) => Promise<Sesion>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 /**
- * Autenticación mock (CLAUDE.md §11 pendiente de backend real): solo
- * distingue el rol activo para poder navegar por los tres modos de la app.
+ * Sesión de la app. El rol ya no se elige a mano: lo determina la cuenta con la
+ * que se inicia sesión. Sin persistencia todavía (CLAUDE.md §11 pendiente).
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [rol, setRol] = useState<Rol | null>(null);
+  const [sesion, setSesion] = useState<Sesion | null>(null);
+
+  const login = useCallback(async (dni: string, password: string) => {
+    const nueva = await iniciarSesion(dni, password);
+    setSesion(nueva);
+    return nueva;
+  }, []);
+
+  const logout = useCallback(() => {
+    cerrarSesion();
+    setSesion(null);
+  }, []);
 
   const value = useMemo<AuthState>(
-    () => ({
-      isAuthenticated: rol !== null,
-      rol,
-      login: (nuevoRol: Rol) => setRol(nuevoRol),
-      logout: () => setRol(null),
-    }),
-    [rol],
+    () => ({ isAuthenticated: sesion !== null, sesion, rol: sesion?.rol ?? null, login, logout }),
+    [sesion, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

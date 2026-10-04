@@ -8,3 +8,7 @@ export * from "./laboratorio";
 export * from "./receta";
 export * from "./feedback";
 export * from "./notificacion";
+export * from "./usuario";
+export * from "./padronProfesional";
+export * from "./notaPaciente";
+export * from "./ayuda";

@@ -8,7 +8,7 @@ import { Card, PrimaryButton, ScreenContainer, StatusBadge, Text } from "@/compo
 import { Medico, Turno } from "@/domain";
 import { cancelarTurno, getMedico, getPacienteActual, listTurnosPaciente } from "@/services";
 import { useTheme } from "@/theme";
-import { formatFechaCorta } from "@/utils/format";
+import { formatFechaCorta, nombreConTitulo } from "@/utils/format";
 
 type Filtro = "proximos" | "historial";
 
@@ -85,7 +85,7 @@ export default function TurnosScreen() {
           <Card style={styles.turnoCard}>
             <View style={styles.turnoHeader}>
               <Text style={[styles.medicoNombre, { color: theme.colors.foreground }]}>
-                {item.medico ? `Dr. ${item.medico.nombre} ${item.medico.apellido}` : "Médico"}
+                {item.medico ? nombreConTitulo(item.medico) : "Médico"}
               </Text>
               <StatusBadge estado={item.turno.estado} />
             </View>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
-  listContent: { paddingHorizontal: 24, paddingBottom: 120 },
+  listContent: { paddingHorizontal: 24, paddingBottom: 32 },
   turnoCard: { marginBottom: 16 },
   turnoHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
   medicoNombre: { fontSize: 15, fontWeight: "600", flex: 1, marginRight: 8 },

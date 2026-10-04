@@ -7,7 +7,7 @@ import { Avatar, Card, Chip, ScreenContainer, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
 import { listEspecialidades, searchMedicos, getPacienteActual } from "@/services";
 import { useTheme } from "@/theme";
-import { iniciales } from "@/utils/format";
+import { iniciales, nombreConTitulo } from "@/utils/format";
 
 export default function BuscarScreen() {
   const { theme } = useTheme();
@@ -65,7 +65,7 @@ export default function BuscarScreen() {
         keyExtractor={(item) => item.id ?? "todos"}
         showsHorizontalScrollIndicator={false}
         style={styles.chipList}
-        contentContainerStyle={{ gap: 8 }}
+        contentContainerStyle={{ gap: 8, alignItems: "center" }}
         renderItem={({ item }) => (
           <Chip
             label={item.nombre}
@@ -96,7 +96,7 @@ export default function BuscarScreen() {
               <View style={{ flex: 1 }}>
                 <View style={styles.medicoHeader}>
                   <Text style={[styles.medicoNombre, { color: theme.colors.foreground }]}>
-                    Dra. {item.nombre} {item.apellido}
+                    {nombreConTitulo(item)}
                   </Text>
                   <View style={styles.rating}>
                     <Star size={12} color="#EAB308" fill="#EAB308" />
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  chipList: { flexGrow: 0, marginBottom: 16 },
-  listContent: { paddingBottom: 120 },
+  chipList: { flexGrow: 0, flexShrink: 0, marginBottom: 16 },
+  listContent: { paddingBottom: 32 },
   medicoCard: { marginBottom: 16 },
   medicoRow: { flexDirection: "row", gap: 16 },
   medicoHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },

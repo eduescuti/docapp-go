@@ -10,7 +10,6 @@ const config: ExpoConfig = {
   icon: "./assets/icon.png",
   scheme: "docappgo",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.docappgo.app",

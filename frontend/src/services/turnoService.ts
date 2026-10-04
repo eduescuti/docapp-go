@@ -6,6 +6,19 @@ import { delay } from "./apiClient";
 // Estado en memoria: simula la tabla de turnos hasta que exista backend real.
 let turnos: Turno[] = [...turnosMock];
 
+/** Acceso sincrónico para otros services (p. ej. pacientes asignados). Las pantallas usan las funciones async. */
+export function getTurnosEnMemoria(): Turno[] {
+  return turnos;
+}
+
+export async function listTurnosMedico(medicoId: string): Promise<Turno[]> {
+  return delay(
+    turnos
+      .filter((t) => t.medicoId === medicoId)
+      .sort((a, b) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`)),
+  );
+}
+
 export async function listTurnosPaciente(pacienteId: string): Promise<Turno[]> {
   return delay(turnos.filter((t) => t.pacienteId === pacienteId));
 }

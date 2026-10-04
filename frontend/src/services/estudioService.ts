@@ -10,3 +10,8 @@ export async function listEstudiosPaciente(pacienteId: string): Promise<Estudio[
 export async function listOrdenesPaciente(pacienteId: string): Promise<OrdenLaboratorio[]> {
   return delay(ordenesLaboratorioMock.filter((o) => o.pacienteId === pacienteId));
 }
+
+/** Estudios que un profesional le pidió a un paciente. */
+export async function listEstudiosSolicitados(medicoId: string, pacienteId: string): Promise<Estudio[]> {
+  return delay(estudiosMock.filter((e) => e.medicoSolicitanteId === medicoId && e.pacienteId === pacienteId));
+}

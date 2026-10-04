@@ -2,6 +2,7 @@ import { Medico } from "@/domain";
 import { medicosMock } from "@/mocks";
 
 import { delay } from "./apiClient";
+import { getSesionActual } from "./authService";
 
 export interface FiltrosMedico {
   query?: string;
@@ -29,4 +30,16 @@ export async function searchMedicos(filtros: FiltrosMedico = {}): Promise<Medico
 
 export async function getMedico(id: string): Promise<Medico | undefined> {
   return delay(medicosMock.find((m) => m.id === id));
+}
+
+export async function listMedicos(): Promise<Medico[]> {
+  return delay(medicosMock);
+}
+
+export async function getMedicoActual(): Promise<Medico> {
+  const sesion = getSesionActual();
+  if (sesion?.rol !== "doctor") throw new Error("No hay profesional autenticado");
+  const medico = medicosMock.find((m) => m.id === sesion.medicoId);
+  if (!medico) throw new Error("No hay profesional autenticado");
+  return delay(medico);
 }

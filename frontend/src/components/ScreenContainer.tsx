@@ -30,6 +30,7 @@ export function ScreenContainer({ children, scroll = true, style }: ScreenContai
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }, style]}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
@@ -43,6 +44,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 120,
+    paddingBottom: 32,
   },
 });

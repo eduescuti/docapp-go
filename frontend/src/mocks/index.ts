@@ -7,3 +7,7 @@ export * from "./turnos";
 export * from "./estudios";
 export * from "./recetas";
 export * from "./notificaciones";
+export * from "./padronProfesionales";
+export * from "./usuarios";
+export * from "./notas";
+export * from "./ayuda";

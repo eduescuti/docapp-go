@@ -8,7 +8,7 @@ import { Card, ScreenContainer, StatusBadge, Text } from "@/components";
 import { Estudio, Medico, OrdenLaboratorio } from "@/domain";
 import { getMedico, getPacienteActual, listEstudiosPaciente, listOrdenesPaciente } from "@/services";
 import { useTheme } from "@/theme";
-import { formatFechaCorta } from "@/utils/format";
+import { formatFechaCorta, tituloMedico } from "@/utils/format";
 
 type Tab = "resultados" | "ordenes";
 
@@ -81,7 +81,7 @@ export default function EstudiosScreen() {
                 <View style={styles.metaItem}>
                   <Stethoscope size={12} color={theme.colors.mutedForeground} />
                   <Text style={[styles.metaText, { color: theme.colors.mutedForeground }]}>
-                    {item.medico ? `Dr. ${item.medico.apellido}` : ""}
+                    {item.medico ? `${tituloMedico(item.medico)} ${item.medico.apellido}` : ""}
                   </Text>
                 </View>
               </View>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
-  listContent: { paddingHorizontal: 24, paddingBottom: 120 },
+  listContent: { paddingHorizontal: 24, paddingBottom: 32 },
   card: { marginBottom: 16 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   cardHeaderLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1, marginRight: 8 },

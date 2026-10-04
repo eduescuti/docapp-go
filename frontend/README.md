@@ -4,12 +4,12 @@ App móvil de gestión de turnos y servicios médicos multi-hospital. Trabajo pr
 **Programación de Apps Móviles (UCA)**.
 
 El contexto completo del proyecto (modelo de dominio, reglas de negocio, sistema de diseño,
-alcance del MVP) vive en [`CLAUDE.md`](../CLAUDE.md), un nivel arriba de esta carpeta. Léelo
+alcance del MVP) vive en [`CLAUDE.md`](../../CLAUDE.md), dos niveles arriba de esta carpeta (en el workspace). Léelo
 antes de tocar código.
 
 ## Stack
 
-- React Native + **Expo SDK 54** (pineado — no actualizar sin confirmación)
+- React Native 0.86 + **Expo SDK 57** (pineado — no actualizar sin confirmación)
 - TypeScript (`strict: true`)
 - Expo Router (navegación file-based)
 - `react-native-maps` (Google Maps)
@@ -18,7 +18,7 @@ antes de tocar código.
 
 - **Node.js** 20 o superior y **npm** (`node -v`, `npm -v`).
 - La app **Expo Go** instalada en el celular Android — [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent).
-  Usá **siempre la versión de Expo Go compatible con SDK 54** (la que baja Play Store por
+  Usá **siempre la versión de Expo Go compatible con SDK 57** (la que baja Play Store por
   defecto ya sirve; si tenías Expo Go instalado de antes y no conecta, desinstalá y volvé a
   instalar).
 - Celular y computadora **en la misma red Wi-Fi** (el QR conecta por IP local).
@@ -27,13 +27,14 @@ antes de tocar código.
 
 ## Puesta en marcha
 
-Clonar el repo y pararse en esta carpeta (`DocApp Go/`, la raíz del proyecto Expo):
+El repo tiene dos carpetas: `frontend/` (esta app Expo) y `backend/` (reservada para la API,
+todavía vacía). Clonar el repo y pararse en `frontend/`, la raíz del proyecto Expo:
 
 ```bash
 git clone https://github.com/eduescuti/docapp-go.git
-cd docapp-go
+cd docapp-go/frontend
+
 npm install
-cp .env.example .env   # completar EXPO_PUBLIC_GOOGLE_MAPS_API_KEY (ver nota abajo)
 npx expo start
 ```
 
@@ -89,14 +90,13 @@ proyecto en Google Cloud Console, o generá una propia restringida a tu paquete 
 
 ## Problemas comunes
 
-- **"Something went wrong" / la app no carga en Expo Go**: parate en esta carpeta (no en la raíz
-  del workspace) antes de correr `npx expo start` — tiene que ejecutarse donde está el
+- **"Something went wrong" / la app no carga en Expo Go**: parate en `frontend/` (no en la raíz
+  del repo) antes de correr `npx expo start` — tiene que ejecutarse donde está el
   `package.json` de Expo.
 - **Cambios que no se reflejan**: `npx expo start -c` para limpiar caché de Metro.
 - **Versión de SDK no coincide con Expo Go**: confirmá `npx expo-doctor` sin errores y que
-  `package.json` tenga `"expo": "~54.x.x"`. No corras `npx expo upgrade` — el proyecto está
-  pineado a SDK 54 a propósito (CLAUDE.md §2), porque versiones más nuevas no anduvieron en
-  Android en pruebas previas.
+  `package.json` tenga `"expo": "^57"`. No corras `npx expo upgrade` — el proyecto está
+  pineado a SDK 57 (CLAUDE.md §2); cualquier cambio de versión se confirma antes.
 
 ## Estructura
 
@@ -107,9 +107,17 @@ Ver CLAUDE.md §4 para el detalle de `app/` y `src/`. En resumen:
 - `src/domain/` — tipos del dominio médico.
 - `src/services/` — la única puerta de entrada a los datos; hoy leen `src/mocks/`, mañana un backend real.
 - `src/mocks/` — datos de prueba.
+- [`USUARIOS-DE-PRUEBA.md`](USUARIOS-DE-PRUEBA.md) — cuentas para el SignIn, fichas para el SignUp y dónde modificarlas.
 
 ## Estado
 
-Base funcional del **modo paciente** (las 7 pantallas de referencia en `/template-ejemplo-figma`)
-sobre navegación, tema y datos mockeados. Los modos doctor y admin tienen la navegación
-lista y pantallas placeholder — ver CLAUDE.md §13 para el detalle de qué falta.
+- **Paciente:** base funcional de las 7 pantallas de referencia (`/template-ejemplo-figma`).
+  Todas las tarjetas del Menú tienen su página (`app/(paciente)/cuenta/`), la campana del
+  Inicio abre un panel de notificaciones y en Configuración se elige modo claro, oscuro o
+  automático.
+- **Profesional:** agenda, pacientes asignados, ficha del paciente (historial con ese
+  profesional + notas privadas) y perfil.
+- **Admin:** panel con métricas de uso y gráfico de pacientes por obra social, alta de obras
+  sociales y de instituciones.
+
+Ver CLAUDE.md §13 para el detalle de qué falta.

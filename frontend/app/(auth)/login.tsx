@@ -1,110 +1,125 @@
 import { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { HeartPulse } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Card, Chip, PrimaryButton, Text } from "@/components";
-import { useAuth, Rol } from "@/hooks/useAuth";
+import { Card, PasswordField, PrimaryButton, ScreenContainer, Text, TextField } from "@/components";
+import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
-import { planesMedicosMock } from "@/mocks";
 
-const ROLES: { id: Rol; label: string }[] = [
-  { id: "paciente", label: "Paciente" },
-  { id: "doctor", label: "Médico" },
-  { id: "admin", label: "Administrador" },
-];
-
+/**
+ * Inicio de sesión único para los tres roles: el rol lo determina la cuenta
+ * (DNI + contraseña), no un selector en pantalla.
+ */
 export default function LoginScreen() {
   const { theme } = useTheme();
   const { login } = useAuth();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
-  const [rolSeleccionado, setRolSeleccionado] = useState<Rol>("paciente");
-  const [dni, setDni] = useState("34567890");
-  const [planId, setPlanId] = useState(planesMedicosMock[0].id);
+  const [dni, setDni] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(false);
 
-  const handleIngresar = () => {
-    login(rolSeleccionado);
-    router.replace("/");
+  const puedeEnviar = dni.trim().length > 0 && password.length > 0;
+
+  const handleIngresar = async () => {
+    if (!puedeEnviar) return;
+    setError(null);
+    setCargando(true);
+    try {
+      await login(dni, password);
+      router.replace("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo iniciar sesión.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background, paddingTop: insets.top + 48 }]}>
-      <View style={styles.hero}>
-        <View style={[styles.iconWrapper, { backgroundColor: theme.colors.primary, borderRadius: theme.radii.lg }]}>
-          <HeartPulse size={36} color={theme.colors.primaryForeground} />
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScreenContainer style={styles.container}>
+        <View style={styles.hero}>
+          <View style={[styles.iconWrapper, { backgroundColor: theme.colors.primary, borderRadius: theme.radii.lg }]}>
+            <HeartPulse size={36} color={theme.colors.primaryForeground} />
+          </View>
+          <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
+            DocApp Go
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.mutedForeground }]}>
+            Gestioná tus turnos, estudios y recetas en una sola app.
+          </Text>
         </View>
-        <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
-          DocApp Go
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.colors.mutedForeground }]}>
-          Gestioná tus turnos, estudios y recetas en una sola app.
-        </Text>
-      </View>
 
-      <View style={styles.roleRow}>
-        {ROLES.map((r) => (
-          <Chip key={r.id} label={r.label} selected={rolSeleccionado === r.id} onPress={() => setRolSeleccionado(r.id)} />
-        ))}
-      </View>
+        <Card>
+          <Text variant="heading" style={[styles.cardTitle, { color: theme.colors.foreground }]}>
+            Ingresar a mi cuenta
+          </Text>
 
-      <Card style={styles.card}>
-        <Text variant="heading" style={[styles.cardTitle, { color: theme.colors.foreground }]}>
-          Ingresar a mi cuenta
-        </Text>
+          <TextField
+            label="DNI"
+            value={dni}
+            onChangeText={(t) => {
+              setDni(t);
+              setError(null);
+            }}
+            placeholder="Ej. 12345678"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="username"
+            returnKeyType="next"
+          />
+          <PasswordField
+            label="Contraseña"
+            value={password}
+            onChangeText={(t) => {
+              setPassword(t);
+              setError(null);
+            }}
+            placeholder="Tu contraseña"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={handleIngresar}
+          />
 
-        <Text style={[styles.label, { color: theme.colors.mutedForeground }]}>DNI o Pasaporte</Text>
-        <TextInput
-          value={dni}
-          onChangeText={setDni}
-          keyboardType="number-pad"
-          placeholder="Ej. 34567890"
-          placeholderTextColor={theme.colors.mutedForeground}
-          accessibilityLabel="DNI o Pasaporte"
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.colors.muted,
-              borderColor: theme.colors.border,
-              color: theme.colors.foreground,
-              borderRadius: theme.radii.md,
-            },
-          ]}
-        />
-
-        {rolSeleccionado === "paciente" && (
-          <>
-            <Text style={[styles.label, { color: theme.colors.mutedForeground, marginTop: 16 }]}>
-              Plan Médico / Obra Social
-            </Text>
-            <View style={styles.planList}>
-              {planesMedicosMock.map((plan) => (
-                <Chip key={plan.id} label={plan.nombre} selected={planId === plan.id} onPress={() => setPlanId(plan.id)} />
-              ))}
+          {error ? (
+            <View
+              style={[styles.errorBox, { backgroundColor: `${theme.colors.danger}1A`, borderRadius: theme.radii.md }]}
+              accessibilityLiveRegion="polite"
+            >
+              <Text style={[styles.errorText, { color: theme.colors.danger }]}>{error}</Text>
             </View>
-          </>
-        )}
+          ) : null}
 
-        <View style={{ marginTop: 24 }}>
-          <PrimaryButton label="Iniciar Sesión" onPress={handleIngresar} accessibilityLabel="Iniciar sesión" />
-        </View>
-      </Card>
-    </View>
+          <PrimaryButton
+            label="Iniciar sesión"
+            onPress={handleIngresar}
+            disabled={!puedeEnviar}
+            loading={cargando}
+            accessibilityLabel="Iniciar sesión"
+          />
+        </Card>
+
+        <Pressable
+          onPress={() => router.push("/(auth)/registro")}
+          accessibilityRole="button"
+          accessibilityLabel="Crear una cuenta"
+          style={styles.registroLink}
+        >
+          <Text style={{ color: theme.colors.mutedForeground, fontSize: 14 }}>
+            ¿No tenés cuenta?{" "}
+            <Text style={{ color: theme.colors.primary, fontWeight: "600" }}>Crear cuenta</Text>
+          </Text>
+        </Pressable>
+      </ScreenContainer>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: "space-between",
-    paddingBottom: 32,
-  },
-  hero: {
-    alignItems: "center",
-  },
+  container: { paddingTop: 72, paddingBottom: 48 },
+  hero: { alignItems: "center", marginBottom: 32 },
   iconWrapper: {
     width: 72,
     height: 72,
@@ -113,44 +128,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     transform: [{ rotate: "-4deg" }],
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: "center",
-  },
-  roleRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 24,
-  },
-  card: {
-    marginTop: 24,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    padding: 14,
-    fontSize: 14,
-    minHeight: 48,
-  },
-  planList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  title: { fontSize: 28, fontWeight: "700", marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: "center" },
+  cardTitle: { fontSize: 17, fontWeight: "600", textAlign: "center", marginBottom: 20 },
+  errorBox: { padding: 12, marginBottom: 16 },
+  errorText: { fontSize: 13 },
+  registroLink: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 20 },
 });

@@ -7,4 +7,5 @@ export const especialidadesMock: Especialidad[] = [
   { id: "esp-clinica-medica", nombre: "Clínica Médica", subespecialidades: [] },
   { id: "esp-traumatologia", nombre: "Traumatología", subespecialidades: ["Deportiva", "Columna"] },
   { id: "esp-ginecologia", nombre: "Ginecología", subespecialidades: [] },
+  { id: "esp-enfermeria", nombre: "Enfermería", subespecialidades: [] },
 ];
