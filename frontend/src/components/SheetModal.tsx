@@ -41,6 +41,13 @@ export function SheetModal({ visible, onClose, etiquetaFondo = "Cerrar", style, 
   const altoPanel = useRef(0);
   const esperandoMedida = useRef(false);
 
+  // Mientras se cierra se sigue mostrando el último contenido: las pantallas limpian el detalle
+  // (p. ej. `abierto = null`) en el mismo momento en que piden cerrar, y sin esto el panel se
+  // vaciaba y se achicaba de golpe antes de bajar.
+  const ultimoContenido = useRef(children);
+  if (visible) ultimoContenido.current = children;
+  const contenido = visible ? children : ultimoContenido.current;
+
   const entrar = useCallback(() => {
     Animated.parallel([
       Animated.timing(opacidadFondo, {
@@ -120,8 +127,12 @@ export function SheetModal({ visible, onClose, etiquetaFondo = "Cerrar", style, 
         <Animated.View style={[StyleSheet.absoluteFill, styles.fondo, { opacity: opacidadFondo }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={etiquetaFondo} />
         </Animated.View>
-        <Animated.View onLayout={alMedir} style={[style, { transform: [{ translateY: desplazamiento }] }]}>
-          {children}
+        {/* Mientras baja no responde a toques: sus botones son del detalle que se está cerrando. */}
+        <Animated.View
+          onLayout={alMedir}
+          style={[style, { transform: [{ translateY: desplazamiento }], pointerEvents: visible ? "auto" : "none" }]}
+        >
+          {contenido}
         </Animated.View>
       </View>
     </Modal>
