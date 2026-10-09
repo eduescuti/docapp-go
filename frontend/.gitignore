@@ -40,3 +40,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# REFES crudo descargado para scripts/importar-refes.mjs (~9 MB, no se versiona)
+scripts/.cache/

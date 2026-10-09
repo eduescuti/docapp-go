@@ -42,6 +42,8 @@ const config: ExpoConfig = {
       {
         locationAlwaysAndWhenInUsePermission:
           "DocApp Go usa tu ubicación para mostrarte instituciones médicas cercanas.",
+        locationWhenInUsePermission:
+          "Usamos tu ubicación para mostrarte los centros de salud más cercanos que aceptan tu cobertura.",
       },
     ],
   ],

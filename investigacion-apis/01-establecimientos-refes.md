@@ -132,10 +132,15 @@ Mapeo propuesto a `TipoInstitucion` (`frontend/src/domain/institucion.ts`):
 | Tipo en la app | Criterio en el REFES | Total | Con coordenadas | CABA con coordenadas |
 |---|---|---|---|---|
 | `hospital` | Sigla `ESCI*` (con internación), sin `ESCIRES`, y financiamiento **público** | 1.505 | 1.472 | 46 |
-| `clinica` | Sigla `ESCI*` (con internación), sin `ESCIRES`, y financiamiento **privado** | 2.249 | 2.131 | 453 |
+| `clinica` | Sigla `ESCI*` (con internación), sin `ESCIRES`, y financiamiento **privado** | 2.249 | 2.131 | 453 ⚠️ |
 | `centro_medico` | Sigla `ESSIDT` con atención médica (sin "Sin atención médica…") | 15.148 | 12.714 | 739 |
 | `laboratorio` | Sigla `ESSID` de laboratorio o diagnóstico por imágenes | 4.688 | 2.866 | 163 |
 | **Total** | | **23.590** | **19.183** | **1.401** |
+
+> ⚠️ **Corrección (09/10/2026):** el criterio `ESCI*` incluye `ESCIETE` (internación de tercera
+> edad): son geriátricos, 323 de ellos en CABA. Al generar los datos de la app se excluyeron, y
+> CABA quedó en 1.077 establecimientos. Detalle en
+> [plan de integración, Fase 2](plan-integracion-apis/02-fases.md#fase-2--foto-del-refes-de-caba-script).
 
 Quedan afuera unos 12.500 registros: residencias, ópticas, ortopedias, vacunatorios, centros de
 día, traslados, etc.

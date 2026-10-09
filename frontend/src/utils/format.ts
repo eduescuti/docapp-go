@@ -49,3 +49,9 @@ export function tituloMedico(medico: Pick<Medico, "genero">): string {
 export function nombreConTitulo(medico: Pick<Medico, "genero" | "nombre" | "apellido">): string {
   return `${tituloMedico(medico)} ${medico.nombre} ${medico.apellido}`;
 }
+
+/** "a 850 m" / "a 1,2 km" */
+export function formatDistancia(km: number): string {
+  if (km < 1) return `a ${Math.round((km * 1000) / 10) * 10} m`;
+  return `a ${km.toFixed(1).replace(".", ",")} km`;
+}

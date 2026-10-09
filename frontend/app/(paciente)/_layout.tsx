@@ -3,6 +3,7 @@ import { Calendar, FileText, Home, Menu as MenuIcon, Search } from "lucide-react
 
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
+import { rutaInicio } from "@/utils/navigation";
 
 /** Rutas del grupo que no aparecen como pestaña (se abren desde otras pantallas). */
 const RUTAS_OCULTAS = [
@@ -29,7 +30,7 @@ export default function PacienteLayout() {
   const { rol } = useAuth();
 
   // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
-  if (rol !== "paciente") return <Redirect href="/" />;
+  if (rol !== "paciente") return <Redirect href={rutaInicio(rol)} />;
 
   return (
     <Tabs

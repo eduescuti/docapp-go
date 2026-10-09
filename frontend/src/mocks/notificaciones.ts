@@ -8,7 +8,7 @@ export const notificacionesMock: Notificacion[] = [
     pacienteId: "pac-sofia",
     tipo: "recordatorio_turno",
     titulo: "Turno mañana con Dr. Roberto Méndez",
-    mensaje: "Tenés un turno de cardiología en Centro Médico Norte.",
+    mensaje: "Tenés un turno de cardiología en el CESAC Nº 33.",
     fecha: format(subHours(new Date(), 3), "yyyy-MM-dd'T'HH:mm"),
     leida: false,
   },

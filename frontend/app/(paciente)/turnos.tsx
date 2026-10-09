@@ -1,38 +1,75 @@
-import { useCallback, useState } from "react";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
-import { Calendar, Clock } from "lucide-react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FlatList, Linking, Pressable, StyleSheet, View } from "react-native";
+import { Calendar, CheckCircle2, ChevronRight, Clock, MapPin, Stethoscope, Trash2 } from "lucide-react-native";
 
-import { Card, PrimaryButton, ScreenContainer, StatusBadge, Text } from "@/components";
-import { Medico, Turno } from "@/domain";
-import { cancelarTurno, getMedico, getPacienteActual, listTurnosPaciente } from "@/services";
+import {
+  Avatar,
+  BottomSheet,
+  Card,
+  Confirmacion,
+  PrimaryButton,
+  ScreenContainer,
+  StatusBadge,
+  TabSwitch,
+  Text,
+} from "@/components";
+import { Especialidad, Institucion, Medico, Sede, Turno } from "@/domain";
+import {
+  cancelarTurno,
+  getEspecialidad,
+  getInstitucion,
+  getMedico,
+  getPacienteActual,
+  getSede,
+  listMisTurnos,
+  ocultarTurnoDelHistorial,
+  vaciarHistorialTurnos,
+} from "@/services";
 import { useTheme } from "@/theme";
-import { formatFechaCorta, nombreConTitulo } from "@/utils/format";
+import { etiquetaTipoConsulta, formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
 
 type Filtro = "proximos" | "historial";
+type Confirmando = "cancelar" | "ocultar" | null;
 
-interface TurnoConMedico {
+interface TurnoDetalle {
   turno: Turno;
   medico?: Medico;
+  especialidad?: Especialidad;
+  sede?: Sede;
+  institucion?: Institucion;
+}
+
+async function conDetalle(turno: Turno): Promise<TurnoDetalle> {
+  const [medico, sede] = await Promise.all([getMedico(turno.medicoId), getSede(turno.sedeId)]);
+  const [especialidad, institucion] = await Promise.all([
+    medico ? getEspecialidad(medico.especialidadId) : undefined,
+    sede ? getInstitucion(sede.institucionId) : undefined,
+  ]);
+  return { turno, medico, especialidad, sede, institucion };
 }
 
 export default function TurnosScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
+  const [pacienteId, setPacienteId] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("proximos");
-  const [turnos, setTurnos] = useState<TurnoConMedico[]>([]);
+  const [proximos, setProximos] = useState<TurnoDetalle[]>([]);
+  const [historial, setHistorial] = useState<TurnoDetalle[]>([]);
+  const [abierto, setAbierto] = useState<TurnoDetalle | null>(null);
+  const [confirmando, setConfirmando] = useState<Confirmando>(null);
+  const [vaciando, setVaciando] = useState(false);
+  const [procesando, setProcesando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     const paciente = await getPacienteActual();
-    const lista = await listTurnosPaciente(paciente.id);
-    const conMedico = await Promise.all(
-      lista.map(async (turno) => ({ turno, medico: await getMedico(turno.medicoId) })),
-    );
-    conMedico.sort((a, b) => `${a.turno.fecha}${a.turno.hora}`.localeCompare(`${b.turno.fecha}${b.turno.hora}`));
-    setTurnos(conMedico);
+    setPacienteId(paciente.id);
+    const mis = await listMisTurnos(paciente.id);
+    const [p, h] = await Promise.all([Promise.all(mis.proximos.map(conDetalle)), Promise.all(mis.historial.map(conDetalle))]);
+    setProximos(p);
+    setHistorial(h);
   }, []);
 
   useFocusEffect(
@@ -41,119 +78,284 @@ export default function TurnosScreen() {
     }, [cargar]),
   );
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  const filtrados = turnos.filter(({ turno }) =>
-    filtro === "proximos"
-      ? turno.fecha >= hoy && turno.estado !== "cancelado" && turno.estado !== "completado"
-      : turno.fecha < hoy || turno.estado === "completado" || turno.estado === "cancelado",
-  );
+  // El aviso de éxito se va solo a los 3 segundos.
+  useEffect(() => {
+    if (!aviso) return;
+    const t = setTimeout(() => setAviso(null), 3000);
+    return () => clearTimeout(t);
+  }, [aviso]);
 
-  const handleCancelar = (turnoId: string) => {
-    Alert.alert("Cancelar turno", "¿Seguro que querés cancelar este turno?", [
-      { text: "No", style: "cancel" },
-      {
-        text: "Sí, cancelar",
-        style: "destructive",
-        onPress: async () => {
-          await cancelarTurno(turnoId);
-          cargar();
-        },
-      },
-    ]);
+  const abrir = (item: TurnoDetalle) => {
+    setConfirmando(null);
+    setAbierto(item);
   };
 
-  return (
-    <ScreenContainer scroll={false} style={{ paddingTop: insets.top + 16 }}>
-      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Mis Turnos</Text>
+  const cerrar = () => {
+    if (procesando) return;
+    setAbierto(null);
+    setConfirmando(null);
+  };
 
-      <View style={[styles.tabSwitch, { backgroundColor: theme.colors.muted, borderColor: theme.colors.border }]}>
-        <TabButton label="Próximos" active={filtro === "proximos"} onPress={() => setFiltro("proximos")} />
-        <TabButton label="Historial" active={filtro === "historial"} onPress={() => setFiltro("historial")} />
-      </View>
+  const confirmar = async () => {
+    if (!abierto || !confirmando) return;
+    setProcesando(true);
+    try {
+      if (confirmando === "cancelar") await cancelarTurno(abierto.turno.id);
+      else await ocultarTurnoDelHistorial(abierto.turno.id);
+      setAviso(confirmando === "cancelar" ? "Cancelaste el turno. Lo vas a ver en el historial." : "Eliminaste el turno de tu historial.");
+      setAbierto(null);
+      setConfirmando(null);
+      await cargar();
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const vaciar = async () => {
+    if (!pacienteId) return;
+    setProcesando(true);
+    try {
+      await vaciarHistorialTurnos(pacienteId);
+      setAviso("Eliminaste todo tu historial de turnos.");
+      setVaciando(false);
+      await cargar();
+    } finally {
+      setProcesando(false);
+    }
+  };
+
+  const lista = filtro === "proximos" ? proximos : historial;
+  const nombreMedico = (item: TurnoDetalle) => (item.medico ? nombreConTitulo(item.medico) : "Profesional");
+  const esProximo = abierto ? proximos.some((p) => p.turno.id === abierto.turno.id) : false;
+
+  return (
+    <ScreenContainer scroll={false}>
+      <Text variant="heading" style={[styles.titulo, { color: theme.colors.foreground }]}>Mis Turnos</Text>
+
+      <TabSwitch
+        opciones={[
+          { valor: "proximos", etiqueta: "Próximos" },
+          { valor: "historial", etiqueta: "Historial" },
+        ]}
+        valor={filtro}
+        onChange={setFiltro}
+      />
+
+      {aviso ? (
+        <View style={[styles.aviso, { backgroundColor: `${theme.colors.success}1F` }]} accessibilityLiveRegion="polite">
+          <CheckCircle2 size={16} color={theme.colors.success} />
+          <Text style={[styles.avisoTexto, { color: theme.colors.foreground }]}>{aviso}</Text>
+        </View>
+      ) : null}
 
       <FlatList
-        data={filtrados}
+        data={lista}
         keyExtractor={({ turno }) => turno.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={styles.lista}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          filtro === "historial" && historial.length > 0 ? (
+            <View style={styles.encabezadoHistorial}>
+              <Text style={[styles.cantidad, { color: theme.colors.mutedForeground }]}>
+                {historial.length} {historial.length === 1 ? "turno" : "turnos"}
+              </Text>
+              <Pressable
+                onPress={() => setVaciando(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Eliminar todo el historial de turnos"
+                hitSlop={8}
+                style={styles.eliminarTodo}
+              >
+                <Trash2 size={16} color={theme.colors.danger} />
+                <Text style={[styles.eliminarTodoTexto, { color: theme.colors.danger }]}>Eliminar todo</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <Text style={{ color: theme.colors.mutedForeground, marginTop: 24 }}>
-            {filtro === "proximos" ? "No tenés turnos próximos." : "Todavía no hay turnos en tu historial."}
+          <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
+            {filtro === "proximos" ? "No tenés turnos próximos." : "Tu historial de turnos está vacío."}
           </Text>
         }
         renderItem={({ item }) => (
-          <Card style={styles.turnoCard}>
-            <View style={styles.turnoHeader}>
-              <Text style={[styles.medicoNombre, { color: theme.colors.foreground }]}>
-                {item.medico ? nombreConTitulo(item.medico) : "Médico"}
-              </Text>
-              <StatusBadge estado={item.turno.estado} />
-            </View>
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <Calendar size={14} color={theme.colors.primary} />
-                <Text style={[styles.metaText, { color: theme.colors.mutedForeground }]}>
-                  {formatFechaCorta(item.turno.fecha)}
+          <Card
+            style={styles.tarjeta}
+            onPress={() => abrir(item)}
+            accessibilityLabel={`Turno con ${nombreMedico(item)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
+          >
+            <View style={styles.fila}>
+              <Avatar
+                uri={item.medico?.avatarUrl}
+                iniciales={item.medico ? iniciales(item.medico.nombre, item.medico.apellido) : "?"}
+                size={44}
+              />
+              <View style={styles.flex}>
+                <Text style={[styles.nombre, { color: theme.colors.foreground }]} numberOfLines={1}>
+                  {nombreMedico(item)}
+                </Text>
+                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
+                  {[item.especialidad?.nombre, item.institucion?.nombre].filter(Boolean).join(" · ")}
                 </Text>
               </View>
-              <View style={styles.metaItem}>
-                <Clock size={14} color={theme.colors.primary} />
-                <Text style={[styles.metaText, { color: theme.colors.mutedForeground }]}>{item.turno.hora}</Text>
-              </View>
+              <StatusBadge estado={item.turno.estado} />
             </View>
-            {filtro === "proximos" && (
-              <View style={{ marginTop: 12 }}>
-                <PrimaryButton
-                  label="Cancelar turno"
-                  variant="outline"
-                  onPress={() => handleCancelar(item.turno.id)}
-                  accessibilityLabel="Cancelar turno"
-                />
+            <View style={[styles.pieTarjeta, { borderTopColor: theme.colors.border }]}>
+              <View style={styles.dato}>
+                <Calendar size={14} color={theme.colors.primary} />
+                <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{formatFechaCorta(item.turno.fecha)}</Text>
               </View>
-            )}
+              <View style={styles.dato}>
+                <Clock size={14} color={theme.colors.primary} />
+                <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{item.turno.hora}</Text>
+              </View>
+              <View style={styles.flex} />
+              <ChevronRight size={18} color={theme.colors.mutedForeground} />
+            </View>
           </Card>
         )}
       />
+
+      {/* Detalle del turno y sus acciones, con segunda confirmación antes de cancelar o eliminar. */}
+      <BottomSheet
+        visible={!!abierto}
+        titulo={confirmando === "cancelar" ? "Cancelar turno" : confirmando === "ocultar" ? "Eliminar del historial" : "Detalle del turno"}
+        extraTitulo={abierto && !confirmando ? <StatusBadge estado={abierto.turno.estado} /> : undefined}
+        onClose={cerrar}
+        pie={
+          abierto && !confirmando ? (
+            esProximo ? (
+              <PrimaryButton label="Cancelar turno" variant="outline" onPress={() => setConfirmando("cancelar")} />
+            ) : (
+              <PrimaryButton label="Eliminar del historial" variant="outline" onPress={() => setConfirmando("ocultar")} />
+            )
+          ) : undefined
+        }
+      >
+        {abierto && confirmando ? (
+          <Confirmacion
+            mensaje={
+              confirmando === "cancelar"
+                ? `¿Seguro que querés cancelar tu turno con ${nombreMedico(abierto)} del ${formatFechaLarga(abierto.turno.fecha)} a las ${abierto.turno.hora}? El horario queda libre para otra persona.`
+                : "¿Eliminar este turno de tu historial? Solo deja de verse en esta lista: tu historial médico y lo que registró el profesional no cambian."
+            }
+            textoConfirmar={confirmando === "cancelar" ? "Sí, cancelar turno" : "Sí, eliminar"}
+            textoVolver={confirmando === "cancelar" ? "No, mantener turno" : "No, volver"}
+            onConfirmar={confirmar}
+            onVolver={() => setConfirmando(null)}
+            cargando={procesando}
+          />
+        ) : abierto ? (
+          <View style={styles.detalle}>
+            <Pressable
+              onPress={() => {
+                if (!abierto.medico) return;
+                cerrar();
+                router.push(`/medico/${abierto.medico.id}`);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`Ver perfil de ${nombreMedico(abierto)}`}
+              style={styles.fila}
+            >
+              <Avatar
+                uri={abierto.medico?.avatarUrl}
+                iniciales={abierto.medico ? iniciales(abierto.medico.nombre, abierto.medico.apellido) : "?"}
+                size={52}
+              />
+              <View style={styles.flex}>
+                <Text style={[styles.nombreDetalle, { color: theme.colors.foreground }]}>{nombreMedico(abierto)}</Text>
+                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+                  {[abierto.especialidad?.nombre, abierto.medico ? `Mat. ${abierto.medico.matricula}` : null].filter(Boolean).join(" · ")}
+                </Text>
+              </View>
+              <ChevronRight size={18} color={theme.colors.mutedForeground} />
+            </Pressable>
+
+            <Seccion icono={Calendar} titulo="Fecha y horario">
+              <Text style={[styles.valor, { color: theme.colors.foreground }]}>
+                {formatFechaLarga(abierto.turno.fecha)} · {abierto.turno.hora} h
+              </Text>
+            </Seccion>
+
+            <Seccion icono={Stethoscope} titulo="Tipo de consulta">
+              <Text style={[styles.valor, { color: theme.colors.foreground }]}>{etiquetaTipoConsulta(abierto.turno.tipoConsulta)}</Text>
+            </Seccion>
+
+            <Seccion icono={MapPin} titulo="Sede">
+              <Text style={[styles.valor, { color: theme.colors.foreground }]}>{abierto.institucion?.nombre ?? "Sede"}</Text>
+              {abierto.sede ? (
+                <>
+                  <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+                    {abierto.sede.direccion}, {abierto.sede.ciudad}
+                  </Text>
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL(
+                        `https://www.google.com/maps/dir/?api=1&destination=${abierto.sede?.latitud},${abierto.sede?.longitud}`,
+                      )
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel="Cómo llegar a la sede"
+                    style={styles.enlace}
+                  >
+                    <Text style={[styles.enlaceTexto, { color: theme.colors.primary }]}>Cómo llegar</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </Seccion>
+          </View>
+        ) : null}
+      </BottomSheet>
+
+      <BottomSheet visible={vaciando} titulo="Eliminar historial" onClose={() => !procesando && setVaciando(false)}>
+        <Confirmacion
+          mensaje={`¿Eliminar ${historial.length === 1 ? "el turno" : `los ${historial.length} turnos`} de tu historial? Solo dejan de verse en esta lista: tu historial médico no cambia.`}
+          textoConfirmar="Sí, eliminar todo"
+          textoVolver="No, volver"
+          onConfirmar={vaciar}
+          onVolver={() => setVaciando(false)}
+          cargando={procesando}
+        />
+      </BottomSheet>
     </ScreenContainer>
   );
 }
 
-function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Seccion({ icono: Icono, titulo, children }: { icono: typeof Calendar; titulo: string; children: ReactNode }) {
   const { theme } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: active }}
-      style={[
-        styles.tabButton,
-        { backgroundColor: active ? theme.colors.background : "transparent" },
-      ]}
-    >
-      <Text style={{ fontSize: 14, fontWeight: "600", color: active ? theme.colors.foreground : theme.colors.mutedForeground }}>
-        {label}
-      </Text>
-    </Pressable>
+    <View style={[styles.seccion, { borderTopColor: theme.colors.border }]}>
+      <View style={styles.dato}>
+        <Icono size={14} color={theme.colors.primary} />
+        <Text style={[styles.seccionTitulo, { color: theme.colors.mutedForeground }]}>{titulo}</Text>
+      </View>
+      {children}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 20, paddingHorizontal: 24 },
-  tabSwitch: {
-    flexDirection: "row",
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 4,
-    marginHorizontal: 24,
-    marginBottom: 16,
-  },
-  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
-  listContent: { paddingHorizontal: 24, paddingBottom: 32 },
-  turnoCard: { marginBottom: 16 },
-  turnoHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
-  medicoNombre: { fontSize: 15, fontWeight: "600", flex: 1, marginRight: 8 },
-  metaRow: { flexDirection: "row", gap: 16 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 13 },
+  flex: { flex: 1 },
+  titulo: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
+  aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  avisoTexto: { flex: 1, fontSize: 13 },
+  lista: { paddingBottom: 32 },
+  encabezadoHistorial: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  cantidad: { fontSize: 13 },
+  eliminarTodo: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 36 },
+  eliminarTodoTexto: { fontSize: 13, fontWeight: "600" },
+  vacio: { marginTop: 24, textAlign: "center" },
+  tarjeta: { marginBottom: 12 },
+  fila: { flexDirection: "row", alignItems: "center", gap: 12 },
+  nombre: { fontSize: 15, fontWeight: "600" },
+  meta: { fontSize: 12, marginTop: 2 },
+  pieTarjeta: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
+  dato: { flexDirection: "row", alignItems: "center", gap: 6 },
+  datoTexto: { fontSize: 13 },
+  detalle: { gap: 4 },
+  nombreDetalle: { fontSize: 16, fontWeight: "700" },
+  seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
+  seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
+  valor: { fontSize: 15, fontWeight: "500" },
+  enlace: { alignSelf: "flex-start", minHeight: 36, justifyContent: "center" },
+  enlaceTexto: { fontSize: 14, fontWeight: "600" },
 });

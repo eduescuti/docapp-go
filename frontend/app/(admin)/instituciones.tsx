@@ -28,6 +28,9 @@ const TIPOS: { value: TipoInstitucion; label: string; icon: LucideIcon }[] = [
 
 const esTipo = (v: string): v is TipoInstitucion => TIPOS.some((t) => t.value === v);
 
+/** Con ~1.000 establecimientos del REFES no se dibujan todos: el buscador queda para más adelante. */
+const LIMITE_LISTA = 30;
+
 /** "-34,60" o "-34.60" -> -34.6 */
 const parseCoordenada = (v: string) => Number.parseFloat(v.replace(",", "."));
 
@@ -100,6 +103,11 @@ export default function AdminInstitucionesScreen() {
   };
 
   const nombrePlan = (id: string) => planes.find((p) => p.id === id)?.aseguradora;
+  const coberturaTexto = (inst: Institucion) => {
+    if (inst.origen === "publico") return "Público: atiende a todas las coberturas";
+    const aseguradoras = Array.from(new Set(inst.planesAceptadosIds.map(nombrePlan).filter(Boolean)));
+    return aseguradoras.length > 0 ? `Acepta: ${aseguradoras.join(", ")}` : "Sin obras sociales cargadas";
+  };
   const tipoInfo = (t: TipoInstitucion) => TIPOS.find((x) => x.value === t) ?? TIPOS[0];
 
   return (
@@ -186,7 +194,12 @@ export default function AdminInstitucionesScreen() {
         )}
 
         <SectionHeader title={`Cargadas (${instituciones.length})`} />
-        {instituciones.map((inst) => {
+        {instituciones.length > LIMITE_LISTA ? (
+          <Text style={[styles.sub, { color: theme.colors.mutedForeground, marginTop: 0 }]}>
+            Se muestran las primeras {LIMITE_LISTA}. Las que agregues aparecen arriba de todo.
+          </Text>
+        ) : null}
+        {instituciones.slice(0, LIMITE_LISTA).map((inst) => {
           const info = tipoInfo(inst.tipo);
           const sede = inst.sedes[0];
           return (
@@ -200,7 +213,7 @@ export default function AdminInstitucionesScreen() {
                     {sede ? ` · ${sede.direccion}, ${sede.ciudad}` : ""}
                   </Text>
                   <Text style={[styles.meta, { color: theme.colors.mutedForeground }]} numberOfLines={2}>
-                    Acepta: {Array.from(new Set(inst.planesAceptadosIds.map(nombrePlan).filter(Boolean))).join(", ")}
+                    {coberturaTexto(inst)}
                   </Text>
                 </View>
               </View>

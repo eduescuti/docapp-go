@@ -16,4 +16,9 @@ export interface Turno {
   hora: string; // "10:30"
   tipoConsulta: TipoConsulta;
   estado: EstadoTurno;
+  /**
+   * El paciente lo sacó de su historial de turnos. Solo se oculta en esa lista: el historial
+   * médico, lo que ve el profesional y el feedback no cambian.
+   */
+  ocultoEnHistorial?: boolean;
 }

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { FlatList, Modal, Pressable, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { Check, ChevronDown, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { SheetModal } from "./SheetModal";
 import { Text } from "./Text";
 
 export interface SelectOption {
@@ -54,66 +55,61 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
       </Pressable>
       {error ? <Text style={[styles.error, { color: theme.colors.danger }]}>{error}</Text> : null}
 
-      <Modal visible={abierto} transparent animationType="slide" onRequestClose={() => setAbierto(false)}>
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => setAbierto(false)}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar selector"
-        />
-        <View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: theme.colors.card,
-              borderColor: theme.colors.border,
-              borderTopLeftRadius: theme.radii.lg * 2,
-              borderTopRightRadius: theme.radii.lg * 2,
-              paddingBottom: insets.bottom + 16,
-            },
-          ]}
-        >
-          <View style={styles.sheetHeader}>
-            <Text variant="heading" style={[styles.sheetTitle, { color: theme.colors.foreground }]}>{label}</Text>
-            <Pressable
-              onPress={() => setAbierto(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar"
-              hitSlop={8}
-              style={styles.closeBtn}
-            >
-              <X size={20} color={theme.colors.mutedForeground} />
-            </Pressable>
-          </View>
-          <FlatList
-            data={options}
-            keyExtractor={(o) => o.value}
-            renderItem={({ item }) => {
-              const activa = item.value === value;
-              return (
-                <Pressable
-                  onPress={() => {
-                    onChange(item.value);
-                    setAbierto(false);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.label}
-                  accessibilityState={{ selected: activa }}
-                  style={[styles.option, { borderBottomColor: theme.colors.border }]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.optionLabel, { color: theme.colors.foreground }]}>{item.label}</Text>
-                    {item.description ? (
-                      <Text style={[styles.optionDesc, { color: theme.colors.mutedForeground }]}>{item.description}</Text>
-                    ) : null}
-                  </View>
-                  {activa && <Check size={18} color={theme.colors.primary} />}
-                </Pressable>
-              );
-            }}
-          />
+      <SheetModal
+        visible={abierto}
+        onClose={() => setAbierto(false)}
+        etiquetaFondo="Cerrar selector"
+        style={[
+          styles.sheet,
+          {
+            backgroundColor: theme.colors.card,
+            borderColor: theme.colors.border,
+            borderTopLeftRadius: theme.radii.lg * 2,
+            borderTopRightRadius: theme.radii.lg * 2,
+            paddingBottom: insets.bottom + 16,
+          },
+        ]}
+      >
+        <View style={styles.sheetHeader}>
+          <Text variant="heading" style={[styles.sheetTitle, { color: theme.colors.foreground }]}>{label}</Text>
+          <Pressable
+            onPress={() => setAbierto(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar"
+            hitSlop={8}
+            style={styles.closeBtn}
+          >
+            <X size={20} color={theme.colors.mutedForeground} />
+          </Pressable>
         </View>
-      </Modal>
+        <FlatList
+          data={options}
+          keyExtractor={(o) => o.value}
+          renderItem={({ item }) => {
+            const activa = item.value === value;
+            return (
+              <Pressable
+                onPress={() => {
+                  onChange(item.value);
+                  setAbierto(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                accessibilityState={{ selected: activa }}
+                style={[styles.option, { borderBottomColor: theme.colors.border }]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.optionLabel, { color: theme.colors.foreground }]}>{item.label}</Text>
+                  {item.description ? (
+                    <Text style={[styles.optionDesc, { color: theme.colors.mutedForeground }]}>{item.description}</Text>
+                  ) : null}
+                </View>
+                {activa && <Check size={18} color={theme.colors.primary} />}
+              </Pressable>
+            );
+          }}
+        />
+      </SheetModal>
     </View>
   );
 }
@@ -132,7 +128,6 @@ const styles = StyleSheet.create({
   },
   fieldText: { fontSize: 14, flex: 1 },
   error: { fontSize: 12, marginTop: 6 },
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   sheet: { maxHeight: "70%", borderWidth: 1, paddingHorizontal: 24, paddingTop: 16 },
   sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   sheetTitle: { fontSize: 17, fontWeight: "600" },

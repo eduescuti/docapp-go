@@ -9,7 +9,8 @@ interface PrimaryButtonProps {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  variant?: "primary" | "outline";
+  /** danger: confirmaciones destructivas (cancelar un turno, eliminar). */
+  variant?: "primary" | "outline" | "danger";
   accessibilityLabel?: string;
 }
 
@@ -24,6 +25,8 @@ export function PrimaryButton({
 }: PrimaryButtonProps) {
   const { theme } = useTheme();
   const isOutline = variant === "outline";
+  const relleno = variant === "danger" ? theme.colors.danger : theme.colors.primary;
+  const textoRelleno = variant === "danger" ? theme.colors.dangerForeground : theme.colors.primaryForeground;
 
   return (
     <Pressable
@@ -35,8 +38,8 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: isOutline ? "transparent" : theme.colors.primary,
-          borderColor: theme.colors.primary,
+          backgroundColor: isOutline ? "transparent" : relleno,
+          borderColor: relleno,
           borderWidth: isOutline ? 1 : 0,
           borderRadius: theme.radii.full,
           opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
@@ -44,11 +47,11 @@ export function PrimaryButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isOutline ? theme.colors.primary : theme.colors.primaryForeground} />
+        <ActivityIndicator color={isOutline ? theme.colors.primary : textoRelleno} />
       ) : (
         <Text
           variant="heading"
-          style={[styles.label, { color: isOutline ? theme.colors.primary : theme.colors.primaryForeground }]}
+          style={[styles.label, { color: isOutline ? theme.colors.primary : textoRelleno }]}
         >
           {label}
         </Text>

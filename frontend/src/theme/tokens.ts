@@ -15,6 +15,8 @@ export interface ThemeColors {
   success: string;
   successForeground: string;
   danger: string;
+  /** Texto sobre `danger` (botones de confirmación destructiva). */
+  dangerForeground: string;
 }
 
 export interface ThemeRadii {
@@ -37,11 +39,37 @@ export interface ThemeFonts {
   body: string;
 }
 
+/**
+ * Colores del mapa (MapLibre): el fondo se repinta con estos tonos para que combine con el tema,
+ * y cada tipo de institución tiene su color de marcador.
+ */
+export interface ThemeMapa {
+  /** Estilo base de OpenFreeMap que se repinta encima. */
+  estiloBase: "positron" | "dark";
+  tierra: string;
+  manzana: string;
+  edificio: string;
+  agua: string;
+  parque: string;
+  calle: string;
+  avenida: string;
+  borde: string;
+  texto: string;
+  textoHalo: string;
+  ubicacion: string;
+  marcadorBorde: string;
+  hospital: string;
+  clinica: string;
+  centroMedico: string;
+  laboratorio: string;
+}
+
 export interface Theme {
   id: ThemeId;
   name: string;
   isDark: boolean;
   colors: ThemeColors;
+  mapa: ThemeMapa;
   radii: ThemeRadii;
   fonts: ThemeFonts;
   shadow: ThemeShadow;
@@ -67,6 +95,26 @@ const themeA: Theme = {
     success: "#22C55E",
     successForeground: "#FFFFFF",
     danger: "#EF4444",
+    dangerForeground: "#FFFFFF",
+  },
+  mapa: {
+    estiloBase: "positron",
+    tierra: "#F8FAFC",
+    manzana: "#F1F5F9",
+    edificio: "#E9EEF4",
+    agua: "#CFE6F5",
+    parque: "#DDF0E3",
+    calle: "#FFFFFF",
+    avenida: "#FFFFFF",
+    borde: "#DCE3EC",
+    texto: "#64748B",
+    textoHalo: "#FFFFFF",
+    ubicacion: "#0284C7",
+    marcadorBorde: "#FFFFFF",
+    hospital: "#DC2626",
+    clinica: "#0284C7",
+    centroMedico: "#0D9488",
+    laboratorio: "#9333EA",
   },
   radii: { sm: 2, md: 4, lg: 8, full: 9999 },
   fonts: { heading: "Inter_600SemiBold", body: "Inter_400Regular" },
@@ -99,6 +147,26 @@ const themeB: Theme = {
     success: "#10B981",
     successForeground: "#FFFFFF",
     danger: "#DC2626",
+    dangerForeground: "#FFFFFF",
+  },
+  mapa: {
+    estiloBase: "positron",
+    tierra: "#FFFDFA",
+    manzana: "#FFF7ED",
+    edificio: "#FCEFE2",
+    agua: "#D3E9F2",
+    parque: "#E4F1D9",
+    calle: "#FFFFFF",
+    avenida: "#FFFFFF",
+    borde: "#F5DCC3",
+    texto: "#9A3412",
+    textoHalo: "#FFFDFA",
+    ubicacion: "#F97316",
+    marcadorBorde: "#FFFFFF",
+    hospital: "#DC2626",
+    clinica: "#EA580C",
+    centroMedico: "#0D9488",
+    laboratorio: "#9333EA",
   },
   radii: { sm: 8, md: 16, lg: 24, full: 9999 },
   fonts: { heading: "Nunito_700Bold", body: "Nunito_400Regular" },
@@ -131,6 +199,26 @@ const themeC: Theme = {
     success: "#10B981",
     successForeground: "#020617",
     danger: "#F87171",
+    dangerForeground: "#020617",
+  },
+  mapa: {
+    estiloBase: "dark",
+    tierra: "#020617",
+    manzana: "#0B1222",
+    edificio: "#111A2E",
+    agua: "#0C2236",
+    parque: "#0B2A22",
+    calle: "#1E293B",
+    avenida: "#334155",
+    borde: "#0F172A",
+    texto: "#94A3B8",
+    textoHalo: "#020617",
+    ubicacion: "#38BDF8",
+    marcadorBorde: "#020617",
+    hospital: "#F87171",
+    clinica: "#38BDF8",
+    centroMedico: "#10B981",
+    laboratorio: "#C084FC",
   },
   radii: { sm: 8, md: 12, lg: 16, full: 9999 },
   fonts: { heading: "PlayfairDisplay_600SemiBold", body: "PlusJakartaSans_400Regular" },

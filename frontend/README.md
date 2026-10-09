@@ -27,8 +27,9 @@ antes de tocar código.
 
 ## Puesta en marcha
 
-El repo tiene dos carpetas: `frontend/` (esta app Expo) y `backend/` (reservada para la API,
-todavía vacía). Clonar el repo y pararse en `frontend/`, la raíz del proyecto Expo:
+Este repo es el del **frontend**: la app Expo está en `frontend/`. El backend está en otro repo,
+[docapp-go-backend](https://github.com/eduescuti/docapp-go-backend). Clonar este repo y pararse en
+`frontend/`, la raíz del proyecto Expo:
 
 ```bash
 git clone https://github.com/eduescuti/docapp-go.git
@@ -80,6 +81,28 @@ npx expo start --tunnel # idem, con túnel — usalo si el QR no conecta por red
 npm run typecheck       # tsc --noEmit, correlo antes de cada commit
 npx expo-doctor         # chequea que la instalación y config de Expo estén sanas
 ```
+
+## Establecimientos reales (REFES)
+
+Las instituciones de la app son los **1.077 establecimientos de salud de CABA** del REFES
+(Registro Federal de Establecimientos de Salud, Ministerio de Salud de la Nación, licencia
+CC BY 4.0): hospitales, clínicas y sanatorios, centros médicos y laboratorios. Viven en
+`src/mocks/data/refes-caba.json`, que **no se edita a mano**: lo genera un script.
+
+Para regenerarlo con una versión nueva del REFES:
+
+```bash
+# 1. Bajar el CSV (~9 MB) a scripts/.cache/, que está en .gitignore.
+#    La URL de cada versión sale de DocApp Go/investigacion-apis/06-como-reproducir.md.
+curl -skL -o scripts/.cache/refes-20251215.csv "<URL del CSV>"
+
+# 2. Generar el JSON. Imprime cuántos quedaron por tipo y por qué se descartó el resto.
+node scripts/importar-refes.mjs scripts/.cache/refes-20251215.csv
+```
+
+Los públicos se muestran a todos los pacientes (CLAUDE.md §10, regla 15). Los privados, solo
+si aceptan la obra social del paciente; esa relación se carga aparte desde las cartillas
+(Fase 3 del plan en `DocApp Go/investigacion-apis/plan-integracion-apis/`).
 
 ## Nota sobre la clave de Google Maps
 

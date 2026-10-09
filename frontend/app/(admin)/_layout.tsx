@@ -3,13 +3,14 @@ import { Building2, CreditCard, LayoutDashboard } from "lucide-react-native";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
+import { rutaInicio } from "@/utils/navigation";
 
 export default function AdminLayout() {
   const { theme } = useTheme();
   const { rol } = useAuth();
 
   // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
-  if (rol !== "admin") return <Redirect href="/" />;
+  if (rol !== "admin") return <Redirect href={rutaInicio(rol)} />;
 
   return (
     <Tabs

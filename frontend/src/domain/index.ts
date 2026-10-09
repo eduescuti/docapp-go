@@ -1,6 +1,7 @@
 export * from "./paciente";
 export * from "./planMedico";
 export * from "./institucion";
+export * from "./coberturaRelacion";
 export * from "./especialidad";
 export * from "./medico";
 export * from "./turno";

@@ -8,6 +8,8 @@ export interface FiltrosMedico {
   query?: string;
   especialidadId?: string;
   planMedicoId?: string;
+  /** Solo los que atienden en esa sede (tarjeta del mapa). */
+  sedeId?: string;
 }
 
 /**
@@ -19,6 +21,7 @@ export async function searchMedicos(filtros: FiltrosMedico = {}): Promise<Medico
   const resultado = medicosMock.filter((medico) => {
     if (filtros.especialidadId && medico.especialidadId !== filtros.especialidadId) return false;
     if (filtros.planMedicoId && !medico.planesAceptadosIds.includes(filtros.planMedicoId)) return false;
+    if (filtros.sedeId && !medico.sedesIds.includes(filtros.sedeId)) return false;
     if (query) {
       const nombreCompleto = `${medico.nombre} ${medico.apellido}`.toLowerCase();
       if (!nombreCompleto.includes(query)) return false;

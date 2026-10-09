@@ -11,3 +11,4 @@ export * from "./padronProfesionales";
 export * from "./usuarios";
 export * from "./notas";
 export * from "./ayuda";
+export * from "./resultadosEstudios";

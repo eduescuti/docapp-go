@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DocApp Go Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: atril de presentación — índice de pantallas a la izquierda, el teléfono en el centro, la ficha técnica a la derecha. Todo en una sola pantalla. */
+:root {
+  --bg: #EEF3F7;
+  --surface: #FFFFFF;
+  --ink: #0F172A;
+  --muted: #56667A;
+  --line: #D8E1EA;
+  --accent: #0284C7;
+  --accent-soft: #E0F2FE;
+  --native: #7C3AED;
+  --native-soft: #F1EAFE;
+  --plan: #B45309;
+  --plan-soft: #FEF3C7;
+  --device: #0B1220;
+  --f-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --f-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+/* La página de presentación queda siempre en modo claro; solo el teléfono cambia de tema. */
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 14px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.shell {
+  height: 100%; display: grid; grid-template-rows: auto 1fr;
+  padding-inline: 16px; padding-block: 0 14px; gap: 12px;
+}
+
+/* ---------- Barra superior ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding-block: 12px; border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--accent);
+  display: grid; place-items: center; color: #fff; flex: none;
+}
+.brand-name { font-family: var(--f-display); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.roles { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 3px; flex-wrap: wrap; }
+.roles button {
+  border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.roles button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.apptheme { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.switch { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+.switch button {
+  border: 0; background: transparent; border-radius: 999px; padding: 4px 10px; cursor: pointer;
+  display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.switch button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* ---------- Cuerpo en tres columnas ---------- */
+.main { display: grid; grid-template-columns: 210px minmax(0, 1fr) 400px; gap: 20px; min-height: 0; }
+
+.index { display: flex; flex-direction: column; min-height: 0; }
+.index h2, .spec h2 { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 4px 0 8px; font-weight: 700; }
+.screens { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+.screens button {
+  width: 100%; display: grid; grid-template-columns: 26px 1fr; align-items: baseline; gap: 6px;
+  text-align: left; border: 0; background: transparent; padding: 7px 8px; border-radius: 8px; cursor: pointer;
+}
+.screens button:hover { background: var(--surface); }
+.screens button[aria-current="true"] { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.screens .n { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.screens .t { font-weight: 600; font-size: 13px; }
+.screens button[aria-current="true"] .t { color: var(--accent); }
+.screens .tags { grid-column: 2; display: flex; gap: 4px; flex-wrap: wrap; }
+.legend { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+.legend div { display: flex; align-items: center; gap: 8px; }
+
+.tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 4px; padding: 1px 6px; }
+.tag.native { background: var(--native-soft); color: var(--native); }
+.tag.plan { background: var(--plan-soft); color: var(--plan); }
+
+/* ---------- Escenario con el teléfono ---------- */
+.stage { display: flex; flex-direction: column; align-items: center; min-height: 0; min-width: 0; gap: 10px; }
+.stage-inner { flex: 1; min-height: 0; width: 100%; display: grid; place-items: center; }
+.device {
+  background: var(--device); border-radius: 46px; padding: 10px; position: relative;
+  box-shadow: 0 30px 60px -20px rgba(2, 8, 23, 0.45), 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+.viewport { overflow: hidden; border-radius: 37px; position: relative; }
+.app {
+  width: 375px; height: 812px; transform-origin: top left; position: absolute; top: 0; left: 0;
+}
+.controls { display: flex; align-items: center; gap: 12px; }
+.controls button {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; width: 38px; height: 38px;
+  display: grid; place-items: center; cursor: pointer;
+}
+.controls button:disabled { opacity: 0.4; cursor: default; }
+.counter { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 60px; text-align: center; }
+
+/* ---------- Ficha de la pantalla ---------- */
+.spec { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.card-s { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: grid; gap: 18px; }
+.spec-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spec-role { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.spec-title { font-family: var(--f-display); font-size: 32px; line-height: 1.1; margin: -8px 0 0; text-wrap: balance; }
+.spec-sum { margin: -4px 0 0; font-size: 16px; line-height: 1.5; text-wrap: pretty; }
+.lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+.keys { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.keys li { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; font-weight: 500; line-height: 1.4; }
+.keys li svg { color: var(--accent); margin-top: 2px; flex: none; }
+.goto { display: flex; flex-wrap: wrap; gap: 8px; }
+.goto button {
+  border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 0 12px; min-height: 40px;
+  font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.goto button:hover { border-color: var(--accent); color: var(--accent); }
+details.more { border-top: 1px solid var(--line); padding-top: 10px; }
+details.more summary, .nat summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 32px;
+  font-size: 13.5px; font-weight: 600; color: var(--accent);
+}
+details.more summary::-webkit-details-marker, .nat summary::-webkit-details-marker { display: none; }
+details summary svg { transition: transform 0.15s ease; }
+details[open] > summary svg { transform: rotate(90deg); }
+.more-body { display: grid; gap: 12px; margin-top: 8px; font-size: 13.5px; line-height: 1.5; }
+.more-body .lbl { margin-bottom: 2px; }
+.more-body code { font-family: var(--f-mono); font-size: 12px; background: var(--bg); border-radius: 6px; padding: 3px 7px; overflow-wrap: anywhere; display: inline-block; }
+.planbox { background: var(--plan-soft); border-radius: 10px; padding: 10px 12px; }
+.planbox .lbl { color: var(--plan); }
+.pill { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.pill.plan { background: var(--plan-soft); color: var(--plan); }
+.pill.native { background: var(--surface); color: var(--native); }
+.card-s.native { background: var(--native-soft); border-color: transparent; gap: 16px; }
+.card-s.native .spec-role { color: var(--native); }
+.nat { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: start; }
+.nat-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--surface); color: var(--native); display: grid; place-items: center; }
+.nat-name { font-weight: 700; font-size: 16px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nat-lib { font-family: var(--f-mono); font-size: 11.5px; font-weight: 500; color: var(--native); }
+.nat p { margin: 2px 0 0; font-size: 14px; line-height: 1.45; }
+.nat summary { color: var(--native); font-size: 13px; }
+.nat .why { margin-top: 4px; font-size: 13.5px; line-height: 1.5; }
+.soon { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.flowbar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; max-width: 720px; }
+.flowbar .flow-lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-right: 4px; }
+.flowbar button {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; color: var(--muted);
+}
+.flowbar button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.flowbar .arrow { color: var(--muted); font-size: 11px; }
+
+@media (max-width: 1180px) {
+  .main { grid-template-columns: 190px minmax(0, 1fr) 340px; gap: 14px; }
+  .spec-title { font-size: 28px; }
+}
+@media (max-width: 960px) {
+  html, body { height: auto; }
+  .shell { height: auto; }
+  .main { grid-template-columns: 1fr; }
+  .index { order: 2; }
+  .screens { flex-direction: row; overflow-x: auto; padding-bottom: 4px; }
+  .screens button { width: auto; white-space: nowrap; }
+  .screens .tags { display: none; }
+  .legend { display: none; }
+  .stage { order: 1; }
+  .stage-inner { height: 70vh; min-height: 520px; }
+  .spec { order: 3; overflow: visible; }
+}
+
+/* =================================================================
+   APP — réplica de los temas de src/theme/tokens.ts
+   Tema A (claro, Minimalista clínico) y Tema C (oscuro, Moderno premium)
+   ================================================================= */
+.app[data-mode="light"] {
+  --a-bg: #FFFFFF; --a-fg: #0F172A; --a-card: #FFFFFF; --a-pri: #0284C7; --a-prifg: #FFFFFF;
+  --a-mut: #F1F5F9; --a-mutfg: #64748B; --a-bd: #E2E8F0; --a-acc: #E0F2FE; --a-accfg: #0284C7;
+  --a-ok: #22C55E; --a-okbg: #DCFCE7; --a-okfg: #15803D; --a-warnbg: #FEF3C7; --a-warnfg: #B45309;
+  --a-danger: #EF4444; --a-r1: 2px; --a-r2: 4px; --a-r3: 8px;
+  --a-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --a-head: "Inter", system-ui, sans-serif; --a-body: "Inter", system-ui, sans-serif;
+  --a-map: #EAF0F4; --a-road: #FFFFFF; --a-park: #D7EBD9; --a-water: #CFE3F2;
+}
+.app[data-mode="dark"] {
+  --a-bg: #020617; --a-fg: #F8FAFC; --a-card: #0F172A; --a-pri: #10B981; --a-prifg: #020617;
+  --a-mut: #1E293B; --a-mutfg: #94A3B8; --a-bd: #334155; --a-acc: #10B981; --a-accfg: #020617;
+  --a-ok: #10B981; --a-okbg: #064E3B; --a-okfg: #6EE7B7; --a-warnbg: #451A03; --a-warnfg: #FCD34D;
+  --a-danger: #F87171; --a-r1: 8px; --a-r2: 12px; --a-r3: 16px;
+  --a-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  --a-head: "Playfair Display", Georgia, serif; --a-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --a-map: #0B1324; --a-road: #1B2740; --a-park: #0F2A22; --a-water: #0C2238;
+}
+.app { background: var(--a-bg); color: var(--a-fg); font-family: var(--a-body); font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
+.app * { box-sizing: border-box; }
+.app button { cursor: pointer; font-family: inherit; }
+.statusbar { height: 46px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 28px 0 32px; font-size: 14px; font-weight: 600; position: relative; z-index: 5; }
+.statusbar .notch { position: absolute; left: 50%; top: 10px; width: 110px; height: 30px; margin-left: -55px; background: #000; border-radius: 20px; }
+.statusbar .sb-icons { display: flex; gap: 5px; align-items: center; }
+.content { flex: 1; overflow-y: auto; padding: 8px 20px 24px; scrollbar-width: none; position: relative; }
+.content::-webkit-scrollbar { display: none; }
+.content.flush { padding: 0; }
+.homebar { height: 22px; flex: none; display: grid; place-items: center; }
+.homebar i { width: 130px; height: 5px; border-radius: 3px; background: var(--a-fg); opacity: 0.85; display: block; }
+.tabbar { flex: none; display: flex; border-top: 1px solid var(--a-bd); background: var(--a-card); padding-top: 6px; }
+.tabbar button { flex: 1; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0; color: var(--a-mutfg); font-size: 10.5px; font-weight: 500; min-height: 48px; }
+.tabbar button.on { color: var(--a-pri); font-weight: 600; }
+
+.h1 { font-family: var(--a-head); font-size: 24px; font-weight: 700; margin: 6px 0 16px; letter-spacing: -0.01em; }
+.h2 { font-family: var(--a-head); font-size: 17px; font-weight: 700; margin: 0; }
+.sect { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 0 10px; }
+.sect .h2 { font-size: 16px; }
+.link { color: var(--a-pri); font-weight: 600; font-size: 13px; background: none; border: 0; padding: 0; }
+.mut { color: var(--a-mutfg); }
+.small { font-size: 12px; }
+.card { background: var(--a-card); border: 1px solid var(--a-bd); border-radius: var(--a-r3); box-shadow: var(--a-shadow); padding: 14px; }
+button.card { width: 100%; text-align: left; color: inherit; display: block; }
+.stack { display: grid; gap: 10px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.row > .grow { flex: 1; min-width: 0; }
+.av { width: 46px; height: 46px; border-radius: 50%; background: var(--a-acc); color: var(--a-accfg); display: grid; place-items: center; font-weight: 700; font-size: 15px; flex: none; }
+.av.lg { width: 84px; height: 84px; font-size: 26px; }
+.name { font-weight: 600; font-size: 15px; }
+.meta { display: flex; align-items: center; gap: 6px; color: var(--a-mutfg); font-size: 12.5px; }
+.btn { border: 0; border-radius: var(--a-r2); background: var(--a-pri); color: var(--a-prifg); font-weight: 600; font-size: 14px; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+.btn.ghost { background: var(--a-mut); color: var(--a-fg); }
+.btn.outline { background: transparent; color: var(--a-pri); box-shadow: inset 0 0 0 1px var(--a-bd); }
+.btn.danger { background: transparent; color: var(--a-danger); box-shadow: inset 0 0 0 1px var(--a-bd); }
+.btnrow { display: flex; gap: 8px; }
+.badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.badge.ok { background: var(--a-okbg); color: var(--a-okfg); }
+.badge.warn { background: var(--a-warnbg); color: var(--a-warnfg); }
+.badge.info { background: var(--a-acc); color: var(--a-accfg); }
+.badge.mute { background: var(--a-mut); color: var(--a-mutfg); }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); border-radius: 999px; padding: 0 14px; min-height: 34px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.chip.on { background: var(--a-pri); border-color: var(--a-pri); color: var(--a-prifg); }
+.field { display: grid; gap: 6px; margin-bottom: 12px; }
+.field label { font-size: 13px; font-weight: 600; }
+.input { border: 1px solid var(--a-bd); border-radius: var(--a-r2); min-height: 46px; padding: 0 12px; display: flex; align-items: center; gap: 8px; background: var(--a-bg); color: var(--a-fg); font-size: 14px; }
+.input.ph { color: var(--a-mutfg); }
+.input.area { min-height: 76px; align-items: flex-start; padding-top: 12px; }
+.seg { display: flex; background: var(--a-mut); border-radius: var(--a-r3); padding: 4px; margin-bottom: 14px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--a-mutfg); border-radius: var(--a-r2); min-height: 36px; font-weight: 600; font-size: 13px; }
+.seg button.on { background: var(--a-card); color: var(--a-fg); box-shadow: var(--a-shadow); }
+.back { display: flex; align-items: center; gap: 8px; margin: 2px 0 14px; }
+.back button { border: 0; background: var(--a-mut); color: var(--a-fg); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; }
+.back .h2 { font-size: 18px; }
+.star { color: #F59E0B; }
+.ic { display: block; flex: none; }
+.iconbox { width: 40px; height: 40px; border-radius: var(--a-r3); background: var(--a-acc); color: var(--a-accfg); display: grid; place-items: center; flex: none; }
+.divider { height: 1px; background: var(--a-bd); margin: 12px 0; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; }
+.kv dt { color: var(--a-mutfg); }
+.kv dd { margin: 0; font-weight: 600; text-align: right; }
+
+.qa { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.qa button { border: 0; background: none; color: var(--a-fg); display: grid; justify-items: center; gap: 6px; font-size: 11px; font-weight: 500; }
+.qa .circ { width: 56px; height: 56px; border-radius: 50%; background: var(--a-card); border: 1px solid var(--a-bd); box-shadow: var(--a-shadow); color: var(--a-pri); display: grid; place-items: center; }
+
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.slot { border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); border-radius: var(--a-r2); min-height: 44px; font-weight: 600; font-size: 13px; }
+.slot.on { background: var(--a-pri); border-color: var(--a-pri); color: var(--a-prifg); }
+.slot:disabled { color: var(--a-mutfg); text-decoration: line-through; opacity: 0.6; cursor: default; }
+.days { display: flex; gap: 8px; }
+.day { flex: 1; border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); border-radius: var(--a-r3); padding: 8px 0; display: grid; justify-items: center; gap: 2px; font-size: 11px; }
+.day b { font-size: 17px; }
+.day.on { background: var(--a-pri); border-color: var(--a-pri); color: var(--a-prifg); }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.tile { border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); border-radius: var(--a-r3); box-shadow: var(--a-shadow); padding: 14px 10px; display: grid; justify-items: center; gap: 8px; font-size: 13px; font-weight: 600; text-align: center; position: relative; min-height: 96px; align-content: center; }
+.tile .dot { position: absolute; top: 8px; right: 10px; background: var(--a-danger); color: #fff; font-size: 10px; border-radius: 999px; min-width: 18px; height: 18px; display: grid; place-items: center; padding: 0 5px; }
+.bell { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); display: grid; place-items: center; }
+.bell .dot { position: absolute; top: 4px; right: 4px; background: var(--a-danger); color: #fff; font-size: 10px; font-weight: 700; border-radius: 999px; min-width: 17px; height: 17px; display: grid; place-items: center; }
+.stat { border: 1px solid var(--a-bd); background: var(--a-card); border-radius: var(--a-r3); padding: 12px; display: grid; gap: 2px; }
+.stat b { font-family: var(--a-head); font-size: 24px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11.5px; color: var(--a-mutfg); }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: 92px 1fr 22px; align-items: center; gap: 8px; font-size: 12.5px; }
+.bar-track { height: 14px; background: var(--a-mut); border-radius: var(--a-r1); overflow: hidden; }
+.bar-fill { height: 100%; background: var(--a-pri); border-radius: var(--a-r1); }
+.bar-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--a-okfg); }
+.steps { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; font-size: 11px; }
+.steps .s { display: flex; align-items: center; gap: 6px; color: var(--a-mutfg); }
+.steps .s i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--a-mut); font-style: normal; font-weight: 700; }
+.steps .s.done i, .steps .s.on i { background: var(--a-pri); color: var(--a-prifg); }
+.steps .s.on { color: var(--a-fg); font-weight: 600; }
+.steps .line { flex: 1; height: 2px; background: var(--a-bd); }
+.radio { display: flex; align-items: center; gap: 12px; padding: 12px 0; border: 0; background: none; color: var(--a-fg); width: 100%; text-align: left; border-bottom: 1px solid var(--a-bd); }
+.radio:last-child { border-bottom: 0; }
+.radio .r { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--a-bd); flex: none; display: grid; place-items: center; }
+.radio.on .r { border-color: var(--a-pri); }
+.radio.on .r::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--a-pri); }
+.stars { display: flex; gap: 4px; }
+.stars button { border: 0; background: none; padding: 2px; color: var(--a-bd); }
+.stars button.on { color: #F59E0B; }
+.unread { width: 8px; height: 8px; border-radius: 50%; background: var(--a-pri); flex: none; }
+.credential { border-radius: var(--a-r3); padding: 18px; background: var(--a-pri); color: var(--a-prifg); display: grid; gap: 14px; }
+.credential .big { font-family: var(--a-head); font-size: 24px; font-weight: 700; }
+.credential .lbl { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Mapa */
+.map { position: absolute; inset: 0; background: var(--a-map); overflow: hidden; }
+.map svg.streets { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pin { position: absolute; transform: translate(-50%, -100%); border: 0; background: none; padding: 0; display: grid; justify-items: center; }
+.pin .head { width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); display: grid; place-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2px solid #fff; }
+.pin .head svg { transform: rotate(45deg); color: #fff; }
+.pin.sel .head { width: 42px; height: 42px; }
+.me { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2563EB; border: 3px solid #fff; transform: translate(-50%, -50%); box-shadow: 0 0 0 10px rgba(37, 99, 235, 0.18); }
+.map-top { position: absolute; left: 0; right: 0; top: 0; padding: 4px 16px; display: grid; gap: 10px; }
+.map-top .row { gap: 8px; }
+.roundbtn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--a-card); color: var(--a-fg); box-shadow: var(--a-shadow), 0 2px 8px rgba(0,0,0,0.15); display: grid; place-items: center; flex: none; }
+.pill-search { flex: 1; height: 44px; border-radius: 22px; background: var(--a-card); box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--a-mutfg); font-size: 13px; }
+.map-card { position: absolute; left: 16px; right: 16px; bottom: 16px; }
+.attrib { position: absolute; left: 16px; bottom: 4px; font-size: 9px; color: var(--a-mutfg); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* Overlays (Alert nativo / bottom sheet) */
+.overlay { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.5); display: grid; place-items: center; padding: 28px; z-index: 20; }
+.dialog { background: var(--a-card); border-radius: 14px; padding: 20px; width: 100%; display: grid; gap: 12px; text-align: center; color: var(--a-fg); }
+.dialog .okcirc { width: 60px; height: 60px; border-radius: 50%; background: var(--a-okbg); color: var(--a-okfg); display: grid; place-items: center; margin: 0 auto; }
+.toast { position: absolute; left: 20px; right: 20px; bottom: 96px; background: var(--a-fg); color: var(--a-bg); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; z-index: 30; text-align: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .app .content { animation: enter 0.22s ease-out; }
+  @keyframes enter { from { opacity: 0.4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 7 3.5C19 16.5 12 21 12 21z"/><path d="M9 12h6M12 9v6"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">DocApp Go</div>
+        <div class="brand-sub">Sprint 1 · Pantallas y flujo de navegación · Programación de Apps Móviles (UCA)</div>
+      </div>
+    </div>
+    <nav class="roles" id="roles" aria-label="Rol"></nav>
+    <div class="apptheme">
+      <span>Tema de la app</span>
+      <div class="switch" id="modeSwitch">
+        <button type="button" data-mode="light" aria-pressed="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>Claro
+        </button>
+        <button type="button" data-mode="dark" aria-pressed="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>Oscuro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <aside class="index">
+      <h2 id="indexTitle">Pantallas</h2>
+      <ol class="screens" id="screenList"></ol>
+      <div class="legend">
+        <div><span class="tag native">Nativo</span> usa hardware del teléfono</div>
+        <div><span class="tag plan">Plan</span> se completa con el plan de integración de APIs</div>
+        <div>Tocá dentro del teléfono para navegar, o usá las flechas ← → del teclado.</div>
+      </div>
+    </aside>
+
+    <section class="stage" aria-label="Emulador">
+      <div class="stage-inner" id="stageInner">
+        <div class="device" id="device">
+          <div class="viewport" id="viewport">
+            <div class="app" id="app" data-mode="light"></div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" id="prev" aria-label="Pantalla anterior">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="counter" id="counter">1 / 1</span>
+        <button type="button" id="next" aria-label="Pantalla siguiente">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div class="flowbar" id="flowbar" aria-label="Flujo principal del paciente"></div>
+    </section>
+
+    <aside class="spec" id="spec" aria-live="polite"></aside>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Íconos (trazos al estilo lucide) ---------------- */
+  var P = {
+    home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    star: '<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+    card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    steth: '<path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 12 0V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 12 0v-4"/><circle cx="20" cy="10" r="2"/>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    nav: '<path d="m3 11 19-9-9 19-2-8z"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    building: '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+    chart: '<path d="M3 3v18h18"/><path d="M7 16h8M7 11h12M7 6h5"/>',
+    sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    pill: '<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7zM8.5 8.5l7 7"/>',
+    idcard: '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4M14 14h4"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    map: '<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    hospital: '<path d="M12 6v4M10 8h4"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M3 21h18M10 21v-4h4v4"/>',
+    flask: '<path d="M9 2h6M10 2v7L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20L14 9V2"/><path d="M7 15h10"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>',
+    signal: '<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
+    battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><rect x="4" y="9" width="11" height="6" rx="1" fill="currentColor" stroke="none"/>'
+  };
+  function ic(name, size, sw) {
+    size = size || 20; sw = sw || 2;
+    return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + P[name] + '</svg>';
+  }
+  function starFill(size) {
+    return '<svg class="ic star" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + P.star + '</svg>';
+  }
+
+  /* ---------------- Datos de ejemplo (los mismos de src/mocks/) ---------------- */
+  var MEDICOS = [
+    { id: "mendez", nombre: "Dr. Roberto Méndez", ini: "RM", esp: "Cardiología", val: 4.8, cant: 312, anios: 15, matricula: "MN 45210",
+      sede: "Hospital Alemán", dir: "Av. Pueyrredón 1640", prox: "Lun 12 oct · 10:30",
+      desc: "Especialista en cardiología clínica e intervencionista. Miembro de la Sociedad Argentina de Cardiología." },
+    { id: "ruiz", nombre: "Dra. Elena Ruiz", ini: "ER", esp: "Dermatología", val: 4.9, cant: 258, anios: 10, matricula: "MN 38940",
+      sede: "Sanatorio Güemes", dir: "Acuña de Figueroa 1240", prox: "Mié 14 oct · 14:00",
+      desc: "Especialista en dermatología clínica y estética con más de 10 años de experiencia. Miembro de la Sociedad Argentina de Dermatología." },
+    { id: "castro", nombre: "Dr. Julián Castro", ini: "JC", esp: "Pediatría", val: 4.7, cant: 190, anios: 8, matricula: "MN 51022",
+      sede: "Hospital Italiano", dir: "Gascón 450", prox: "Mar 13 oct · 09:00",
+      desc: "Pediatra general con foco en seguimiento de desarrollo infantil." },
+    { id: "fernandez", nombre: "Dra. Carla Fernández", ini: "CF", esp: "Clínica Médica", val: 4.6, cant: 140, anios: 12, matricula: "MN 47788",
+      sede: "Hospital de Clínicas", dir: "Av. Córdoba 2351", prox: "Jue 15 oct · 11:30",
+      desc: "Médica clínica orientada a control y prevención integral." }
+  ];
+  var ESPECIALIDADES = ["Todas", "Cardiología", "Dermatología", "Pediatría", "Clínica Médica", "Traumatología"];
+
+  /* Establecimientos reales del REFES (coordenadas verificadas en investigacion-apis/01). */
+  var CENTROS = [
+    { id: "fernandez", nombre: "Hospital Gral. de Agudos Dr. Juan A. Fernández", tipo: "hospital", publico: true, dir: "Cerviño 3356", lat: -34.5815, lng: -58.4070 },
+    { id: "aleman", nombre: "Hospital Alemán", tipo: "clinica", publico: false, dir: "Av. Pueyrredón 1650", lat: -34.5923, lng: -58.4012 },
+    { id: "guemes", nombre: "Sanatorio Güemes", tipo: "clinica", publico: false, dir: "Acuña de Figueroa 1240", lat: -34.5970, lng: -58.4216 },
+    { id: "clinicas", nombre: "Hospital de Clínicas José de San Martín", tipo: "hospital", publico: true, dir: "Av. Córdoba 2351", lat: -34.5994, lng: -58.4003 },
+    { id: "italiano", nombre: "Hospital Italiano de Buenos Aires", tipo: "clinica", publico: false, dir: "Gascón 450", lat: -34.6067, lng: -58.4248 }
+  ];
+  var YO = { lat: -34.5880, lng: -58.4150 };
+  var TIPO_LABEL = { hospital: "Hospital público", clinica: "Clínica / sanatorio", laboratorio: "Laboratorio" };
+  var TIPO_COLOR = { hospital: "#DC2626", clinica: "#0284C7", laboratorio: "#9333EA" };
+
+  function distanciaKm(a, b) {
+    var R = 6371, r = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * r, dLon = (b.lng - a.lng) * r;
+    var h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin(dLon / 2), 2);
+    return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+  function fmtKm(km) { return km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(1).replace(".", ",") + " km"; }
+  /* Proyección simple de la zona Palermo–Recoleta–Almagro al área del mapa (375 × 812). */
+  function proj(p) {
+    return { x: (p.lng + 58.437) / 0.045 * 375, y: (-34.577 - p.lat) / 0.0297 * 380 + 140 };
+  }
+
+  /* ---------------- Estado de la UI ---------------- */
+  var ui = {
+    mode: "light", rol: "paciente", screen: "login",
+    esp: "Todas", medico: "mendez", day: 0, slot: "11:00",
+    turnosTab: "proximos", estudiosTab: "resultados",
+    mapaFiltro: "todos", mapaSel: "aleman", mapaVista: "mapa",
+    rating: 4, criterios: [5, 4, 5, 4, 5], pref: "auto",
+    overlay: null, toast: null
+  };
+
+  /* ---------------- Piezas compartidas ---------------- */
+  function statusbar() {
+    return '<div class="statusbar"><span>10:24</span><span class="notch"></span><span class="sb-icons">' + ic("signal", 16) + ic("battery", 22, 1.6) + '</span></div>';
+  }
+  var TABS = {
+    paciente: [["inicio", "Inicio", "home"], ["turnos", "Turnos", "calendar"], ["estudios", "Estudios", "file"], ["buscar", "Buscar", "search"], ["menu", "Menú", "menu"]],
+    doctor: [["agenda", "Agenda", "calendar"], ["pacientes", "Pacientes", "users"], ["perfil-doc", "Perfil", "user"]],
+    admin: [["panel", "Panel", "chart"], ["obras", "Obras sociales", "card"], ["instituciones", "Instituciones", "building"]]
+  };
+  function tabbar(rol, active) {
+    return '<nav class="tabbar">' + TABS[rol].map(function (t) {
+      return '<button class="' + (t[0] === active ? "on" : "") + '" data-go="' + t[0] + '" aria-label="' + t[1] + '">' + ic(t[2], 22) + '<span>' + t[1] + '</span></button>';
+    }).join("") + '</nav>';
+  }
+  function back(title, to) {
+    return '<div class="back"><button data-go="' + to + '" aria-label="Volver">' + ic("left", 20) + '</button><span class="h2">' + title + '</span></div>';
+  }
+  function field(label, value, opts) {
+    opts = opts || {};
+    return '<div class="field"><label>' + label + '</label><div class="input' + (opts.ph ? " ph" : "") + (opts.area ? " area" : "") + '">' + (opts.icon ? ic(opts.icon, 18) : "") + '<span style="flex:1">' + value + '</span>' + (opts.right || "") + '</div></div>';
+  }
+  function medico(id) { return MEDICOS.filter(function (m) { return m.id === id; })[0] || MEDICOS[0]; }
+  function doctorRow(m, go) {
+    return '<button class="card" data-go="' + go + '" data-med="' + m.id + '" aria-label="' + m.nombre + '"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + '</div><div class="meta">' + ic("pin", 13) + m.sede + '</div></div><div style="text-align:right"><div class="meta" style="justify-content:flex-end;color:var(--a-fg);font-weight:600">' + starFill(14) + m.val.toString().replace(".", ",") + '</div><div class="small mut">' + m.cant + ' opiniones</div></div></div></button>';
+  }
+
+  /* ---------------- Pantallas ---------------- */
+  var S = {};
+
+  S.login = function () {
+    return '<div class="content" style="display:flex;flex-direction:column;justify-content:center;padding-bottom:60px">' +
+      '<div style="display:grid;justify-items:center;gap:8px;margin-bottom:28px;text-align:center">' +
+      '<div class="iconbox" style="width:64px;height:64px;background:var(--a-pri);color:var(--a-prifg)">' + ic("steth", 32) + '</div>' +
+      '<div class="h1" style="font-size:28px;margin:8px 0 0">DocApp Go</div>' +
+      '<div class="mut">Gestioná tus turnos, estudios y recetas en una sola app.</div></div>' +
+      '<div class="card" style="padding:18px"><div class="h2" style="margin-bottom:16px">Ingresar a mi cuenta</div>' +
+      field("DNI", "12345678") + field("Contraseña", "••••••••••••", { right: '<span class="mut">' + ic("lock", 16) + '</span>' }) +
+      '<button class="btn" data-go="inicio" data-rol="paciente">Iniciar sesión</button></div>' +
+      '<button class="link" style="margin-top:18px;font-weight:400;color:var(--a-mutfg)" data-go="registro">¿No tenés cuenta? <b style="color:var(--a-pri)">Crear cuenta</b></button>' +
+      '</div>';
+  };
+
+  S.registro = function () {
+    function opt(t, d, icon, go) {
+      return '<button class="card" data-go="' + go + '" style="padding:18px"><div class="row" style="align-items:flex-start"><div class="iconbox">' + ic(icon, 20) + '</div><div class="grow"><div class="name">' + t + '</div><div class="mut small" style="margin-top:4px">' + d + '</div></div><span class="mut">' + ic("right", 18) + '</span></div></button>';
+    }
+    return '<div class="content">' + back("Crear cuenta", "login") +
+      '<p class="mut" style="margin:0 0 16px">¿Cómo vas a usar DocApp Go?</p><div class="stack">' +
+      opt("Soy paciente", "Buscá profesionales según tu obra social y gestioná tus turnos.", "user", "registro-paciente") +
+      opt("Soy profesional de la salud", "Verificamos tu matrícula en el padrón nacional antes de crear la cuenta.", "steth", "registro-profesional") +
+      '</div></div>';
+  };
+
+  S["registro-paciente"] = function () {
+    var reqs = ["Al menos 8 caracteres", "Una mayúscula", "Un número", "Un carácter especial"];
+    return '<div class="content">' + back("Registro de paciente", "registro") +
+      '<p class="mut" style="margin:-6px 0 16px">Completá tus datos y tu cobertura</p>' +
+      '<div class="grid2" style="gap:10px">' + field("Nombre", "Sofía") + field("Apellido", "Martínez") + '</div>' +
+      field("DNI", "12345678") +
+      field("Obra social / prepaga", "OSDE 210", { right: ic("right", 16) }) +
+      field("Contraseña", "••••••••••••") +
+      '<div style="display:grid;gap:4px;margin:-4px 0 16px">' + reqs.map(function (r) { return '<span class="check">' + ic("check", 14, 2.5) + r + '</span>'; }).join("") + '</div>' +
+      '<button class="btn" data-act="toast" data-msg="Tus datos son válidos. La cuenta todavía no se guarda: no hay base de datos en el Sprint 1.">Crear cuenta</button></div>';
+  };
+
+  S["registro-profesional"] = function () {
+    return '<div class="content">' + back("Registro profesional", "registro") +
+      '<p class="mut" style="margin:-6px 0 14px">Verificación en el padrón nacional</p>' +
+      '<div class="steps"><span class="s done"><i>' + ic("check", 12, 3) + '</i>Tus datos</span><span class="line"></span><span class="s on"><i>2</i>Confirmación</span><span class="line"></span><span class="s"><i>3</i>Crear cuenta</span></div>' +
+      '<div class="card"><div class="row" style="margin-bottom:12px"><div class="iconbox">' + ic("idcard", 20) + '</div><div class="grow"><div class="name">¿Esta es tu información?</div><div class="small mut">Ficha del padrón nacional</div></div></div>' +
+      '<dl class="kv">' +
+      '<dt>Nombre</dt><dd>Juan Fernández</dd><dt>DNI</dt><dd>40.123.456</dd><dt>Profesión</dt><dd>Kinesiólogo</dd>' +
+      '<dt>Matrícula</dt><dd>154321</dd><dt>Código del profesional</dt><dd>541043250006</dd>' +
+      '<dt>Emisor</dt><dd>Ministerio de Salud de la Nación</dd><dt>Provincia</dt><dd>CABA</dd>' +
+      '<dt>Estado de matrícula</dt><dd><span class="badge ok">Habilitada en CABA</span></dd></dl></div>' +
+      '<div class="stack" style="margin-top:16px"><button class="btn" data-act="toast" data-msg="Paso 3: crear la contraseña. La cuenta se habilita cuando exista la base de datos.">Sí, soy yo</button><button class="btn ghost" data-act="toast" data-msg="Vuelve al paso 1 para corregir DNI, matrícula o profesión.">No, revisar mis datos</button></div></div>';
+  };
+
+  S.inicio = function () {
+    var m = MEDICOS[0];
+    var cerca = CENTROS.slice().sort(function (a, b) { return distanciaKm(YO, a) - distanciaKm(YO, b); });
+    return '<div class="content">' +
+      '<div class="row" style="margin:4px 0 18px"><div class="grow"><div class="mut small">Hola, Sofía 👋</div><div class="h1" style="margin:2px 0 0;font-size:22px">¿Cómo te sentís?</div></div>' +
+      '<button class="bell" data-go="notificaciones" aria-label="Notificaciones, 2 sin leer">' + ic("bell", 20) + '<span class="dot">2</span></button></div>' +
+      '<div class="sect" style="margin-top:0"><span class="h2">Próximo turno</span></div>' +
+      '<div class="card"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + '</div></div><span class="badge ok">Confirmado</span></div>' +
+      '<div class="divider"></div><div class="stack" style="gap:6px"><div class="meta">' + ic("calendar", 14) + 'Lunes 12 de octubre · ' + ic("clock", 14) + '10:30</div><div class="meta">' + ic("pin", 14) + m.sede + ' · ' + m.dir + '</div></div>' +
+      '<div class="btnrow" style="margin-top:12px"><button class="btn" data-go="turnos">Ver turno</button><button class="btn outline" data-go="mapa" data-sel="aleman">' + ic("nav", 16) + 'Cómo llegar</button></div></div>' +
+      '<div class="sect"><span class="h2">Accesos rápidos</span></div>' +
+      '<div class="qa">' +
+      [["buscar", "search", "Buscar"], ["turnos", "steth", "Turnos"], ["estudios", "file", "Estudios"], ["mapa", "pin", "Centros"]].map(function (q) {
+        return '<button data-go="' + q[0] + '" aria-label="' + q[2] + '"><span class="circ">' + ic(q[1], 22) + '</span>' + q[2] + '</button>';
+      }).join("") + '</div>' +
+      '<div class="sect"><span class="h2">Instituciones cercanas</span><button class="link" data-go="mapa">Ver mapa</button></div>' +
+      '<button class="card" data-go="mapa" style="padding:0;overflow:hidden">' + miniMap() +
+      '<div style="padding:12px 14px"><div class="name" style="font-size:14px">' + cerca[0].nombre + '</div><div class="meta">' + fmtKm(distanciaKm(YO, cerca[0])) + ' · ' + TIPO_LABEL[cerca[0].tipo] + ' · y ' + (cerca.length - 1) + ' centros más</div></div></button>' +
+      '</div>' + tabbar("paciente", "inicio");
+  };
+
+  function streetsSvg() {
+    var lines = "";
+    for (var i = -6; i < 16; i++) {
+      lines += '<line x1="' + (i * 52 - 200) + '" y1="-50" x2="' + (i * 52 + 260) + '" y2="900" stroke="var(--a-road)" stroke-width="' + (i % 4 === 0 ? 9 : 4) + '"/>';
+    }
+    for (var j = -4; j < 24; j++) {
+      lines += '<line x1="-50" y1="' + (j * 46 + 150) + '" x2="450" y2="' + (j * 46 - 110) + '" stroke="var(--a-road)" stroke-width="' + (j % 5 === 0 ? 9 : 4) + '"/>';
+    }
+    return '<svg class="streets" viewBox="0 0 375 812" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<rect width="375" height="812" fill="var(--a-map)"/>' +
+      '<path d="M220 -10 L380 -10 L380 150 Q300 120 260 60 Z" fill="var(--a-park)"/>' +
+      '<path d="M0 560 L70 520 L110 600 L40 660 L0 650 Z" fill="var(--a-park)"/>' +
+      lines + '</svg>';
+  }
+  function miniMap() {
+    var pins = CENTROS.map(function (c) {
+      var p = proj(c);
+      return '<span style="position:absolute;left:' + (p.x / 375 * 100) + '%;top:' + ((p.y - 140) / 440 * 100) + '%;width:12px;height:12px;border-radius:50%;background:' + TIPO_COLOR[c.tipo] + ';border:2px solid #fff;transform:translate(-50%,-50%)"></span>';
+    }).join("");
+    var me = proj(YO);
+    return '<div style="position:relative;height:120px;overflow:hidden;background:var(--a-map)"><div style="position:absolute;inset:-120px 0 auto 0;height:812px;opacity:0.9">' + streetsSvg() + '</div>' + pins +
+      '<span style="position:absolute;left:' + (me.x / 375 * 100) + '%;top:' + ((me.y - 140) / 440 * 100) + '%;width:12px;height:12px;border-radius:50%;background:#2563EB;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 6px rgba(37,99,235,.2)"></span></div>';
+  }
+
+  S.buscar = function () {
+    var list = MEDICOS.filter(function (m) { return ui.esp === "Todas" || m.esp === ui.esp; });
+    return '<div class="content"><div class="h1">Buscar</div>' +
+      '<div class="row" style="gap:8px;margin-bottom:14px"><div class="input ph grow">' + ic("search", 18) + 'Médicos, especialidades...</div><button class="roundbtn" style="border-radius:var(--a-r2);box-shadow:none;border:1px solid var(--a-bd)" aria-label="Filtros" data-act="toast" data-msg="Filtros: plan, distancia, disponibilidad, valoración (próximo sprint).">' + ic("sliders", 18) + '</button></div>' +
+      '<div class="chips" style="margin-bottom:14px">' + ESPECIALIDADES.map(function (e) { return '<button class="chip' + (ui.esp === e ? " on" : "") + '" data-act="esp" data-v="' + e + '">' + e + '</button>'; }).join("") + '</div>' +
+      '<div class="small mut" style="margin-bottom:8px">' + list.length + ' profesionales que atienden <b>OSDE 210</b></div>' +
+      '<div class="stack">' + (list.length ? list.map(function (m) { return doctorRow(m, "medico"); }).join("") : '<div class="card mut" style="text-align:center">No hay profesionales de esta especialidad para tu cobertura.</div>') + '</div>' +
+      '</div>' + tabbar("paciente", "buscar");
+  };
+
+  S.medico = function () {
+    var m = medico(ui.medico);
+    return '<div class="content">' + back("Perfil profesional", "buscar") +
+      '<div style="display:grid;justify-items:center;gap:6px;text-align:center"><div class="av lg">' + m.ini + '</div><div class="h1" style="margin:8px 0 0;font-size:22px">' + m.nombre + '</div><div class="mut">' + m.esp + ' · ' + m.matricula + '</div></div>' +
+      '<div class="grid2" style="grid-template-columns:repeat(3,1fr);margin:18px 0">' +
+      '<div class="stat" style="text-align:center"><b>' + m.val.toString().replace(".", ",") + '</b><span>Valoración</span></div>' +
+      '<div class="stat" style="text-align:center"><b>' + m.cant + '</b><span>Pacientes</span></div>' +
+      '<div class="stat" style="text-align:center"><b>' + m.anios + '</b><span>Años Exp.</span></div></div>' +
+      '<div class="h2" style="font-size:15px;margin-bottom:6px">Sobre el/la profesional</div><p class="mut" style="margin:0 0 16px;line-height:1.55">' + m.desc + '</p>' +
+      '<div class="h2" style="font-size:15px;margin-bottom:8px">Dónde atiende</div>' +
+      '<div class="card" style="margin-bottom:10px"><div class="row"><div class="iconbox">' + ic("hospital", 20) + '</div><div class="grow"><div class="name" style="font-size:14px">' + m.sede + '</div><div class="meta">' + m.dir + ', CABA</div></div><span class="badge ok">OSDE 210</span></div></div>' +
+      '<div class="meta" style="margin-bottom:16px">' + ic("calendar", 14) + 'Próximo disponible: ' + m.prox + '</div>' +
+      '<button class="btn" data-go="reservar">Solicitar Turno</button></div>';
+  };
+
+  S.reservar = function () {
+    var m = medico(ui.medico);
+    var dias = [["Lun", 12], ["Mar", 13], ["Mié", 14], ["Jue", 15], ["Vie", 16]];
+    var slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00"];
+    var tomados = ["10:00", "10:30", "12:30"];
+    var html = '<div class="content">' + back("Reservar turno", "medico") +
+      '<div class="card" style="margin-bottom:16px"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + '</div></div></div></div>' +
+      '<div class="field"><label>Sede</label><div class="input">' + ic("pin", 16) + '<span style="flex:1">' + m.sede + ' · ' + m.dir + '</span>' + ic("right", 16) + '</div></div>' +
+      '<div class="row" style="justify-content:space-between;margin:4px 0 10px"><span class="h2" style="font-size:15px">Octubre 2026</span><span class="small mut">Presencial · Control</span></div>' +
+      '<div class="days" style="margin-bottom:18px">' + dias.map(function (d, i) { return '<button class="day' + (ui.day === i ? " on" : "") + '" data-act="day" data-v="' + i + '"><span>' + d[0] + '</span><b>' + d[1] + '</b></button>'; }).join("") + '</div>' +
+      '<div class="h2" style="font-size:15px;margin-bottom:10px">Horarios disponibles</div>' +
+      '<div class="slots" style="margin-bottom:20px">' + slots.map(function (s) {
+        var t = tomados.indexOf(s) >= 0;
+        return '<button class="slot' + (ui.slot === s ? " on" : "") + '" ' + (t ? "disabled aria-label=\"" + s + " ocupado\"" : 'data-act="slot" data-v="' + s + '"') + '>' + s + '</button>';
+      }).join("") + '</div>' +
+      '<button class="btn" data-act="overlay" data-v="confirmado">Confirmar reserva</button></div>';
+    if (ui.overlay === "confirmado") {
+      html += '<div class="overlay"><div class="dialog"><div class="okcirc">' + ic("check", 30, 2.5) + '</div><div class="h2">Turno confirmado</div><div class="mut">Tu turno fue reservado con éxito.</div>' +
+        '<div class="card" style="text-align:left;box-shadow:none"><div class="name" style="font-size:14px">' + m.nombre + '</div><div class="meta">' + dias[ui.day][0] + ' ' + dias[ui.day][1] + ' oct · ' + ui.slot + '</div><div class="meta">' + m.sede + '</div></div>' +
+        '<button class="btn" data-go="turnos">Ver mis turnos</button></div></div>';
+    }
+    return html;
+  };
+
+  S.turnos = function () {
+    var prox = ui.turnosTab === "proximos";
+    function turno(m, fecha, hora, tipo, estado, cls, extra) {
+      return '<div class="card"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + ' · ' + tipo + '</div></div><span class="badge ' + cls + '">' + estado + '</span></div>' +
+        '<div class="divider"></div><div class="stack" style="gap:6px"><div class="meta">' + ic("calendar", 14) + fecha + ' · ' + ic("clock", 14) + hora + '</div><div class="meta">' + ic("pin", 14) + m.sede + '</div></div>' + (extra || "") + '</div>';
+    }
+    var body = prox
+      ? turno(MEDICOS[0], "Lun 12 oct", "10:30", "Control", "Confirmado", "ok", '<div class="btnrow" style="margin-top:12px"><button class="btn danger" data-act="overlay" data-v="cancelar">Cancelar turno</button></div>') +
+        turno(MEDICOS[1], "Sáb 17 oct", "15:00", "Seguimiento", "Pendiente", "warn", '<div class="btnrow" style="margin-top:12px"><button class="btn danger" data-act="overlay" data-v="cancelar">Cancelar turno</button></div>')
+      : turno(MEDICOS[1], "Dom 13 sep", "11:00", "Primera consulta", "Completado", "mute", '<div class="btnrow" style="margin-top:12px"><button class="btn outline" data-go="calificar">' + ic("star", 16) + 'Calificar consulta</button></div>') +
+        turno(MEDICOS[0], "Dom 9 ago", "09:30", "Control", "Completado", "mute");
+    var html = '<div class="content"><div class="h1">Mis Turnos</div>' +
+      '<div class="seg"><button class="' + (prox ? "on" : "") + '" data-act="turnosTab" data-v="proximos">Próximos</button><button class="' + (!prox ? "on" : "") + '" data-act="turnosTab" data-v="historial">Historial</button></div>' +
+      '<div class="stack">' + body + '</div></div>' + tabbar("paciente", "turnos");
+    if (ui.overlay === "cancelar") {
+      html += '<div class="overlay"><div class="dialog"><div class="h2">Cancelar turno</div><div class="mut">¿Seguro que querés cancelar este turno?</div><div class="btnrow"><button class="btn ghost" data-act="overlay" data-v="">No</button><button class="btn" style="background:var(--a-danger);color:#fff" data-act="overlay" data-v="" data-msg="El turno se cancela y el horario vuelve a quedar libre.">Sí, cancelar</button></div></div></div>';
+    }
+    return html;
+  };
+
+  S.estudios = function () {
+    var res = ui.estudiosTab === "resultados";
+    function est(tipo, fecha, inst, med) {
+      return '<div class="card"><div class="row"><div class="iconbox">' + ic("file", 20) + '</div><div class="grow"><div class="name" style="font-size:14px">' + tipo + '</div><div class="meta">' + fecha + ' · ' + inst + '</div><div class="meta">Solicitó ' + med + '</div></div></div><div class="row" style="margin-top:10px;justify-content:space-between"><span class="badge ok">Resultado disponible</span><button class="link" data-act="toast" data-msg="Abre el informe del estudio (solo visible para el paciente y su médico).">Ver resultado</button></div></div>';
+    }
+    var body = res
+      ? est("Análisis de Sangre Completo", "28 sep", "Hospital Italiano", "Dr. Méndez") + est("Electrocardiograma", "20 sep", "Hospital Alemán", "Dr. Méndez") + est("Radiografía de Tórax", "2 sep", "Hospital de Clínicas", "Dra. Fernández")
+      : '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="name" style="font-size:14px">Orden de laboratorio</span><span class="badge warn">Pendiente</span></div><div class="meta">Dr. Roberto Méndez · 5 oct</div><div class="divider"></div><div class="small"><b>Estudios:</b> Análisis de Sangre Completo</div><div class="small mut" style="margin-top:4px"><b>Indicaciones:</b> Ayuno de 8 horas.</div><button class="btn outline" style="margin-top:12px" data-go="mapa" data-filtro="laboratorio">' + ic("pin", 16) + 'Buscar laboratorio</button></div>';
+    return '<div class="content"><div class="h1">Mis Estudios</div>' +
+      '<div class="seg"><button class="' + (res ? "on" : "") + '" data-act="estudiosTab" data-v="resultados">Resultados</button><button class="' + (!res ? "on" : "") + '" data-act="estudiosTab" data-v="ordenes">Órdenes</button></div>' +
+      '<div class="stack">' + body + '</div></div>' + tabbar("paciente", "estudios");
+  };
+
+  S.mapa = function () {
+    var visibles = CENTROS.filter(function (c) { return ui.mapaFiltro === "todos" || c.tipo === ui.mapaFiltro; });
+    var sel = visibles.filter(function (c) { return c.id === ui.mapaSel; })[0] || visibles[0];
+    var chips = [["todos", "Todos"], ["hospital", "Hospitales"], ["clinica", "Clínicas"], ["laboratorio", "Laboratorios"]];
+    var top = '<div class="map-top"><div class="row"><button class="roundbtn" data-go="inicio" aria-label="Volver">' + ic("left", 20) + '</button><div class="pill-search">' + ic("search", 16) + 'Aceptan OSDE 210</div><button class="roundbtn" data-act="vista" aria-label="Ver como ' + (ui.mapaVista === "mapa" ? "lista" : "mapa") + '">' + ic(ui.mapaVista === "mapa" ? "list" : "map", 20) + '</button></div>' +
+      '<div class="chips">' + chips.map(function (c) { return '<button class="chip' + (ui.mapaFiltro === c[0] ? " on" : "") + '" data-act="filtro" data-v="' + c[0] + '" style="box-shadow:0 2px 6px rgba(0,0,0,.12)">' + c[1] + '</button>'; }).join("") + '</div></div>';
+    function cobertura(c) { return c.publico ? '<span class="badge info">Público · atiende a todos</span>' : '<span class="badge ok">Acepta OSDE 210</span>'; }
+
+    if (ui.mapaVista === "lista") {
+      var ord = visibles.slice().sort(function (a, b) { return distanciaKm(YO, a) - distanciaKm(YO, b); });
+      return '<div class="content flush" style="background:var(--a-bg)">' + top.replace('class="map-top"', 'class="map-top" style="position:static;padding-bottom:12px"') +
+        '<div class="stack" style="padding:0 16px 16px">' + (ord.length ? ord.map(function (c) {
+          return '<button class="card" data-act="sel" data-v="' + c.id + '"><div class="row"><span class="legend-dot" style="background:' + TIPO_COLOR[c.tipo] + '"></span><div class="grow"><div class="name" style="font-size:14px">' + c.nombre + '</div><div class="meta">' + c.dir + ' · ' + fmtKm(distanciaKm(YO, c)) + '</div><div style="margin-top:6px">' + cobertura(c) + '</div></div></div></button>';
+        }).join("") : '<div class="card mut" style="text-align:center">No hay laboratorios cargados todavía para tu cobertura en esta zona.</div>') + '</div>' +
+        '<div class="small mut" style="padding:0 16px 16px">Establecimientos: REFES — Ministerio de Salud de la Nación (CC BY 4.0)</div></div>';
+    }
+
+    var me = proj(YO);
+    var pins = visibles.map(function (c) {
+      var p = proj(c), on = sel && c.id === sel.id;
+      return '<button class="pin' + (on ? " sel" : "") + '" style="left:' + p.x + 'px;top:' + p.y + 'px" data-act="sel" data-v="' + c.id + '" aria-label="' + c.nombre + '"><span class="head" style="background:' + TIPO_COLOR[c.tipo] + '">' + ic(c.tipo === "laboratorio" ? "flask" : "hospital", on ? 20 : 16, 2.2) + '</span></button>';
+    }).join("");
+    var card = sel
+      ? '<div class="card map-card" style="padding:16px"><div class="row" style="align-items:flex-start"><div class="grow"><div class="small mut">' + TIPO_LABEL[sel.tipo] + '</div><div class="name">' + sel.nombre + '</div><div class="meta" style="margin-top:2px">' + ic("pin", 13) + sel.dir + ', CABA · ' + fmtKm(distanciaKm(YO, sel)) + '</div></div></div>' +
+        '<div style="margin:10px 0 12px">' + cobertura(sel) + '</div>' +
+        '<div class="btnrow"><button class="btn" data-go="buscar">Ver turnos</button><button class="btn outline" data-act="toast" data-msg="Abre Google Maps con la ruta desde tu ubicación hasta ' + sel.dir + '.">' + ic("nav", 16) + 'Cómo llegar</button></div></div>'
+      : '<div class="card map-card mut" style="text-align:center">No hay laboratorios cargados todavía para tu cobertura en esta zona.</div>';
+    return '<div class="content flush"><div class="map">' + streetsSvg() + '<span class="me" style="left:' + me.x + 'px;top:' + me.y + 'px" aria-label="Tu ubicación"></span>' + pins + '</div>' +
+      top + '<button class="roundbtn" style="position:absolute;right:16px;bottom:' + (sel ? 236 : 110) + 'px" aria-label="Centrar en mi ubicación" data-act="toast" data-msg="GPS: centra el mapa en tu ubicación actual (expo-location).">' + ic("target", 20) + '</button>' +
+      card + '<span class="attrib">REFES — Min. de Salud de la Nación (CC BY 4.0) · Google</span></div>';
+  };
+
+  S.menu = function () {
+    var secciones = [
+      ["Mi salud", [["plan", "card", "Mi plan médico"], [null, "pill", "Mis recetas"], [null, "file", "Órdenes médicas"], [null, "history", "Historial"]]],
+      ["Favoritos y avisos", [[null, "heart", "Médicos favoritos"], [null, "pin", "Instituciones favoritas"], ["notificaciones", "bell", "Notificaciones", 2], ["calificar", "star", "Feedback"]]],
+      ["Cuenta", [[null, "user", "Mi perfil"], [null, "shield", "Seguridad"], ["configuracion", "settings", "Configuración"], [null, "help", "Ayuda"]]]
+    ];
+    return '<div class="content"><div class="h1">Menú</div>' +
+      '<div class="card" style="margin-bottom:6px"><div class="row"><div class="av lg" style="width:56px;height:56px;font-size:18px">SM</div><div class="grow"><div class="name" style="font-size:16px">Sofía Martínez</div><div class="meta">OSDE 210 · DNI 12.345.678</div></div><span class="mut">' + ic("right", 18) + '</span></div></div>' +
+      secciones.map(function (s) {
+        return '<div class="sect"><span class="h2">' + s[0] + '</span></div><div class="grid2">' + s[1].map(function (it) {
+          var go = it[0] ? 'data-go="' + it[0] + '"' : 'data-act="toast" data-msg="' + it[2] + ': pantalla implementada en app/(paciente)/cuenta/."';
+          return '<button class="tile" ' + go + ' aria-label="' + it[2] + '">' + (it[3] ? '<span class="dot">' + it[3] + '</span>' : "") + '<span class="iconbox">' + ic(it[1], 20) + '</span>' + it[2] + '</button>';
+        }).join("") + '</div>';
+      }).join("") +
+      '<button class="card" data-go="login" style="margin-top:16px"><div class="row" style="color:var(--a-danger)">' + ic("logout", 18) + '<span style="font-weight:600">Cerrar sesión</span></div></button>' +
+      '</div>' + tabbar("paciente", "menu");
+  };
+
+  S.notificaciones = function () {
+    var n = [
+      ["calendar", "Turno mañana con Dr. Roberto Méndez", "Tenés un turno de cardiología en Hospital Alemán.", "Hace 1 h", true],
+      ["file", "Resultado disponible", "Ya está listo el resultado de tu Análisis de Sangre Completo.", "Hace 3 h", true],
+      ["pill", "Nueva receta", "El Dr. Roberto Méndez te generó una nueva receta.", "Ayer", false],
+      ["check", "Turno confirmado", "Tu turno de seguimiento con la Dra. Elena Ruiz quedó confirmado.", "Hace 2 días", false]
+    ];
+    return '<div class="content">' + back("Notificaciones", "inicio") + '<div class="stack">' + n.map(function (x) {
+      return '<div class="card"><div class="row" style="align-items:flex-start"><div class="iconbox">' + ic(x[0], 18) + '</div><div class="grow"><div class="name" style="font-size:14px">' + x[1] + '</div><div class="small mut" style="margin-top:2px">' + x[2] + '</div><div class="small mut" style="margin-top:6px">' + x[3] + '</div></div>' + (x[4] ? '<span class="unread" aria-label="Sin leer"></span>' : "") + '</div></div>';
+    }).join("") + '</div></div>';
+  };
+
+  S.plan = function () {
+    return '<div class="content">' + back("Mi plan médico", "menu") +
+      '<div class="credential"><div class="row" style="justify-content:space-between"><span class="lbl">Obra social</span>' + ic("shield", 20) + '</div><div class="big">OSDE 210</div>' +
+      '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><div class="lbl">Afiliado/a</div><div style="font-weight:600">Sofía Martínez</div></div><div style="text-align:right"><div class="lbl">DNI</div><div style="font-weight:600">12.345.678</div></div></div></div>' +
+      '<div class="sect"><span class="h2">Dónde te atienden</span></div>' +
+      '<div class="grid2" style="margin-bottom:12px"><div class="stat"><b>5</b><span>Instituciones que te cubren</span></div><div class="stat"><b>4</b><span>Profesionales disponibles</span></div></div>' +
+      '<button class="btn outline" data-go="mapa" style="margin-bottom:10px">' + ic("map", 16) + 'Ver mapa</button>' +
+      '<button class="btn ghost" data-act="toast" data-msg="Elegís otra obra social de las cargadas en la app y el mapa se actualiza.">Cambiar de obra social</button></div>';
+  };
+
+  S.calificar = function () {
+    var crit = ["Puntualidad", "Atención", "Trato", "Claridad de la explicación", "Experiencia general"];
+    function stars(val, key, size) {
+      var s = "";
+      for (var i = 1; i <= 5; i++) s += '<button class="' + (i <= val ? "on" : "") + '" data-act="' + key + '" data-v="' + i + '" aria-label="' + i + ' estrellas"><svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' + P.star + '</svg></button>';
+      return '<div class="stars">' + s + '</div>';
+    }
+    return '<div class="content">' + back("Calificar consulta", "turnos") +
+      '<div class="card" style="margin-bottom:14px"><div class="row"><div class="av">ER</div><div class="grow"><div class="name">Dra. Elena Ruiz</div><div class="meta">Dermatología · 13 sep</div></div></div></div>' +
+      '<div style="text-align:center;margin-bottom:12px"><div class="h2">¿Cómo fue tu consulta?</div><div style="display:flex;justify-content:center;margin-top:8px">' + stars(ui.rating, "rating", 34) + '</div></div>' +
+      '<div class="card" style="margin-bottom:12px">' + crit.map(function (c, i) {
+        return '<div class="row" style="justify-content:space-between;padding:4px 0"><span class="small" style="font-weight:600">' + c + '</span>' + stars(ui.criterios[i], "crit" + i, 18) + '</div>';
+      }).join("") + '</div>' +
+      field("Comentario (opcional)", "Contanos cómo te atendieron", { ph: true, area: true }) +
+      '<button class="btn" data-act="toast" data-msg="¡Gracias! Tu opinión fue enviada.">Enviar opinión</button></div>';
+  };
+
+  S.configuracion = function () {
+    var ops = [["auto", "Automático", "Sigue el modo claro u oscuro de tu teléfono."], ["light", "Claro", "La app se ve siempre en modo claro."], ["dark", "Oscuro", "La app se ve siempre en modo oscuro."]];
+    return '<div class="content">' + back("Configuración", "menu") +
+      '<div class="sect" style="margin-top:4px"><span class="h2">Apariencia</span></div>' +
+      '<div class="card" style="padding:4px 14px"><div class="small mut" style="padding-top:10px">Modo de color</div>' + ops.map(function (o) {
+        return '<button class="radio' + (ui.pref === o[0] ? " on" : "") + '" data-act="pref" data-v="' + o[0] + '"><span class="r"></span><span><span style="font-weight:600;display:block">' + o[1] + '</span><span class="small mut">' + o[2] + '</span></span></button>';
+      }).join("") + '</div>' +
+      '<div class="sect"><span class="h2">Acerca de</span></div>' +
+      '<div class="card"><dl class="kv"><dt>Versión de la app</dt><dd>1.0.0</dd><dt>Establecimientos</dt><dd>REFES · Min. de Salud</dd></dl></div></div>';
+  };
+
+  /* --- Profesional --- */
+  S.agenda = function () {
+    function t(hora, nombre, tipo, cob) {
+      return '<button class="card" data-go="ficha"><div class="row"><div style="font-family:var(--a-head);font-weight:700;font-size:17px;width:52px;font-variant-numeric:tabular-nums">' + hora + '</div><div class="grow"><div class="name" style="font-size:14px">' + nombre + '</div><div class="meta">' + tipo + ' · ' + cob + '</div></div><span class="mut">' + ic("right", 18) + '</span></div></button>';
+    }
+    return '<div class="content"><div class="mut small" style="margin-top:4px">Hola,</div><div class="h1" style="margin-top:2px">Dra. Valeria Sosa</div>' +
+      '<div class="grid2" style="grid-template-columns:repeat(3,1fr);margin-bottom:6px"><div class="stat"><b>2</b><span>Turnos hoy</span></div><div class="stat"><b>5</b><span>Próximos 7 días</span></div><div class="stat"><b>3</b><span>Pacientes</span></div></div>' +
+      '<div class="sect"><span class="h2">Próximos turnos</span></div>' +
+      '<div class="small mut" style="margin-bottom:8px">Hoy · jueves 8 de octubre</div><div class="stack">' +
+      t("08:30", "Sofía Martínez", "Control", "OSDE 210") + t("11:00", "Lucas Gómez", "Seguimiento", "Swiss Medical SMG20") +
+      '</div><div class="small mut" style="margin:14px 0 8px">Lunes 12 de octubre</div><div class="stack">' + t("09:00", "Martina López", "Primera consulta", "OSDE 210") + '</div>' +
+      '</div>' + tabbar("doctor", "agenda");
+  };
+
+  S.pacientes = function () {
+    var p = [["SM", "Sofía Martínez", "DNI 12.345.678 · OSDE 210", "Hoy 08:30"], ["LG", "Lucas Gómez", "DNI 35.678.901 · Swiss Medical", "Hoy 11:00"], ["ML", "Martina López", "DNI 38.456.123 · OSDE 210", "Lun 12 · 09:00"]];
+    return '<div class="content"><div class="h1">Mis pacientes</div><div class="input ph" style="margin-bottom:14px">' + ic("search", 18) + 'Buscar por nombre o DNI</div>' +
+      '<div class="small mut" style="margin-bottom:8px">Pacientes con un turno próximo con vos</div><div class="stack">' +
+      p.map(function (x) { return '<button class="card" data-go="ficha"><div class="row"><div class="av">' + x[0] + '</div><div class="grow"><div class="name">' + x[1] + '</div><div class="meta">' + x[2] + '</div></div><span class="badge info">' + x[3] + '</span></div></button>'; }).join("") +
+      '</div></div>' + tabbar("doctor", "pacientes");
+  };
+
+  S.ficha = function () {
+    return '<div class="content">' + back("Ficha del paciente", "pacientes") +
+      '<div class="card"><div class="row"><div class="av">SM</div><div class="grow"><div class="name">Sofía Martínez</div><div class="meta">DNI 12.345.678</div></div></div><div class="divider"></div><dl class="kv"><dt>Cobertura</dt><dd>OSDE 210</dd></dl></div>' +
+      '<div class="sect"><span class="h2">Próximos turnos</span></div><div class="card"><div class="meta" style="color:var(--a-fg)">' + ic("calendar", 14) + 'Hoy 08:30 · Control · Hospital Italiano</div></div>' +
+      '<div class="sect"><span class="h2">Historial con vos</span></div><div class="card"><div class="meta" style="color:var(--a-fg)">' + ic("history", 14) + '14 jul · Control · Completado</div></div>' +
+      '<div class="sect"><span class="h2">Notas</span><span class="small mut">' + ic("lock", 12) + '</span></div>' +
+      '<div class="card small" style="margin-bottom:10px">Control de presión estable. Reforzar hidratación.<div class="mut" style="margin-top:4px">14 jul · solo la ves vos</div></div>' +
+      field("Nueva nota", "Indicaciones, observaciones de la consulta...", { ph: true, area: true }) +
+      '<button class="btn" data-act="toast" data-msg="Nota guardada. Es privada: solo la ve quien la escribió.">Guardar nota</button></div>';
+  };
+
+  S["perfil-doc"] = function () {
+    var h = [["Lunes", "08:00 – 14:00", "Hospital Italiano"], ["Miércoles", "08:00 – 14:00", "Hospital Italiano"], ["Viernes", "14:00 – 18:00", "Hospital Alemán"]];
+    return '<div class="content"><div class="h1">Mi perfil</div>' +
+      '<div style="display:grid;justify-items:center;gap:4px;text-align:center;margin-bottom:12px"><div class="av lg">VS</div><div class="h2" style="margin-top:8px">Dra. Valeria Sosa</div><div class="mut">Enfermería · Mat. 132043</div><div class="meta" style="color:var(--a-fg);font-weight:600">' + starFill(14) + '4,9</div></div>' +
+      '<div class="sect"><span class="h2">Lugares de atención</span></div><div class="stack">' +
+      ["Hospital Italiano · Gascón 450", "Hospital Alemán · Av. Pueyrredón 1650"].map(function (l) { return '<div class="card" style="padding:12px"><div class="meta" style="color:var(--a-fg)">' + ic("pin", 14) + l + '</div></div>'; }).join("") + '</div>' +
+      '<div class="sect"><span class="h2">Horarios de atención</span></div><div class="card"><dl class="kv">' +
+      h.map(function (x) { return '<dt>' + x[0] + '</dt><dd>' + x[1] + '<div class="small mut" style="font-weight:400">' + x[2] + '</div></dd>'; }).join("") + '</dl></div>' +
+      '<button class="card" data-go="login" style="margin-top:16px"><div class="row" style="color:var(--a-danger)">' + ic("logout", 18) + '<span style="font-weight:600">Cerrar sesión</span></div></button>' +
+      '</div>' + tabbar("doctor", "perfil-doc");
+  };
+
+  /* --- Administrador --- */
+  S.panel = function () {
+    var datos = [["OSDE 210", 2], ["Swiss Medical", 1], ["Galeno Oro", 0], ["Medifé", 0]];
+    var max = 2;
+    return '<div class="content"><div class="mut small" style="margin-top:4px">Panel de administración</div><div class="h1" style="margin-top:2px">Administrador</div>' +
+      '<div class="sect" style="margin-top:0"><span class="h2">Personas en la app</span></div>' +
+      '<div class="grid2" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><b>3</b><span>Pacientes</span></div><div class="stat"><b>5</b><span>Profesionales</span></div><div class="stat"><b>8</b><span>Total</span></div></div>' +
+      '<div class="sect"><span class="h2">Pacientes por obra social</span></div>' +
+      '<div class="card"><div class="bars">' + datos.map(function (d) {
+        return '<div class="bar-row"><span>' + d[0] + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (d[1] / max * 100) + '%"></div></div><b>' + d[1] + '</b></div>';
+      }).join("") + '</div></div>' +
+      '<button class="card" data-go="login" style="margin-top:16px"><div class="row" style="color:var(--a-danger)">' + ic("logout", 18) + '<span style="font-weight:600">Cerrar sesión</span></div></button>' +
+      '</div>' + tabbar("admin", "panel");
+  };
+
+  S.obras = function () {
+    var l = [["OSDE", "OSDE 210", "RNAS 400800"], ["Swiss Medical", "Swiss Medical SMG20", "Prepaga"], ["Galeno", "Galeno Oro", "Prepaga"], ["Medifé", "Medifé Plan 3000", "Prepaga"]];
+    return '<div class="content"><div class="h1">Obras sociales</div>' +
+      '<div class="card" style="margin-bottom:16px">' + field("Obra social / prepaga", "Ej. IOMA", { ph: true }) + field("Nombre del plan", "Ej. IOMA Plan Integral", { ph: true }) +
+      '<div class="small mut" style="margin:-4px 0 12px">Si ya existe, el plan se agrega a esa obra social.</div><button class="btn" data-act="toast" data-msg="Alta en memoria: la lista se actualiza durante la sesión.">' + ic("plus", 16) + 'Agregar</button></div>' +
+      '<div class="stack">' + l.map(function (x) { return '<div class="card" style="padding:12px 14px"><div class="row"><div class="iconbox">' + ic("card", 18) + '</div><div class="grow"><div class="name" style="font-size:14px">' + x[0] + '</div><div class="meta">' + x[1] + '</div></div><span class="badge mute">' + x[2] + '</span></div></div>'; }).join("") + '</div>' +
+      '</div>' + tabbar("admin", "obras");
+  };
+
+  S.instituciones = function () {
+    return '<div class="content"><div class="h1">Instituciones</div>' +
+      '<div class="card" style="margin-bottom:16px"><div class="h2" style="font-size:15px;margin-bottom:12px">Agregar institución</div>' +
+      field("Nombre", "Ej. Hospital Alemán", { ph: true }) +
+      '<div class="field"><label>Tipo</label><div class="chips" style="flex-wrap:wrap"><button class="chip">Hospital</button><button class="chip on">Clínica</button><button class="chip">Centro médico</button><button class="chip">Laboratorio</button></div></div>' +
+      field("Dirección", "Av. Pueyrredón 1640", { right: '<button class="link" data-act="toast" data-msg="Georef (API del Estado): convierte la dirección en latitud y longitud.">Buscar coordenadas</button>' }) +
+      '<div class="grid2">' + field("Latitud", "-34.5915") + field("Longitud", "-58.4011") + '</div>' +
+      '<div class="field"><label>Obras sociales aceptadas</label><div class="chips" style="flex-wrap:wrap"><button class="chip on">OSDE 210</button><button class="chip on">Swiss Medical SMG20</button><button class="chip">Galeno Oro</button><button class="chip">Medifé Plan 3000</button></div></div>' +
+      '<button class="btn" data-act="toast" data-msg="La institución aparece en el mapa de los pacientes con esas coberturas.">Guardar institución</button></div>' +
+      '<div class="stack">' + CENTROS.slice(0, 3).map(function (c) { return '<div class="card" style="padding:12px 14px"><div class="row"><span class="legend-dot" style="background:' + TIPO_COLOR[c.tipo] + '"></span><div class="grow"><div class="name" style="font-size:14px">' + c.nombre + '</div><div class="meta">' + c.dir + ', CABA</div></div></div></div>'; }).join("") + '</div>' +
+      '</div>' + tabbar("admin", "instituciones");
+  };
+
+  /* ---------------- Fichas técnicas ---------------- */
+  var NATIVO = {
+    gps: { icon: "target", nombre: "GPS", lib: "expo-location",
+      corto: "Ubica al paciente para mostrarle primero los centros más cercanos.",
+      why: "Pide permiso de ubicación en primer plano y lee la posición con getCurrentPositionAsync. La distancia a cada sede se calcula en el teléfono con la fórmula de Haversine. Si el permiso se niega, el mapa arranca en el Obelisco y la app sigue funcionando." },
+    mapa: { icon: "map", nombre: "Google Maps", lib: "react-native-maps",
+      corto: "Mapa nativo con los centros que aceptan la cobertura del paciente.",
+      why: "Usa el SDK nativo de Google Maps, gratis en móvil y requisito de la materia. Cada tipo de institución tiene su marcador, y «Cómo llegar» abre la app de Google Maps con la ruta ya calculada." },
+    push: { icon: "bell", nombre: "Notificaciones push", lib: "expo-notifications", proximo: true,
+      corto: "Recordatorio del turno y aviso cuando hay un resultado o receta nueva.",
+      why: "Notificación local programada 24 h antes de cada turno y aviso al cargarse un resultado o una receta. Está planificada para el próximo sprint: hoy la lista de avisos usa datos de ejemplo." }
+  };
+
+  var META = {
+    login: { rol: "acceso", titulo: "Iniciar sesión", ruta: "app/(auth)/login.tsx",
+      resumen: "Un solo ingreso para los tres roles. La cuenta decide qué app ves.",
+      clave: ["DNI y contraseña", "El rol no se elige en pantalla: lo define la cuenta"],
+      ir: [["inicio", "Paciente"], ["agenda", "Profesional"], ["panel", "Administrador"], ["registro", "Crear cuenta"]],
+      datos: "authService.iniciarSesion() contra cuentas de prueba: 12345678 (paciente), 42300300 (profesional) y admin." },
+    registro: { rol: "acceso", titulo: "Crear cuenta", ruta: "app/(auth)/registro.tsx",
+      resumen: "Antes de pedir datos, la app pregunta cómo se va a usar.",
+      clave: ["Paciente o profesional de la salud: cada uno tiene su registro"],
+      ir: [["registro-paciente", "Registro de paciente"], ["registro-profesional", "Registro profesional"]],
+      datos: "Pantalla de navegación, sin datos." },
+    "registro-paciente": { rol: "acceso", titulo: "Registro de paciente", ruta: "app/(auth)/registro-paciente.tsx",
+      resumen: "Alta con nombre, DNI, contraseña segura y obra social.",
+      clave: ["La obra social filtra todo lo que el paciente ve en la app", "Contraseña con 8 caracteres, mayúscula, número y símbolo"],
+      ir: [["login", "Iniciar sesión"]],
+      datos: "planMedicoService.listPlanesMedicos() y validation.ts. En el Sprint 1 valida pero no guarda la cuenta." },
+    "registro-profesional": { rol: "acceso", titulo: "Registro profesional", ruta: "app/(auth)/registro-medico.tsx",
+      resumen: "La matrícula se verifica en el padrón nacional antes de crear la cuenta.",
+      clave: ["Tres pasos: datos, confirmación y cuenta", "Solo pasan las matrículas habilitadas"],
+      ir: [["registro", "Volver a Crear cuenta"]],
+      datos: "authService.verificarProfesional() contra un padrón de ejemplo con el formato del Buscador Nacional (argentina.gob.ar)." },
+    inicio: { rol: "paciente", titulo: "Inicio", ruta: "app/(paciente)/index.tsx",
+      resumen: "El próximo turno primero; todo lo demás, a un toque.",
+      clave: ["Próximo turno con «Cómo llegar»", "Accesos rápidos", "Centros cercanos en el mapa"],
+      ir: [["turnos", "Mis turnos"], ["mapa", "Mapa"], ["buscar", "Buscar"], ["notificaciones", "Notificaciones"]],
+      datos: "turnoService, notificacionService e institucionService.",
+      nativo: ["gps", "push"], plan: "Fase 5: los centros cercanos salen de la ubicación real del teléfono." },
+    buscar: { rol: "paciente", titulo: "Buscar", ruta: "app/(paciente)/buscar.tsx",
+      resumen: "Profesionales que atienden tu obra social, por especialidad.",
+      clave: ["Solo aparece lo que cubre tu plan", "Filtro rápido por especialidad"],
+      ir: [["medico", "Perfil profesional"]],
+      datos: "especialidadService y medicoService.searchMedicos({ planMedicoId })." },
+    medico: { rol: "paciente", titulo: "Perfil profesional", ruta: "app/(paciente)/medico/[id].tsx",
+      resumen: "Lo esencial arriba; el detalle, más abajo.",
+      clave: ["Valoración y experiencia", "Dónde atiende y si acepta tu plan"],
+      ir: [["reservar", "Solicitar turno"]],
+      datos: "medicoService.getMedico(id)." },
+    reservar: { rol: "paciente", titulo: "Reservar turno", ruta: "app/(paciente)/reservar/[medicoId].tsx",
+      resumen: "Sede, día, horario y confirmación, en una sola pantalla.",
+      clave: ["Los horarios ocupados no se pueden elegir", "Una reserva bloquea el horario: no hay doble reserva"],
+      ir: [["turnos", "Mis turnos"]],
+      datos: "turnoService.getHorariosDisponibles() y reservarTurno()." },
+    turnos: { rol: "paciente", titulo: "Mis turnos", ruta: "app/(paciente)/turnos.tsx",
+      resumen: "Turnos próximos e historial, cada uno con su estado.",
+      clave: ["Cancelar pide confirmación", "Los turnos cumplidos se pueden calificar"],
+      ir: [["calificar", "Calificar consulta"], ["inicio", "Inicio"]],
+      datos: "turnoService.listTurnosPaciente() y cancelarTurno()." },
+    calificar: { rol: "paciente", titulo: "Calificar consulta", ruta: "app/(paciente)/cuenta/calificar/[turnoId].tsx",
+      resumen: "De 1 a 5 estrellas, solo después de un turno cumplido.",
+      clave: ["Cinco criterios y un comentario opcional"],
+      ir: [["turnos", "Mis turnos"]],
+      datos: "feedbackService.enviarFeedback()." },
+    estudios: { rol: "paciente", titulo: "Mis estudios", ruta: "app/(paciente)/estudios.tsx",
+      resumen: "Resultados y órdenes de laboratorio en un solo lugar.",
+      clave: ["Cada orden queda asociada al médico que la pidió", "Desde una orden se busca laboratorio en el mapa"],
+      ir: [["mapa", "Mapa"]],
+      datos: "estudioService." },
+    mapa: { rol: "paciente", titulo: "Mapa de centros", ruta: "app/(paciente)/mapa.tsx",
+      resumen: "Los centros de CABA que te atienden, ordenados por cercanía.",
+      clave: ["Los hospitales públicos atienden a todos", "Los privados aparecen solo si aceptan tu obra social", "Vista de mapa o de lista"],
+      ir: [["buscar", "Ver turnos"], ["inicio", "Inicio"]],
+      datos: "institucionService.listInstituciones({ planMedicoId, cerca }).",
+      nativo: ["gps", "mapa"], plan: "Fases 2 a 5: los establecimientos son reales, del REFES del Ministerio de Salud. Qué obra social acepta cada privado es un ejemplo por ahora." },
+    menu: { rol: "paciente", titulo: "Menú", ruta: "app/(paciente)/menu.tsx",
+      resumen: "Tu cuenta en tarjetas agrupadas, con los avisos a la vista.",
+      clave: ["Mi salud · Favoritos y avisos · Cuenta"],
+      ir: [["plan", "Mi plan médico"], ["notificaciones", "Notificaciones"], ["configuracion", "Configuración"], ["login", "Cerrar sesión"]],
+      datos: "pacienteService y notificacionService." },
+    notificaciones: { rol: "paciente", titulo: "Notificaciones", ruta: "app/(paciente)/cuenta/notificaciones.tsx",
+      resumen: "Recordatorios de turnos, resultados y recetas nuevas.",
+      clave: ["Los avisos sin leer llevan un punto"],
+      ir: [["inicio", "Inicio"]],
+      datos: "notificacionService.listNotificaciones().", nativo: ["push"] },
+    plan: { rol: "paciente", titulo: "Mi plan médico", ruta: "app/(paciente)/cuenta/plan.tsx",
+      resumen: "Tu credencial y lo que cubre tu plan.",
+      clave: ["Cuántos centros y profesionales te atienden"],
+      ir: [["mapa", "Ver mapa"], ["menu", "Menú"]],
+      datos: "planMedicoService e institucionService.", plan: "Fase 3: cada cobertura con su código oficial (OSDE: RNAS 400800)." },
+    configuracion: { rol: "paciente", titulo: "Configuración", ruta: "app/(paciente)/cuenta/configuracion.tsx",
+      resumen: "Modo claro, oscuro o automático según el teléfono.",
+      clave: ["Probalo: el teléfono del emulador cambia de tema"],
+      ir: [["menu", "Menú"]],
+      datos: "useTheme().setPreferencia()." },
+    agenda: { rol: "doctor", titulo: "Agenda", ruta: "app/(doctor)/index.tsx",
+      resumen: "El día del profesional: cuántos turnos tiene y quién viene.",
+      clave: ["Turnos de hoy y de los próximos 7 días"],
+      ir: [["ficha", "Ficha del paciente"], ["pacientes", "Mis pacientes"]],
+      datos: "turnoService.listTurnosMedico()." },
+    pacientes: { rol: "doctor", titulo: "Mis pacientes", ruta: "app/(doctor)/pacientes.tsx",
+      resumen: "Solo los pacientes con un turno próximo con vos.",
+      clave: ["Búsqueda por nombre o DNI"],
+      ir: [["ficha", "Ficha del paciente"]],
+      datos: "pacienteService.listPacientesAsignados()." },
+    ficha: { rol: "doctor", titulo: "Ficha del paciente", ruta: "app/(doctor)/paciente/[id].tsx",
+      resumen: "Datos del paciente, historial con vos y notas.",
+      clave: ["Las notas son privadas: solo las ve quien las escribe"],
+      ir: [["pacientes", "Mis pacientes"]],
+      datos: "pacienteService, turnoService y notaService." },
+    "perfil-doc": { rol: "doctor", titulo: "Perfil profesional", ruta: "app/(doctor)/perfil.tsx",
+      resumen: "Cómo te ven los pacientes: matrícula, lugares y horarios.",
+      clave: ["Lugares y horarios de atención"],
+      ir: [["login", "Cerrar sesión"]],
+      datos: "medicoService.getMedico(sesion.medicoId)." },
+    panel: { rol: "admin", titulo: "Panel", ruta: "app/(admin)/index.tsx",
+      resumen: "Cuántas personas usan la app y con qué obra social.",
+      clave: ["Pacientes, profesionales y total", "Gráfico de pacientes por obra social"],
+      ir: [["obras", "Obras sociales"], ["instituciones", "Instituciones"]],
+      datos: "estadisticaService." },
+    obras: { rol: "admin", titulo: "Obras sociales", ruta: "app/(admin)/obras-sociales.tsx",
+      resumen: "Alta de obras sociales y sus planes.",
+      clave: ["Si la obra social ya existe, el plan se suma a ella"],
+      ir: [["instituciones", "Instituciones"]],
+      datos: "planMedicoService.crearPlanMedico().", plan: "Fase 3: código oficial RNAS o RNEMP en cada cobertura." },
+    instituciones: { rol: "admin", titulo: "Instituciones", ruta: "app/(admin)/instituciones.tsx",
+      resumen: "Alta de centros con su ubicación y las coberturas que aceptan.",
+      clave: ["Qué centro acepta qué cobertura no existe como dato público: se carga acá"],
+      ir: [["panel", "Panel"]],
+      datos: "institucionService.crearInstitucion().", plan: "Fase 6: Georef (API del Estado, gratis) completa latitud y longitud a partir de la dirección." }
+  };
+
+  var ROLES = [
+    ["acceso", "Acceso", ["login", "registro", "registro-paciente", "registro-profesional"]],
+    ["paciente", "Paciente", ["inicio", "buscar", "medico", "reservar", "turnos", "calificar", "estudios", "mapa", "menu", "notificaciones", "plan", "configuracion"]],
+    ["doctor", "Profesional", ["agenda", "pacientes", "ficha", "perfil-doc"]],
+    ["admin", "Administrador", ["panel", "obras", "instituciones"]]
+  ];
+  var ORDER = [];
+  ROLES.forEach(function (r) { ORDER = ORDER.concat(r[2]); });
+  var FLUJO = [["login", "Login"], ["inicio", "Inicio"], ["buscar", "Buscar"], ["medico", "Médico"], ["reservar", "Reservar"], ["turnos", "Mis turnos"], ["calificar", "Calificar"]];
+
+  /* ---------------- Render ---------------- */
+  var $app = document.getElementById("app");
+  var $spec = document.getElementById("spec");
+  var $list = document.getElementById("screenList");
+  var $roles = document.getElementById("roles");
+
+  function rolDe(id) { return META[id].rol; }
+
+  function renderApp() {
+    var mode = ui.pref === "auto" ? ui.mode : ui.pref;
+    $app.setAttribute("data-mode", mode);
+    var inner = S[ui.screen]();
+    var toast = ui.toast ? '<div class="toast" role="status">' + ui.toast + '</div>' : "";
+    $app.innerHTML = statusbar() + inner + '<div class="homebar"><i></i></div>' + toast;
+  }
+
+  function renderSide() {
+    var r = rolDe(ui.screen);
+    $roles.innerHTML = ROLES.map(function (x) {
+      return '<button type="button" data-rol="' + x[0] + '" aria-pressed="' + (x[0] === r) + '">' + x[1] + '</button>';
+    }).join("");
+    var grupo = ROLES.filter(function (x) { return x[0] === r; })[0];
+    document.getElementById("indexTitle").textContent = "Pantallas · " + grupo[1];
+    $list.innerHTML = grupo[2].map(function (id) {
+      var m = META[id], idx = ORDER.indexOf(id) + 1;
+      var tags = (m.nativo ? '<span class="tag native">Nativo</span>' : "") + (m.plan ? '<span class="tag plan">Plan</span>' : "");
+      return '<li><button type="button" data-screen="' + id + '" aria-current="' + (id === ui.screen) + '"><span class="n">' + (idx < 10 ? "0" : "") + idx + '</span><span class="t">' + m.titulo + '</span>' + (tags ? '<span class="tags">' + tags + '</span>' : "") + '</button></li>';
+    }).join("");
+
+    var m = META[ui.screen];
+    var chev = ic("right", 15, 2.4);
+    var html = '<div class="card-s"><div class="spec-head"><span class="spec-role">' + grupo[1] + '</span>' + (m.plan ? '<span class="pill plan">Plan de APIs</span>' : "") + '</div>' +
+      '<h1 class="spec-title">' + m.titulo + '</h1><p class="spec-sum">' + m.resumen + '</p>' +
+      '<div><div class="lbl">Lo importante</div><ul class="keys">' + m.clave.map(function (x) { return "<li>" + ic("check", 16, 2.6) + "<span>" + x + "</span></li>"; }).join("") + '</ul></div>' +
+      '<div><div class="lbl">Desde acá vas a</div><div class="goto">' + m.ir.map(function (x) { return '<button type="button" data-screen="' + x[0] + '">' + x[1] + ic("right", 14, 2.4) + '</button>'; }).join("") + '</div></div>' +
+      '<details class="more"><summary>' + chev + 'Ver detalle técnico</summary><div class="more-body">' +
+      '<div><div class="lbl">Archivo</div><code>' + m.ruta + '</code></div>' +
+      '<div><div class="lbl">De dónde salen los datos</div>' + m.datos + '</div>' +
+      (m.plan ? '<div class="planbox"><div class="lbl">Plan de integración de APIs</div>' + m.plan + '</div>' : "") +
+      '</div></details></div>';
+    if (m.nativo) {
+      html += '<div class="card-s native"><div class="spec-head"><span class="spec-role">Componentes nativos</span><span class="pill native">Consigna 1.4</span></div>' +
+        m.nativo.map(function (k) {
+          var n = NATIVO[k];
+          return '<div class="nat"><span class="nat-icon">' + ic(n.icon, 22) + '</span><div><div class="nat-name">' + n.nombre + '<span class="nat-lib">' + n.lib + '</span>' + (n.proximo ? '<span class="soon">Próximo sprint</span>' : "") + '</div><p>' + n.corto + '</p>' +
+            '<details><summary>' + chev + 'Justificación técnica</summary><div class="why">' + n.why + '</div></details></div></div>';
+        }).join("") + '</div>';
+    }
+    $spec.innerHTML = html;
+
+    var fi = FLUJO.map(function (f) { return f[0]; }).indexOf(ui.screen);
+    document.getElementById("flowbar").innerHTML = '<span class="flow-lbl">Flujo principal</span>' + FLUJO.map(function (f, i) {
+      return (i ? '<span class="arrow">→</span>' : "") + '<button type="button" data-screen="' + f[0] + '" aria-current="' + (i === fi) + '">' + f[1] + '</button>';
+    }).join("");
+
+    var i = ORDER.indexOf(ui.screen);
+    document.getElementById("counter").textContent = (i + 1) + " / " + ORDER.length;
+    document.getElementById("prev").disabled = i === 0;
+    document.getElementById("next").disabled = i === ORDER.length - 1;
+  }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    ui.toast = msg; renderApp();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { ui.toast = null; renderApp(); }, 2800);
+  }
+
+  function go(id) {
+    if (!S[id]) return;
+    ui.screen = id; ui.overlay = null; ui.toast = null;
+    renderApp(); renderSide();
+    var c = $app.querySelector(".content"); if (c) c.scrollTop = 0;
+  }
+
+  $app.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-go],[data-act]");
+    if (!el || !$app.contains(el)) return;
+    if (el.dataset.med) ui.medico = el.dataset.med;
+    if (el.dataset.sel) { ui.mapaSel = el.dataset.sel; ui.mapaFiltro = "todos"; ui.mapaVista = "mapa"; }
+    if (el.dataset.filtro) { ui.mapaFiltro = el.dataset.filtro; ui.mapaVista = "mapa"; }
+    if (el.dataset.go) { go(el.dataset.go); return; }
+    var a = el.dataset.act, v = el.dataset.v;
+    if (a === "toast") { showToast(el.dataset.msg); return; }
+    if (a === "esp") ui.esp = v;
+    else if (a === "day") ui.day = +v;
+    else if (a === "slot") ui.slot = v;
+    else if (a === "turnosTab") ui.turnosTab = v;
+    else if (a === "estudiosTab") ui.estudiosTab = v;
+    else if (a === "filtro") { ui.mapaFiltro = v; }
+    else if (a === "sel") { ui.mapaSel = v; ui.mapaVista = "mapa"; }
+    else if (a === "vista") ui.mapaVista = ui.mapaVista === "mapa" ? "lista" : "mapa";
+    else if (a === "rating") ui.rating = +v;
+    else if (a.indexOf("crit") === 0) ui.criterios[+a.slice(4)] = +v;
+    else if (a === "pref") { ui.pref = v; syncModeSwitch(); }
+    else if (a === "overlay") { ui.overlay = v || null; if (el.dataset.msg) { renderApp(); showToast(el.dataset.msg); return; } }
+    renderApp();
+  });
+
+  document.addEventListener("click", function (e) {
+    var s = e.target.closest("[data-screen]");
+    if (s) { go(s.dataset.screen); return; }
+    var r = e.target.closest("#roles [data-rol]");
+    if (r) { var g = ROLES.filter(function (x) { return x[0] === r.dataset.rol; })[0]; go(g[2][0]); }
+  });
+  document.getElementById("prev").addEventListener("click", function () { var i = ORDER.indexOf(ui.screen); if (i > 0) go(ORDER[i - 1]); });
+  document.getElementById("next").addEventListener("click", function () { var i = ORDER.indexOf(ui.screen); if (i < ORDER.length - 1) go(ORDER[i + 1]); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") document.getElementById("next").click();
+    if (e.key === "ArrowLeft") document.getElementById("prev").click();
+  });
+
+  function syncModeSwitch() {
+    var mode = ui.pref === "auto" ? ui.mode : ui.pref;
+    Array.prototype.forEach.call(document.querySelectorAll("#modeSwitch button"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+    });
+  }
+  document.getElementById("modeSwitch").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    ui.mode = b.dataset.mode; ui.pref = ui.pref === "auto" ? "auto" : b.dataset.mode;
+    syncModeSwitch(); renderApp();
+  });
+
+  /* Escala el teléfono para que entre entero en el escenario, sin scroll. */
+  var $stage = document.getElementById("stageInner");
+  var $device = document.getElementById("device");
+  var $viewport = document.getElementById("viewport");
+  function fit() {
+    var w = $stage.clientWidth, h = $stage.clientHeight;
+    var s = Math.min((h - 24) / 832, (w - 8) / 395, 1);
+    s = Math.max(s, 0.42);
+    $viewport.style.width = (375 * s) + "px";
+    $viewport.style.height = (812 * s) + "px";
+    $app.style.transform = "scale(" + s + ")";
+    $device.style.borderRadius = (46 * s + 4) + "px";
+    $viewport.style.borderRadius = (37 * s) + "px";
+    $device.style.padding = Math.max(6, 10 * s) + "px";
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe($stage);
+  window.addEventListener("resize", fit);
+
+  try {
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ui.mode = "dark";
+  } catch (err) { /* sin preferencia: queda claro */ }
+  syncModeSwitch();
+  renderApp(); renderSide(); fit();
+})();
+</script>
+</body>
+</html>

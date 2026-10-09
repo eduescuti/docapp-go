@@ -1,5 +1,6 @@
 import { Paciente } from "@/domain";
 
+// 10020012315240 = Sanatorio de los Arcos (institución real del REFES).
 export const pacientesMock: Paciente[] = [
   {
     id: "pac-sofia",
@@ -11,7 +12,7 @@ export const pacientesMock: Paciente[] = [
     planMedicoId: "plan-osde210",
     numeroAfiliado: "12.345.678",
     medicosFavoritosIds: ["med-ruiz"],
-    institucionesFavoritasIds: ["inst-los-arcos"],
+    institucionesFavoritasIds: ["refes-10020012315240"],
   },
   {
     id: "pac-lucas",

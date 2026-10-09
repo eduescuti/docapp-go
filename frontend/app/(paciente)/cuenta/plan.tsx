@@ -1,10 +1,20 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { Building2, FlaskConical, Hospital, ShieldCheck, Stethoscope } from "lucide-react-native";
+import { Building2, FlaskConical, Hospital, Stethoscope } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 
-import { BackHeader, Card, IconBadge, PrimaryButton, ScreenContainer, SectionHeader, StatCard, Text } from "@/components";
+import {
+  BackHeader,
+  Card,
+  CredencialPlan,
+  IconBadge,
+  PrimaryButton,
+  ScreenContainer,
+  SectionHeader,
+  StatCard,
+  Text,
+} from "@/components";
 import { Institucion, Paciente, PlanMedico, TipoInstitucion } from "@/domain";
 import { getPacienteActual, getPlanMedico, listInstituciones, searchMedicos } from "@/services";
 import { useTheme } from "@/theme";
@@ -15,6 +25,9 @@ const ICONO_TIPO: Record<TipoInstitucion, LucideIcon> = {
   centro_medico: Stethoscope,
   laboratorio: FlaskConical,
 };
+
+/** Cuántas instituciones se listan acá; el resto se ve en el mapa. */
+const LIMITE_LISTA = 20;
 
 /** Mi plan médico: credencial y qué cubre (instituciones y profesionales que aceptan el plan). */
 export default function PlanScreen() {
@@ -46,29 +59,12 @@ export default function PlanScreen() {
     <ScreenContainer>
       <BackHeader titulo="Mi plan médico" />
 
-      <View
-        style={[styles.credencial, { backgroundColor: theme.colors.primary, borderRadius: theme.radii.lg * 1.5 }]}
-        accessible
-        accessibilityLabel={`Credencial: ${plan?.nombre ?? ""}, DNI ${paciente?.dni ?? ""}`}
-      >
-        <View style={styles.credHeader}>
-          <Text style={[styles.credAseguradora, { color: theme.colors.primaryForeground }]}>{plan?.aseguradora ?? "—"}</Text>
-          <ShieldCheck size={24} color={theme.colors.primaryForeground} />
-        </View>
-        <Text variant="heading" style={[styles.credPlan, { color: theme.colors.primaryForeground }]}>{plan?.nombre ?? "Cargando..."}</Text>
-        <View style={styles.credFooter}>
-          <View>
-            <Text style={[styles.credLabel, { color: theme.colors.primaryForeground }]}>Afiliado/a</Text>
-            <Text style={[styles.credValor, { color: theme.colors.primaryForeground }]}>
-              {paciente ? `${paciente.nombre} ${paciente.apellido}` : ""}
-            </Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={[styles.credLabel, { color: theme.colors.primaryForeground }]}>DNI</Text>
-            <Text style={[styles.credValor, { color: theme.colors.primaryForeground }]}>{paciente?.dni}</Text>
-          </View>
-        </View>
-      </View>
+      <CredencialPlan
+        plan={plan}
+        afiliado={paciente ? `${paciente.nombre} ${paciente.apellido}` : ""}
+        dni={paciente?.dni ?? ""}
+        style={styles.credencial}
+      />
 
       <View style={styles.stats}>
         <StatCard icon={Hospital} valor={instituciones.length} etiqueta="Instituciones que te cubren" />
@@ -76,7 +72,7 @@ export default function PlanScreen() {
       </View>
 
       <SectionHeader title="Dónde te atienden" actionLabel="Ver mapa" onActionPress={() => router.push("/mapa")} />
-      {instituciones.map((inst) => (
+      {instituciones.slice(0, LIMITE_LISTA).map((inst) => (
         <Card key={inst.id} style={styles.item}>
           <View style={styles.row}>
             <IconBadge icon={ICONO_TIPO[inst.tipo]} size={36} />
@@ -89,6 +85,11 @@ export default function PlanScreen() {
           </View>
         </Card>
       ))}
+      {instituciones.length > LIMITE_LISTA ? (
+        <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+          Y {instituciones.length - LIMITE_LISTA} más: miralas todas en el mapa.
+        </Text>
+      ) : null}
 
       <View style={{ marginTop: 16 }}>
         <PrimaryButton label="Cambiar de obra social" variant="outline" onPress={() => router.push("/cuenta/perfil")} />
@@ -98,13 +99,7 @@ export default function PlanScreen() {
 }
 
 const styles = StyleSheet.create({
-  credencial: { padding: 20, marginBottom: 20, gap: 8 },
-  credHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  credAseguradora: { fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, opacity: 0.9 },
-  credPlan: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
-  credFooter: { flexDirection: "row", justifyContent: "space-between", gap: 12 },
-  credLabel: { fontSize: 11, opacity: 0.8 },
-  credValor: { fontSize: 14, fontWeight: "700", marginTop: 2 },
+  credencial: { marginBottom: 20 },
   stats: { flexDirection: "row", gap: 10, marginBottom: 28 },
   item: { marginBottom: 10 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },

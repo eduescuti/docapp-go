@@ -23,6 +23,9 @@ Investigación sobre de dónde sacar los datos que necesita DocApp Go para su ob
 | 5 | [Propuesta para DocApp Go](05-propuesta-para-docapp-go.md) | Cómo armar los datos de la app y qué decisiones faltan |
 | 6 | [Cómo reproducir](06-como-reproducir.md) | Comandos para descargar y verificar cada fuente |
 | 7 | [Glosario y fuentes](07-glosario-y-fuentes.md) | Siglas (REFES, RNAS, SSSalud…) y links consultados |
+| 8 | [Motor del mapa](08-motor-del-mapa.md) | ¿Por qué el mapa no anda en Expo Go y qué usar para que funcione en todos lados? |
+| → | [Plan de integración de APIs](plan-integracion-apis/README.md) | Plan por fases para llevar REFES + coberturas al frontend (solo CABA, 3 coberturas) |
+| → | [Integración del mapa](integracion-mapa/README.md) | Lo que se hizo: datos del REFES, regla de cobertura, MapLibre, pantallas, cómo probar y pendientes |
 
 ---
 
@@ -35,7 +38,7 @@ Investigación sobre de dónde sacar los datos que necesita DocApp Go para su ob
 | Catálogo de prepagas | ⚠️ Solo búsqueda de a una por nombre | **RNEMP** — Superintendencia de Servicios de Salud |
 | PAMI y obras sociales provinciales | ⚠️ No hay listado unificado | Carga manual |
 | **Qué establecimiento acepta qué cobertura** | ❌ **No existe** como dato público | Hay que construirlo (ver doc 3 y 5) |
-| Mapa en el celular | ✅ Gratis e ilimitado | SDK nativo de Google Maps (ya en la app) |
+| Mapa (celular y web) | ✅ Gratis, sin clave | **MapLibre + OpenFreeMap** (Google Maps no anda en Expo Go: ver [doc 8](08-motor-del-mapa.md)) |
 | Coordenadas que faltan | ✅ Gratis | API **Georef** del Estado |
 
 ## Conclusiones principales

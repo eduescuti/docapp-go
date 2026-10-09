@@ -22,4 +22,6 @@ export interface Estudio {
   preparacionPrevia?: string;
   estado: EstadoEstudio;
   resultadoUrl?: string;
+  /** Fecha en que el paciente lo archivó ("yyyy-MM-dd"). Define su carpeta (año → mes) en Archivados. */
+  archivadoEl?: string;
 }

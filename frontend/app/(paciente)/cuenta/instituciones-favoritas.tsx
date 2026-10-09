@@ -50,6 +50,7 @@ export default function InstitucionesFavoritasScreen() {
       {instituciones?.map((inst) => {
         const tipo = TIPOS[inst.tipo];
         const sede = inst.sedes[0];
+        const telefono = sede?.telefono;
         return (
           <Card key={inst.id} style={styles.card}>
             <View style={styles.row}>
@@ -73,14 +74,17 @@ export default function InstitucionesFavoritasScreen() {
             </View>
             {sede && (
               <View style={styles.acciones}>
-                <View style={{ flex: 1 }}>
-                  <PrimaryButton
-                    label="Llamar"
-                    variant="outline"
-                    onPress={() => Linking.openURL(`tel:${sede.telefono.replace(/\s/g, "")}`)}
-                    accessibilityLabel={`Llamar a ${inst.nombre}`}
-                  />
-                </View>
+                {/* El REFES no trae teléfono: "Llamar" aparece solo si la sede lo tiene cargado. */}
+                {telefono ? (
+                  <View style={{ flex: 1 }}>
+                    <PrimaryButton
+                      label="Llamar"
+                      variant="outline"
+                      onPress={() => Linking.openURL(`tel:${telefono.replace(/\s/g, "")}`)}
+                      accessibilityLabel={`Llamar a ${inst.nombre}`}
+                    />
+                  </View>
+                ) : null}
                 <View style={{ flex: 1 }}>
                   <PrimaryButton
                     label="Cómo llegar"
@@ -92,10 +96,10 @@ export default function InstitucionesFavoritasScreen() {
                 </View>
               </View>
             )}
-            {sede?.telefono ? (
+            {telefono ? (
               <View style={styles.telRow}>
                 <Phone size={12} color={theme.colors.mutedForeground} />
-                <Text style={[styles.meta, { color: theme.colors.mutedForeground, marginTop: 0 }]}>{sede.telefono}</Text>
+                <Text style={[styles.meta, { color: theme.colors.mutedForeground, marginTop: 0 }]}>{telefono}</Text>
               </View>
             ) : null}
           </Card>
