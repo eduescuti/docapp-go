@@ -116,7 +116,7 @@ const themeA: Theme = {
     centroMedico: "#0D9488",
     laboratorio: "#9333EA",
   },
-  radii: { sm: 2, md: 4, lg: 8, full: 9999 },
+  radii: { sm: 8, md: 12, lg: 16, full: 9999 },
   fonts: { heading: "Inter_600SemiBold", body: "Inter_400Regular" },
   shadow: {
     shadowColor: "#0F172A",

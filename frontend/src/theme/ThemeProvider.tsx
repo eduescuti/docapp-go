@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { useColorScheme } from "react-native";
 
 import { Theme, ThemeId, themes } from "./tokens";
 
-/** Preferencia de apariencia elegida en Configuración. "sistema" sigue el modo del teléfono. */
-export type PreferenciaTema = "sistema" | "claro" | "oscuro";
+/** Apariencia elegida en Configuración. No sigue el modo del teléfono: por defecto es "claro". */
+export type PreferenciaTema = "claro" | "oscuro";
 
 interface ThemeContextValue {
   theme: Theme;
@@ -17,16 +16,13 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
  * Minimalista (A) es el modo claro y Premium (C) el modo oscuro (CLAUDE.md §7).
- * Por defecto sigue el modo del sistema; desde Configuración se puede forzar claro u
- * oscuro (en memoria: se pierde al cerrar la app). Cálido (B) queda definido en
- * tokens.ts pero fuera de uso.
+ * La app arranca siempre en modo claro, aunque el teléfono esté en modo oscuro; el modo oscuro
+ * se elige en Configuración (en memoria: se pierde al cerrar la app). Cálido (B) queda definido
+ * en tokens.ts pero fuera de uso.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
-  const [preferencia, setPreferencia] = useState<PreferenciaTema>("sistema");
-
-  const oscuro = preferencia === "sistema" ? systemScheme === "dark" : preferencia === "oscuro";
-  const themeId: ThemeId = oscuro ? "C" : "A";
+  const [preferencia, setPreferencia] = useState<PreferenciaTema>("claro");
+  const themeId: ThemeId = preferencia === "oscuro" ? "C" : "A";
 
   const value = useMemo<ThemeContextValue>(
     () => ({ theme: themes[themeId], themeId, preferencia, setPreferencia }),

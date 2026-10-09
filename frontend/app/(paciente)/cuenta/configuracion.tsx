@@ -11,13 +11,13 @@ interface OpcionTema {
   descripcion: string;
 }
 
+// No hay opción "automático": la app no sigue el modo del teléfono y arranca en claro.
 const OPCIONES: OpcionTema[] = [
-  { value: "sistema", label: "Automático", descripcion: "Sigue el modo claro u oscuro de tu teléfono." },
-  { value: "claro", label: "Claro", descripcion: "La app se ve siempre en modo claro." },
-  { value: "oscuro", label: "Oscuro", descripcion: "La app se ve siempre en modo oscuro." },
+  { value: "claro", label: "Claro", descripcion: "La app se ve en modo claro." },
+  { value: "oscuro", label: "Oscuro", descripcion: "La app se ve en modo oscuro." },
 ];
 
-/** Configuración de la app. Por ahora: apariencia (modo claro / oscuro / automático). */
+/** Configuración de la app. Por ahora: apariencia (modo claro u oscuro). */
 export default function ConfiguracionScreen() {
   const { theme, preferencia, setPreferencia } = useTheme();
   const version = Constants.expoConfig?.version;
@@ -52,14 +52,7 @@ export default function ConfiguracionScreen() {
                     },
                   ]}
                 >
-                  {op.value === "sistema" ? (
-                    <View style={styles.mitades}>
-                      <MiniApp tema={themes.A} />
-                      <MiniApp tema={themes.C} />
-                    </View>
-                  ) : (
-                    <MiniApp tema={op.value === "claro" ? themes.A : themes.C} />
-                  )}
+                  <MiniApp tema={op.value === "claro" ? themes.A : themes.C} />
                   {activa && (
                     <View style={[styles.check, { backgroundColor: theme.colors.primary }]}>
                       <Check size={12} color={theme.colors.primaryForeground} strokeWidth={3} />
@@ -119,7 +112,6 @@ const styles = StyleSheet.create({
   opciones: { flexDirection: "row", gap: 10 },
   opcion: { flex: 1, gap: 8 },
   preview: { height: 104, overflow: "hidden" },
-  mitades: { flex: 1, flexDirection: "row" },
   mini: { flex: 1, padding: 8, gap: 6 },
   miniTitulo: { height: 6, width: "50%", borderRadius: 3, opacity: 0.85 },
   miniCard: { flex: 1, borderWidth: 1, borderRadius: 6, padding: 6, gap: 4 },

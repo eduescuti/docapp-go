@@ -9,7 +9,8 @@ const config: ExpoConfig = {
   orientation: "portrait",
   icon: "./assets/icon.png",
   scheme: "docappgo",
-  userInterfaceStyle: "automatic",
+  // La app arranca en modo claro aunque el teléfono esté en oscuro (el oscuro se elige en Configuración).
+  userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.docappgo.app",
