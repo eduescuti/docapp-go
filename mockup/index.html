@@ -189,19 +189,25 @@ details[open] > summary svg { transform: rotate(90deg); }
   --a-bg: #FFFFFF; --a-fg: #0F172A; --a-card: #FFFFFF; --a-pri: #0284C7; --a-prifg: #FFFFFF;
   --a-mut: #F1F5F9; --a-mutfg: #64748B; --a-bd: #E2E8F0; --a-acc: #E0F2FE; --a-accfg: #0284C7;
   --a-ok: #22C55E; --a-okbg: #DCFCE7; --a-okfg: #15803D; --a-warnbg: #FEF3C7; --a-warnfg: #B45309;
-  --a-danger: #EF4444; --a-r1: 2px; --a-r2: 4px; --a-r3: 8px;
+  --a-danger: #EF4444; --a-dangerfg: #FFFFFF; --a-r1: 2px; --a-r2: 4px; --a-r3: 8px;
   --a-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
   --a-head: "Inter", system-ui, sans-serif; --a-body: "Inter", system-ui, sans-serif;
-  --a-map: #EAF0F4; --a-road: #FFFFFF; --a-park: #D7EBD9; --a-water: #CFE3F2;
+  /* theme.mapa del tema A: estilo "positron" de OpenFreeMap repintado */
+  --a-map: #F8FAFC; --a-manzana: #F1F5F9; --a-road: #FFFFFF; --a-avenida: #FFFFFF; --a-casing: #DCE3EC;
+  --a-park: #DDF0E3; --a-water: #CFE6F5; --a-maptext: #64748B;
+  --m-hospital: #DC2626; --m-clinica: #0284C7; --m-centro: #0D9488; --m-lab: #9333EA; --m-yo: #0284C7; --m-borde: #FFFFFF;
 }
 .app[data-mode="dark"] {
   --a-bg: #020617; --a-fg: #F8FAFC; --a-card: #0F172A; --a-pri: #10B981; --a-prifg: #020617;
   --a-mut: #1E293B; --a-mutfg: #94A3B8; --a-bd: #334155; --a-acc: #10B981; --a-accfg: #020617;
   --a-ok: #10B981; --a-okbg: #064E3B; --a-okfg: #6EE7B7; --a-warnbg: #451A03; --a-warnfg: #FCD34D;
-  --a-danger: #F87171; --a-r1: 8px; --a-r2: 12px; --a-r3: 16px;
+  --a-danger: #F87171; --a-dangerfg: #020617; --a-r1: 8px; --a-r2: 12px; --a-r3: 16px;
   --a-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
   --a-head: "Playfair Display", Georgia, serif; --a-body: "Plus Jakarta Sans", system-ui, sans-serif;
-  --a-map: #0B1324; --a-road: #1B2740; --a-park: #0F2A22; --a-water: #0C2238;
+  /* theme.mapa del tema C: estilo "dark" de OpenFreeMap repintado */
+  --a-map: #020617; --a-manzana: #0B1222; --a-road: #1E293B; --a-avenida: #334155; --a-casing: #0F172A;
+  --a-park: #0B2A22; --a-water: #0C2236; --a-maptext: #94A3B8;
+  --m-hospital: #F87171; --m-clinica: #38BDF8; --m-centro: #10B981; --m-lab: #C084FC; --m-yo: #38BDF8; --m-borde: #020617;
 }
 .app { background: var(--a-bg); color: var(--a-fg); font-family: var(--a-body); font-size: 14px; display: flex; flex-direction: column; overflow: hidden; }
 .app * { box-sizing: border-box; }
@@ -227,19 +233,21 @@ details[open] > summary svg { transform: rotate(90deg); }
 .small { font-size: 12px; }
 .card { background: var(--a-card); border: 1px solid var(--a-bd); border-radius: var(--a-r3); box-shadow: var(--a-shadow); padding: 14px; }
 button.card { width: 100%; text-align: left; color: inherit; display: block; }
-.stack { display: grid; gap: 10px; }
+.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .row { display: flex; align-items: center; gap: 12px; }
 .row > .grow { flex: 1; min-width: 0; }
 .av { width: 46px; height: 46px; border-radius: 50%; background: var(--a-acc); color: var(--a-accfg); display: grid; place-items: center; font-weight: 700; font-size: 15px; flex: none; }
 .av.lg { width: 84px; height: 84px; font-size: 26px; }
 .name { font-weight: 600; font-size: 15px; }
 .meta { display: flex; align-items: center; gap: 6px; color: var(--a-mutfg); font-size: 12.5px; }
-.btn { border: 0; border-radius: var(--a-r2); background: var(--a-pri); color: var(--a-prifg); font-weight: 600; font-size: 14px; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+.btn { border: 0; border-radius: 999px; background: var(--a-pri); color: var(--a-prifg); font-family: var(--a-head); font-weight: 600; font-size: 14px; min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
 .btn.ghost { background: var(--a-mut); color: var(--a-fg); }
-.btn.outline { background: transparent; color: var(--a-pri); box-shadow: inset 0 0 0 1px var(--a-bd); }
+.btn.outline { background: transparent; color: var(--a-pri); box-shadow: inset 0 0 0 1px var(--a-pri); }
+.btn.dangerfill { background: var(--a-danger); color: var(--a-dangerfg); }
 .btn.danger { background: transparent; color: var(--a-danger); box-shadow: inset 0 0 0 1px var(--a-bd); }
 .btnrow { display: flex; gap: 8px; }
-.badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.badge { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 9px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge.danger { background: color-mix(in srgb, var(--a-danger) 16%, transparent); color: var(--a-danger); }
 .badge.ok { background: var(--a-okbg); color: var(--a-okfg); }
 .badge.warn { background: var(--a-warnbg); color: var(--a-warnfg); }
 .badge.info { background: var(--a-acc); color: var(--a-accfg); }
@@ -309,25 +317,139 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
 .stars button { border: 0; background: none; padding: 2px; color: var(--a-bd); }
 .stars button.on { color: #F59E0B; }
 .unread { width: 8px; height: 8px; border-radius: 50%; background: var(--a-pri); flex: none; }
-.credential { border-radius: var(--a-r3); padding: 18px; background: var(--a-pri); color: var(--a-prifg); display: grid; gap: 14px; }
-.credential .big { font-family: var(--a-head); font-size: 24px; font-weight: 700; }
-.credential .lbl { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+.credential { border: 0; border-radius: calc(var(--a-r3) * 1.5); padding: 20px; background: var(--a-pri); color: var(--a-prifg); display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; }
+.credential .aseg { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+.credential .big { font-family: var(--a-head); font-size: 24px; font-weight: 700; margin-bottom: 16px; }
+.credential .cpie { display: flex; justify-content: space-between; gap: 12px; margin-top: auto; }
+.credential .clbl { font-size: 11px; opacity: 0.8; }
+.credential .cval { font-size: 14px; font-weight: 700; margin-top: 2px; }
 
-/* Mapa */
+/* Mapa: en la app es MapLibre + OpenFreeMap; acá, una réplica con los mismos colores y piezas. */
 .map { position: absolute; inset: 0; background: var(--a-map); overflow: hidden; }
+.map-capa { position: absolute; left: 0; top: 0; width: 375px; height: 812px; }
 .map svg.streets { position: absolute; inset: 0; width: 100%; height: 100%; }
-.pin { position: absolute; transform: translate(-50%, -100%); border: 0; background: none; padding: 0; display: grid; justify-items: center; }
-.pin .head { width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); display: grid; place-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); border: 2px solid #fff; }
-.pin .head svg { transform: rotate(45deg); color: #fff; }
-.pin.sel .head { width: 42px; height: 42px; }
-.me { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2563EB; border: 3px solid #fff; transform: translate(-50%, -50%); box-shadow: 0 0 0 10px rgba(37, 99, 235, 0.18); }
-.map-top { position: absolute; left: 0; right: 0; top: 0; padding: 4px 16px; display: grid; gap: 10px; }
+.map-label { position: absolute; transform: translate(-50%, -50%); font-size: 9px; font-weight: 600; letter-spacing: 0.08em; color: var(--a-maptext); white-space: nowrap; pointer-events: none; }
+.mk { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--m-borde); transform: translate(-50%, -50%); padding: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+.mk.sel { width: 24px; height: 24px; border-width: 3px; z-index: 2; }
+button.mk::before { content: ""; position: absolute; inset: -12px; }
+.me { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--m-yo); border: 3px solid var(--m-borde); transform: translate(-50%, -50%); box-shadow: 0 0 0 12px color-mix(in srgb, var(--m-yo) 18%, transparent); }
+.map-top { position: absolute; left: 0; right: 0; top: 0; padding: 4px 16px; display: grid; gap: 10px; z-index: 3; }
 .map-top .row { gap: 8px; }
-.roundbtn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--a-card); color: var(--a-fg); box-shadow: var(--a-shadow), 0 2px 8px rgba(0,0,0,0.15); display: grid; place-items: center; flex: none; }
-.pill-search { flex: 1; height: 44px; border-radius: 22px; background: var(--a-card); box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--a-mutfg); font-size: 13px; }
-.map-card { position: absolute; left: 16px; right: 16px; bottom: 16px; }
-.attrib { position: absolute; left: 16px; bottom: 4px; font-size: 9px; color: var(--a-mutfg); }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.roundbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-fg); box-shadow: var(--a-shadow); display: grid; place-items: center; flex: none; }
+.pill-count { flex: 1; min-width: 0; height: 44px; border-radius: 22px; background: var(--a-card); border: 1px solid var(--a-bd); box-shadow: var(--a-shadow); display: flex; align-items: center; padding: 0 16px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.modebtn { height: 44px; border-radius: 22px; border: 1px solid var(--a-bd); background: var(--a-card); color: var(--a-pri); box-shadow: var(--a-shadow); display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 13px; font-weight: 600; flex: none; }
+.map-pie { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; gap: 10px; z-index: 3; }
+.map-pie .roundbtn { color: var(--a-pri); }
+.leyenda { background: var(--a-card); border: 1px solid var(--a-bd); border-radius: 12px; box-shadow: var(--a-shadow); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 10px; padding: 10px 14px; font-size: 12px; font-weight: 500; }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.attrib { display: inline-flex; align-items: center; gap: 6px; background: #FFFFFF; color: #333333; border-radius: 12px; padding: 3px 10px 3px 3px; font: 9.5px/1.3 Helvetica, Arial, sans-serif; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); }
+.attrib i { width: 18px; height: 18px; border-radius: 50%; background: #000000; color: #FFFFFF; display: grid; place-items: center; font: italic bold 11px/1 Georgia, serif; flex: none; }
+.attrib.chica { position: absolute; left: 8px; bottom: 8px; padding: 0; background: transparent; box-shadow: none; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* Inicio: entra en una pantalla y la vista previa del mapa ocupa lo que sobra. */
+.content.inicio { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 16px; }
+.content.inicio .sect { margin: 16px 0 10px; }
+.preview { position: relative; flex: 1; min-height: 140px; border: 1px solid var(--a-bd); border-radius: var(--a-r3); overflow: hidden; background: var(--a-map); box-shadow: var(--a-shadow); padding: 0; width: 100%; display: block; }
+.preview .map-capa { left: 50%; top: 50%; }
+
+/* Carrusel: próximo turno y credencial del plan (Carrusel + CredencialPlan). */
+.carr-head { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; }
+.dots { display: flex; align-items: center; gap: 6px; }
+.dots button { position: relative; border: 0; padding: 0; width: 8px; height: 8px; border-radius: 4px; background: var(--a-bd); transition: width 0.25s ease, background-color 0.25s ease; }
+.dots button::before { content: ""; position: absolute; inset: -14px -4px; }
+.dots button.on { width: 20px; background: var(--a-pri); }
+.carr { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; cursor: grab; }
+.carr::-webkit-scrollbar { display: none; }
+.carr.arrastrando { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+.carr .pag { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: flex; }
+.carr .pag > * { flex: 1; min-width: 0; }
+.tturno { position: relative; overflow: hidden; padding-left: 18px; }
+.tturno .acento { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--a-pri); }
+
+/* Tarjetas tocables de Turnos y Estudios */
+.tpie { display: flex; align-items: center; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--a-bd); }
+.tpie .meta svg { color: var(--a-pri); }
+.tpie .chev { margin-left: auto; color: var(--a-mutfg); display: grid; }
+.circ-ic { width: 40px; height: 40px; border-radius: 50%; background: var(--a-acc); color: var(--a-accfg); display: grid; place-items: center; flex: none; }
+.listhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; color: var(--a-mutfg); }
+.listhead button { border: 0; background: none; color: var(--a-danger); font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0; }
+.aviso { display: flex; align-items: center; gap: 8px; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; background: color-mix(in srgb, var(--a-ok) 14%, transparent); }
+.aviso svg { color: var(--a-ok); flex: none; }
+.ruta { display: flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--a-pri); font-weight: 600; font-size: 14px; min-height: 40px; padding: 0; margin-bottom: 6px; }
+.vacio { display: grid; justify-items: center; gap: 8px; text-align: center; padding: 40px 16px; color: var(--a-mutfg); }
+.vacio .h2 { color: var(--a-fg); font-size: 16px; }
+
+/* Panel inferior (BottomSheet + SheetModal): el fondo aparece de a poco, el panel sube y al cerrar baja entero. */
+.hoja { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; justify-content: flex-end; }
+.hoja .fondo { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+.hoja .panel { position: relative; background: var(--a-card); color: var(--a-fg); border: 1px solid var(--a-bd); border-bottom: 0; border-radius: calc(var(--a-r3) * 2) calc(var(--a-r3) * 2) 0 0; padding: 8px 24px 20px; max-height: 85%; display: flex; flex-direction: column; }
+.hoja .manija { align-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--a-bd); margin-bottom: 12px; }
+.hoja .phead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.hoja .phead .h2 { flex: 1; font-size: 18px; }
+.hoja .x { width: 44px; height: 44px; margin-right: -10px; border: 0; background: none; color: var(--a-mutfg); display: grid; place-items: center; flex: none; }
+.hoja .pbody { overflow-y: auto; scrollbar-width: none; }
+.hoja .ppie { display: grid; gap: 10px; margin-top: 16px; }
+.hoja.entra .fondo { animation: fondoEntra 0.28s ease-out both; }
+.hoja.entra .panel { animation: panelEntra 0.28s cubic-bezier(0.33, 1, 0.68, 1) both; }
+.hoja.sale { pointer-events: none; }
+.hoja.sale .fondo { animation: fondoSale 0.22s ease-in both; }
+.hoja.sale .panel { animation: panelSale 0.22s cubic-bezier(0.32, 0, 0.67, 0) both; }
+@keyframes fondoEntra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fondoSale { from { opacity: 1; } to { opacity: 0; } }
+@keyframes panelEntra { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes panelSale { from { transform: none; } to { transform: translateY(100%); } }
+.sec { border-top: 1px solid var(--a-bd); margin-top: 14px; padding-top: 14px; display: grid; gap: 4px; }
+.sec-t { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--a-mutfg); }
+.sec-t svg { color: var(--a-pri); }
+.sec-v { font-size: 15px; font-weight: 500; }
+.enlace { border: 0; background: none; padding: 0; color: var(--a-pri); font-weight: 600; font-size: 14px; min-height: 36px; justify-self: start; text-align: left; }
+.prof { display: flex; align-items: center; gap: 12px; border: 0; background: none; color: inherit; padding: 0; width: 100%; text-align: left; }
+.confirm { display: grid; justify-items: center; gap: 14px; padding: 8px 0; text-align: center; }
+.confirm .alerta { width: 48px; height: 48px; border-radius: 50%; background: color-mix(in srgb, var(--a-danger) 12%, transparent); color: var(--a-danger); display: grid; place-items: center; }
+.confirm p { margin: 0; font-size: 14px; line-height: 1.5; }
+.confirm .stack { width: 100%; }
+
+/* Visor de PDF (pdf.js en la app), a pantalla completa */
+.visor { position: absolute; left: 0; right: 0; top: 46px; bottom: 22px; z-index: 25; background: var(--a-bg); display: flex; flex-direction: column; }
+.visor.entra { animation: panelEntra 0.28s cubic-bezier(0.33, 1, 0.68, 1) both; }
+.visor.sale { pointer-events: none; animation: panelSale 0.22s cubic-bezier(0.32, 0, 0.67, 0) both; }
+.visor .vbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--a-bd); }
+.visor .vbar .h2 { flex: 1; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.visor .vbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--a-bd); background: none; color: var(--a-fg); display: grid; place-items: center; flex: none; }
+.visor .vbtn:disabled { opacity: 0.4; cursor: default; }
+.visor .vbtn.sinborde { border: 0; }
+.visor .pct { width: 44px; text-align: center; font-size: 12px; font-weight: 600; color: var(--a-mutfg); }
+.visor .vbody { flex: 1; overflow: auto; background: var(--a-mut); padding: 12px; scrollbar-width: none; }
+.pdfpag { width: 336px; min-height: 475px; margin: 0 auto; background: #FFFFFF; color: #111111; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); font-family: Helvetica, Arial, sans-serif; font-size: 7.5px; position: relative; padding-bottom: 28px; }
+.pdfpag .banda { background: #0284C7; color: #FFFFFF; height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; }
+.pdfpag .banda b { font-size: 12px; }
+.pdfpag .cuerpo { padding: 14px 28px 0; }
+.pdfpag h3 { font-size: 11px; margin: 0 0 4px; }
+.pdfpag .avisopdf { color: #BF1A1A; font-size: 5.5px; margin-bottom: 10px; }
+.pdfpag .campo { display: grid; grid-template-columns: 76px 1fr; gap: 4px; margin-bottom: 4px; }
+.pdfpag .campo span { color: #66738C; }
+.pdfpag .secpdf { background: #E6EDF5; font-weight: 700; padding: 3px 5px; margin: 10px 0 6px; }
+.pdfpag table { width: 100%; border-collapse: collapse; }
+.pdfpag th { text-align: left; color: #66738C; font-size: 5.5px; padding: 2px 5px; }
+.pdfpag td { padding: 3px 5px; border-bottom: 0.5px solid #E0E5EC; }
+.pdfpag td:nth-child(2) { font-weight: 700; }
+.pdfpag .linea { padding: 1px 5px 3px; }
+.pdfpag .piepdf { position: absolute; left: 28px; bottom: 12px; color: #66738C; font-size: 5.5px; }
+
+/* Configuración: vista previa de cada modo */
+.modos { display: flex; gap: 10px; }
+.modo { flex: 1; display: grid; gap: 8px; border: 0; background: none; color: inherit; padding: 0; }
+.modo .prev { height: 104px; border-radius: var(--a-r3); overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px var(--a-bd); }
+.modo.on .prev { box-shadow: inset 0 0 0 2px var(--a-pri); }
+.modo .ok { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; background: var(--a-pri); color: var(--a-prifg); display: grid; place-items: center; z-index: 1; }
+.modo .lbl2 { font-size: 13px; text-align: center; color: var(--a-mutfg); font-weight: 500; }
+.modo.on .lbl2 { color: var(--a-fg); font-weight: 700; }
+.mini { position: absolute; inset: 0; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.mini .t { height: 6px; width: 50%; border-radius: 3px; opacity: 0.85; }
+.mini .c { flex: 1; border: 1px solid; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.mini .l { height: 4px; border-radius: 2px; }
+.mini .b { height: 10px; width: 70%; border-radius: 5px; margin-top: auto; }
 
 /* Overlays (Alert nativo / bottom sheet) */
 .overlay { position: absolute; inset: 0; background: rgba(2, 6, 23, 0.5); display: grid; place-items: center; padding: 28px; z-index: 20; }
@@ -336,7 +458,7 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
 .toast { position: absolute; left: 20px; right: 20px; bottom: 96px; background: var(--a-fg); color: var(--a-bg); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; z-index: 30; text-align: center; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .app .content { animation: enter 0.22s ease-out; }
+  .app .content.entra-pantalla { animation: enter 0.22s ease-out; }
   @keyframes enter { from { opacity: 0.4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 }
 </style>
@@ -443,6 +565,14 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
     hospital: '<path d="M12 6v4M10 8h4"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M3 21h18M10 21v-4h4v4"/>',
     flask: '<path d="M9 2h6M10 2v7L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20L14 9V2"/><path d="M7 15h10"/>',
     target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    minus: '<path d="M5 12h14"/>',
+    trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+    archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+    folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>',
+    clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M12 11h4M12 16h4M8 11h.01M8 16h.01"/>',
+    alert: '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4M12 17h.01"/>',
+    checkcirc: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
     signal: '<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
     battery: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><rect x="4" y="9" width="11" height="6" rx="1" fill="currentColor" stroke="none"/>'
   };
@@ -457,31 +587,37 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
   /* ---------------- Datos de ejemplo (los mismos de src/mocks/) ---------------- */
   var MEDICOS = [
     { id: "mendez", nombre: "Dr. Roberto Méndez", ini: "RM", esp: "Cardiología", val: 4.8, cant: 312, anios: 15, matricula: "MN 45210",
-      sede: "Hospital Alemán", dir: "Av. Pueyrredón 1640", prox: "Lun 12 oct · 10:30",
+      sede: "Hospital Alemán", dir: "Avenida Pueyrredón 1650", centro: "aleman", prox: "Lun 12 oct · 10:30",
       desc: "Especialista en cardiología clínica e intervencionista. Miembro de la Sociedad Argentina de Cardiología." },
     { id: "ruiz", nombre: "Dra. Elena Ruiz", ini: "ER", esp: "Dermatología", val: 4.9, cant: 258, anios: 10, matricula: "MN 38940",
-      sede: "Sanatorio Güemes", dir: "Acuña de Figueroa 1240", prox: "Mié 14 oct · 14:00",
+      sede: "Sanatorio de los Arcos", dir: "Av. Juan B. Justo 909", centro: "arcos", prox: "Mié 14 oct · 14:00",
       desc: "Especialista en dermatología clínica y estética con más de 10 años de experiencia. Miembro de la Sociedad Argentina de Dermatología." },
     { id: "castro", nombre: "Dr. Julián Castro", ini: "JC", esp: "Pediatría", val: 4.7, cant: 190, anios: 8, matricula: "MN 51022",
-      sede: "Hospital Italiano", dir: "Gascón 450", prox: "Mar 13 oct · 09:00",
+      sede: "Hospital Italiano de Buenos Aires", dir: "Gascón 450", centro: "italiano", prox: "Mar 13 oct · 09:00",
       desc: "Pediatra general con foco en seguimiento de desarrollo infantil." },
     { id: "fernandez", nombre: "Dra. Carla Fernández", ini: "CF", esp: "Clínica Médica", val: 4.6, cant: 140, anios: 12, matricula: "MN 47788",
-      sede: "Hospital de Clínicas", dir: "Av. Córdoba 2351", prox: "Jue 15 oct · 11:30",
+      sede: "Hospital de Clínicas", dir: "Av. Córdoba 2351", centro: "clinicas", prox: "Jue 15 oct · 11:30",
       desc: "Médica clínica orientada a control y prevención integral." }
   ];
   var ESPECIALIDADES = ["Todas", "Cardiología", "Dermatología", "Pediatría", "Clínica Médica", "Traumatología"];
 
-  /* Establecimientos reales del REFES (coordenadas verificadas en investigacion-apis/01). */
+  /* Establecimientos reales del REFES (src/mocks/data/refes-caba.json), con su tipo y origen. */
   var CENTROS = [
-    { id: "fernandez", nombre: "Hospital Gral. de Agudos Dr. Juan A. Fernández", tipo: "hospital", publico: true, dir: "Cerviño 3356", lat: -34.5815, lng: -58.4070 },
-    { id: "aleman", nombre: "Hospital Alemán", tipo: "clinica", publico: false, dir: "Av. Pueyrredón 1650", lat: -34.5923, lng: -58.4012 },
-    { id: "guemes", nombre: "Sanatorio Güemes", tipo: "clinica", publico: false, dir: "Acuña de Figueroa 1240", lat: -34.5970, lng: -58.4216 },
-    { id: "clinicas", nombre: "Hospital de Clínicas José de San Martín", tipo: "hospital", publico: true, dir: "Av. Córdoba 2351", lat: -34.5994, lng: -58.4003 },
-    { id: "italiano", nombre: "Hospital Italiano de Buenos Aires", tipo: "clinica", publico: false, dir: "Gascón 450", lat: -34.6067, lng: -58.4248 }
+    { id: "fernandez", nombre: "Hospital General de Agudos Dr. Juan A. Fernández", tipo: "hospital", publico: true, dir: "Cerviño 3356", lat: -34.581461, lng: -58.407011 },
+    { id: "clinicas", nombre: "Hospital de Clínicas José de San Martín", tipo: "hospital", publico: true, dir: "Av. Córdoba 2351", lat: -34.599408, lng: -58.400341 },
+    { id: "cesac33", nombre: "CESAC Nº 33", tipo: "centro_medico", publico: true, dir: "Córdoba 5741", lat: -34.586221, lng: -58.441704 },
+    { id: "aleman", nombre: "Hospital Alemán", tipo: "hospital", publico: false, dir: "Avenida Pueyrredón 1650", lat: -34.592258, lng: -58.401241 },
+    { id: "italiano", nombre: "Hospital Italiano de Buenos Aires", tipo: "hospital", publico: false, dir: "Gascón 450", lat: -34.606654, lng: -58.424782 },
+    { id: "arcos", nombre: "Sanatorio de los Arcos", tipo: "clinica", publico: false, dir: "Av. Juan B. Justo 909", lat: -34.58079, lng: -58.429327 },
+    { id: "mediter", nombre: "Diagnóstico Mediter S.A", tipo: "laboratorio", publico: false, dir: "Av. Avellaneda 551", lat: -34.613943, lng: -58.4391 }
   ];
   var YO = { lat: -34.5880, lng: -58.4150 };
-  var TIPO_LABEL = { hospital: "Hospital público", clinica: "Clínica / sanatorio", laboratorio: "Laboratorio" };
-  var TIPO_COLOR = { hospital: "#DC2626", clinica: "#0284C7", laboratorio: "#9333EA" };
+  var TIPOS = ["hospital", "clinica", "centro_medico", "laboratorio"];
+  var TIPO_LABEL = { hospital: "Hospital", clinica: "Clínica", centro_medico: "Centro médico", laboratorio: "Laboratorio" };
+  var TIPO_PLURAL = { hospital: "Hospitales", clinica: "Clínicas", centro_medico: "Centros médicos", laboratorio: "Laboratorios" };
+  /* Colores de marcador de theme.mapa: cambian con el tema de la app. */
+  var TIPO_COLOR = { hospital: "var(--m-hospital)", clinica: "var(--m-clinica)", centro_medico: "var(--m-centro)", laboratorio: "var(--m-lab)" };
+  var TIPO_ICON = { hospital: "hospital", clinica: "building", centro_medico: "steth", laboratorio: "flask" };
 
   function distanciaKm(a, b) {
     var R = 6371, r = Math.PI / 180;
@@ -489,19 +625,51 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
     var h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin(dLon / 2), 2);
     return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
-  function fmtKm(km) { return km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(1).replace(".", ",") + " km"; }
-  /* Proyección simple de la zona Palermo–Recoleta–Almagro al área del mapa (375 × 812). */
+  /* "a 850 m" / "a 1,2 km", como formatDistancia() */
+  function fmtKm(km) { return "a " + (km < 1 ? Math.round(km * 100) * 10 + " m" : km.toFixed(1).replace(".", ",") + " km"); }
+  /* Proyección de Palermo, Recoleta, Almagro y Caballito al área del mapa (375 × 812). */
   function proj(p) {
-    return { x: (p.lng + 58.437) / 0.045 * 375, y: (-34.577 - p.lat) / 0.0297 * 380 + 140 };
+    return { x: (p.lng + 58.447) / 0.05 * 375, y: (-34.574 - p.lat) / 0.0297 * 380 + 150 };
   }
+  /* Regla 15: los públicos atienden a todos. Los privados son un ejemplo (en la app llegan en la fase 3). */
+  function motivo(c) { return c.publico ? "Público · atiende a todas las coberturas" : "Acepta OSDE 210"; }
+
+  /* Turnos de Sofía, en memoria como en la app ("orden" = orden por fecha). */
+  var TURNOS = [
+    { id: "t1", med: "mendez", fecha: "Lun 12 oct", larga: "12 de octubre de 2026", hora: "10:30", tipo: "Control", estado: "Confirmado", cls: "ok", prox: true, orden: 4 },
+    { id: "t2", med: "ruiz", fecha: "Sáb 17 oct", larga: "17 de octubre de 2026", hora: "15:00", tipo: "Seguimiento", estado: "Pendiente", cls: "warn", prox: true, orden: 5 },
+    { id: "t3", med: "ruiz", fecha: "Dom 13 sep", larga: "13 de septiembre de 2026", hora: "11:00", tipo: "Primera consulta", estado: "Completado", cls: "mute", prox: false, orden: 2 },
+    { id: "t4", med: "mendez", fecha: "Dom 9 ago", larga: "9 de agosto de 2026", hora: "09:30", tipo: "Control", estado: "Completado", cls: "mute", prox: false, orden: 1 }
+  ];
+
+  /* Estudios de Sofía (los de src/mocks/estudios.ts) y el contenido de su PDF de ejemplo. */
+  var ESTUDIOS = [
+    { id: "e1", tipo: "Análisis de Sangre Completo", fecha: "Sáb 03 oct", larga: "03 de octubre de 2026", med: "mendez",
+      inst: "Diagnóstico Mediter S.A", dir: "Av. Avellaneda 551 Subsuelo, CABA", orden: { fecha: "03 de octubre de 2026", ind: "Ayuno de 8 horas." }, archivado: null,
+      pdf: [{ titulo: "Resultados", tabla: [["Determinación", "Resultado", "Valores de referencia"], ["Hemoglobina", "13,8 g/dL", "12,0 - 16,0 g/dL"], ["Hematocrito", "41 %", "36 - 46 %"], ["Glóbulos blancos", "6.800 /mm3", "4.000 - 10.000 /mm3"], ["Plaquetas", "250.000 /mm3", "150.000 - 400.000 /mm3"], ["Glucemia", "92 mg/dL", "70 - 100 mg/dL"], ["Colesterol total", "185 mg/dL", "Menor a 200 mg/dL"]] },
+        { titulo: "Observaciones", lineas: ["Valores dentro de los rangos de referencia."] }] },
+    { id: "e2", tipo: "Electrocardiograma", fecha: "Vie 21 ago", larga: "21 de agosto de 2026", med: "mendez",
+      inst: "CESAC Nº 33", dir: "Córdoba 5741, CABA", orden: null, archivado: null,
+      pdf: [{ titulo: "Informe", lineas: ["Ritmo sinusal regular.", "Frecuencia cardíaca: 72 latidos por minuto.", "Eje eléctrico normal.", "Sin alteraciones de la repolarización."] },
+        { titulo: "Conclusión", lineas: ["Electrocardiograma dentro de parámetros normales."] }] },
+    { id: "e3", tipo: "Radiografía de Tórax", fecha: "Vie 21 ago", larga: "21 de agosto de 2026", med: "mendez",
+      inst: "Hospital Italiano de Buenos Aires", dir: "Gascón 450, CABA", orden: null, archivado: null,
+      pdf: [{ titulo: "Informe", lineas: ["Campos pulmonares sin infiltrados ni consolidaciones.", "Silueta cardíaca de tamaño normal.", "Senos costofrénicos libres."] },
+        { titulo: "Conclusión", lineas: ["Sin hallazgos patológicos."] }] }
+  ];
+  var MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  var ZOOMS = [1, 1.5, 2, 3];
+  var CARR_TITULOS = ["Próximo turno", "Mi plan médico"];
 
   /* ---------------- Estado de la UI ---------------- */
   var ui = {
-    mode: "light", rol: "paciente", screen: "login",
+    pref: "light", rol: "paciente", screen: "login",
     esp: "Todas", medico: "mendez", day: 0, slot: "11:00",
-    turnosTab: "proximos", estudiosTab: "resultados",
-    mapaFiltro: "todos", mapaSel: "aleman", mapaVista: "mapa",
-    rating: 4, criterios: [5, 4, 5, 4, 5], pref: "auto",
+    turnosTab: "proximos", estudiosTab: "resultados", archAnio: null, archMes: null,
+    mapaFiltro: "todos", mapaSel: null, mapaVista: "mapa",
+    rating: 4, criterios: [5, 4, 5, 4, 5],
+    carrusel: 0, carrInteraccion: 0, ignorarClic: false,
+    hoja: null, hojaAnim: "", confirmar: null, visor: null, visorAnim: "", aviso: null,
     overlay: null, toast: null
   };
 
@@ -583,49 +751,77 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       '<div class="stack" style="margin-top:16px"><button class="btn" data-act="toast" data-msg="Paso 3: crear la contraseña. La cuenta se habilita cuando exista la base de datos.">Sí, soy yo</button><button class="btn ghost" data-act="toast" data-msg="Vuelve al paso 1 para corregir DNI, matrícula o profesión.">No, revisar mis datos</button></div></div>';
   };
 
+  /* Credencial del plan (CredencialPlan): la misma en el carrusel del Inicio y en Mi plan. */
+  function credencial(boton) {
+    var abre = boton ? '<button class="credential" data-go="plan" aria-label="Credencial: OSDE 210, Sofía Martínez, DNI 12345678. Ver mi plan médico">' : '<div class="credential" aria-label="Credencial: OSDE 210, Sofía Martínez, DNI 12345678">';
+    return abre + '<div class="row" style="justify-content:space-between"><span class="aseg">OSDE</span>' + ic("shield", 24) + '</div>' +
+      '<div class="big">OSDE 210</div>' +
+      '<div class="cpie"><div><div class="clbl">Afiliado/a</div><div class="cval">Sofía Martínez</div></div><div style="text-align:right"><div class="clbl">DNI</div><div class="cval">12345678</div></div></div>' +
+      (boton ? '</button>' : '</div>');
+  }
+
   S.inicio = function () {
     var m = MEDICOS[0];
-    var cerca = CENTROS.slice().sort(function (a, b) { return distanciaKm(YO, a) - distanciaKm(YO, b); });
-    return '<div class="content">' +
+    var etiquetas = ["Mostrar el próximo turno", "Mostrar la credencial del plan"];
+    var turno = '<div class="card tturno"><span class="acento"></span>' +
+      '<button class="prof" data-go="medico" data-med="' + m.id + '" aria-label="Ver próximo turno"><div class="av">' + m.ini + '</div><div class="grow" style="min-width:0"><div class="name">' + m.nombre + '</div><div class="meta" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.esp + ' · ' + m.sede + '</div></div><span class="badge ok">Confirmado</span></button>' +
+      '<div class="row" style="gap:16px;margin-top:12px"><span class="meta">' + ic("calendar", 14) + 'Lun 12 oct</span><span class="meta">' + ic("clock", 14) + '10:30</span></div>' +
+      '<div class="btnrow" style="margin-top:14px"><button class="btn outline" data-go="turnos">Ver turno</button><button class="btn" data-act="toast" data-msg="Abre Google Maps con la ruta hasta ' + m.sede + '.">Cómo llegar</button></div></div>';
+    var paginas = [turno, credencial(true)];
+    return '<div class="content inicio">' +
       '<div class="row" style="margin:4px 0 18px"><div class="grow"><div class="mut small">Hola, Sofía 👋</div><div class="h1" style="margin:2px 0 0;font-size:22px">¿Cómo te sentís?</div></div>' +
       '<button class="bell" data-go="notificaciones" aria-label="Notificaciones, 2 sin leer">' + ic("bell", 20) + '<span class="dot">2</span></button></div>' +
-      '<div class="sect" style="margin-top:0"><span class="h2">Próximo turno</span></div>' +
-      '<div class="card"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + '</div></div><span class="badge ok">Confirmado</span></div>' +
-      '<div class="divider"></div><div class="stack" style="gap:6px"><div class="meta">' + ic("calendar", 14) + 'Lunes 12 de octubre · ' + ic("clock", 14) + '10:30</div><div class="meta">' + ic("pin", 14) + m.sede + ' · ' + m.dir + '</div></div>' +
-      '<div class="btnrow" style="margin-top:12px"><button class="btn" data-go="turnos">Ver turno</button><button class="btn outline" data-go="mapa" data-sel="aleman">' + ic("nav", 16) + 'Cómo llegar</button></div></div>' +
+      '<div class="carr-head"><span class="h2">' + CARR_TITULOS[ui.carrusel] + '</span><div class="dots">' + etiquetas.map(function (e, k) {
+        return '<button type="button" class="' + (k === ui.carrusel ? "on" : "") + '" data-act="carr" data-v="' + k + '" aria-label="' + e + '"></button>';
+      }).join("") + '</div></div>' +
+      '<div class="carr" id="carr">' + paginas.map(function (p) { return '<div class="pag">' + p + '</div>'; }).join("") + '</div>' +
       '<div class="sect"><span class="h2">Accesos rápidos</span></div>' +
       '<div class="qa">' +
       [["buscar", "search", "Buscar"], ["turnos", "steth", "Turnos"], ["estudios", "file", "Estudios"], ["mapa", "pin", "Centros"]].map(function (q) {
         return '<button data-go="' + q[0] + '" aria-label="' + q[2] + '"><span class="circ">' + ic(q[1], 22) + '</span>' + q[2] + '</button>';
       }).join("") + '</div>' +
       '<div class="sect"><span class="h2">Instituciones cercanas</span><button class="link" data-go="mapa">Ver mapa</button></div>' +
-      '<button class="card" data-go="mapa" style="padding:0;overflow:hidden">' + miniMap() +
-      '<div style="padding:12px 14px"><div class="name" style="font-size:14px">' + cerca[0].nombre + '</div><div class="meta">' + fmtKm(distanciaKm(YO, cerca[0])) + ' · ' + TIPO_LABEL[cerca[0].tipo] + ' · y ' + (cerca.length - 1) + ' centros más</div></div></button>' +
+      vistaPrevia() +
       '</div>' + tabbar("paciente", "inicio");
   };
 
+  /* Fondo del mapa con los colores de theme.mapa: manzanas, calles con borde, avenidas y parques. */
   function streetsSvg() {
-    var lines = "";
-    for (var i = -6; i < 16; i++) {
-      lines += '<line x1="' + (i * 52 - 200) + '" y1="-50" x2="' + (i * 52 + 260) + '" y2="900" stroke="var(--a-road)" stroke-width="' + (i % 4 === 0 ? 9 : 4) + '"/>';
+    var borde = "", calles = "";
+    function linea(x1, y1, x2, y2, avenida) {
+      var ancho = avenida ? 9 : 4;
+      borde += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="var(--a-casing)" stroke-width="' + (ancho + 2) + '"/>';
+      calles += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (avenida ? "var(--a-avenida)" : "var(--a-road)") + '" stroke-width="' + ancho + '"/>';
     }
-    for (var j = -4; j < 24; j++) {
-      lines += '<line x1="-50" y1="' + (j * 46 + 150) + '" x2="450" y2="' + (j * 46 - 110) + '" stroke="var(--a-road)" stroke-width="' + (j % 5 === 0 ? 9 : 4) + '"/>';
-    }
-    return '<svg class="streets" viewBox="0 0 375 812" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
-      '<rect width="375" height="812" fill="var(--a-map)"/>' +
-      '<path d="M220 -10 L380 -10 L380 150 Q300 120 260 60 Z" fill="var(--a-park)"/>' +
-      '<path d="M0 560 L70 520 L110 600 L40 660 L0 650 Z" fill="var(--a-park)"/>' +
-      lines + '</svg>';
+    for (var i = -6; i < 16; i++) linea(i * 52 - 200, -50, i * 52 + 260, 900, i % 4 === 0);
+    for (var j = -4; j < 24; j++) linea(-50, j * 46 + 150, 450, j * 46 - 110, j % 5 === 0);
+    return '<svg class="streets" viewBox="0 0 375 812" preserveAspectRatio="none" aria-hidden="true">' +
+      '<rect width="375" height="812" fill="var(--a-manzana)"/>' + borde + calles +
+      '<path d="M230 -10 L385 -10 L385 170 Q300 140 265 70 Z" fill="var(--a-park)"/>' +
+      '<ellipse cx="84" cy="560" rx="34" ry="26" fill="var(--a-park)"/></svg>';
   }
-  function miniMap() {
-    var pins = CENTROS.map(function (c) {
-      var p = proj(c);
-      return '<span style="position:absolute;left:' + (p.x / 375 * 100) + '%;top:' + ((p.y - 140) / 440 * 100) + '%;width:12px;height:12px;border-radius:50%;background:' + TIPO_COLOR[c.tipo] + ';border:2px solid #fff;transform:translate(-50%,-50%)"></span>';
+  function etiquetasMapa() {
+    return [["PALERMO", 165, 291], ["VILLA CRESPO", 56, 452], ["ALMAGRO", 214, 540], ["BARRIO NORTE", 312, 300], ["CABALLITO", 96, 712]].map(function (e) {
+      return '<span class="map-label" style="left:' + e[1] + 'px;top:' + e[2] + 'px">' + e[0] + '</span>';
     }).join("");
+  }
+  /* Marcadores: una capa de círculos por tipo, como la capa "centros" de MapLibre. */
+  function marcadores(lista, selId, tocable) {
+    return lista.map(function (c) {
+      var p = proj(c), estilo = 'left:' + p.x + 'px;top:' + p.y + 'px;background:' + TIPO_COLOR[c.tipo];
+      return tocable
+        ? '<button class="mk' + (c.id === selId ? " sel" : "") + '" style="' + estilo + '" data-act="sel" data-v="' + c.id + '" aria-label="' + c.nombre + '"></button>'
+        : '<span class="mk" style="' + estilo + '"></span>';
+    }).join("");
+  }
+  /* Vista previa del Inicio: el mismo mapa sin gestos, centrado en el paciente. Tocarla abre el mapa. */
+  function vistaPrevia() {
     var me = proj(YO);
-    return '<div style="position:relative;height:120px;overflow:hidden;background:var(--a-map)"><div style="position:absolute;inset:-120px 0 auto 0;height:812px;opacity:0.9">' + streetsSvg() + '</div>' + pins +
-      '<span style="position:absolute;left:' + (me.x / 375 * 100) + '%;top:' + ((me.y - 140) / 440 * 100) + '%;width:12px;height:12px;border-radius:50%;background:#2563EB;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 6px rgba(37,99,235,.2)"></span></div>';
+    return '<button class="preview" data-go="mapa" aria-label="Abrir el mapa de centros de salud">' +
+      // Se centra un poco a la izquierda del paciente para que el mapa cubra todo el ancho de la tarjeta.
+      '<span class="map-capa" style="transform:translate(-200px,' + (-me.y) + 'px)">' + streetsSvg() + etiquetasMapa() + marcadores(CENTROS, null, false) +
+      '<span class="me" style="left:' + me.x + 'px;top:' + me.y + 'px"></span></span>' +
+      '<span class="attrib chica"><i>i</i></span></button>';
   }
 
   S.buscar = function () {
@@ -677,69 +873,136 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
     return html;
   };
 
+  function avisoHtml() {
+    return ui.aviso ? '<div class="aviso" role="status">' + ic("checkcirc", 16) + '<span>' + ui.aviso + '</span></div>' : "";
+  }
+  function turnosDe(prox) {
+    return TURNOS.filter(function (t) { return t.prox === prox && !t.oculto; })
+      .sort(function (a, b) { return prox ? a.orden - b.orden : b.orden - a.orden; });
+  }
+  function turnoPorId(id) { return TURNOS.filter(function (t) { return t.id === id; })[0]; }
+
   S.turnos = function () {
-    var prox = ui.turnosTab === "proximos";
-    function turno(m, fecha, hora, tipo, estado, cls, extra) {
-      return '<div class="card"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + ' · ' + tipo + '</div></div><span class="badge ' + cls + '">' + estado + '</span></div>' +
-        '<div class="divider"></div><div class="stack" style="gap:6px"><div class="meta">' + ic("calendar", 14) + fecha + ' · ' + ic("clock", 14) + hora + '</div><div class="meta">' + ic("pin", 14) + m.sede + '</div></div>' + (extra || "") + '</div>';
-    }
-    var body = prox
-      ? turno(MEDICOS[0], "Lun 12 oct", "10:30", "Control", "Confirmado", "ok", '<div class="btnrow" style="margin-top:12px"><button class="btn danger" data-act="overlay" data-v="cancelar">Cancelar turno</button></div>') +
-        turno(MEDICOS[1], "Sáb 17 oct", "15:00", "Seguimiento", "Pendiente", "warn", '<div class="btnrow" style="margin-top:12px"><button class="btn danger" data-act="overlay" data-v="cancelar">Cancelar turno</button></div>')
-      : turno(MEDICOS[1], "Dom 13 sep", "11:00", "Primera consulta", "Completado", "mute", '<div class="btnrow" style="margin-top:12px"><button class="btn outline" data-go="calificar">' + ic("star", 16) + 'Calificar consulta</button></div>') +
-        turno(MEDICOS[0], "Dom 9 ago", "09:30", "Control", "Completado", "mute");
-    var html = '<div class="content"><div class="h1">Mis Turnos</div>' +
-      '<div class="seg"><button class="' + (prox ? "on" : "") + '" data-act="turnosTab" data-v="proximos">Próximos</button><button class="' + (!prox ? "on" : "") + '" data-act="turnosTab" data-v="historial">Historial</button></div>' +
-      '<div class="stack">' + body + '</div></div>' + tabbar("paciente", "turnos");
-    if (ui.overlay === "cancelar") {
-      html += '<div class="overlay"><div class="dialog"><div class="h2">Cancelar turno</div><div class="mut">¿Seguro que querés cancelar este turno?</div><div class="btnrow"><button class="btn ghost" data-act="overlay" data-v="">No</button><button class="btn" style="background:var(--a-danger);color:#fff" data-act="overlay" data-v="" data-msg="El turno se cancela y el horario vuelve a quedar libre.">Sí, cancelar</button></div></div></div>';
-    }
-    return html;
+    var prox = ui.turnosTab === "proximos", lista = turnosDe(prox);
+    var cabecera = !prox && lista.length
+      ? '<div class="listhead"><span>' + lista.length + (lista.length === 1 ? " turno" : " turnos") + '</span><button data-act="vaciar" aria-label="Eliminar todo el historial de turnos">' + ic("trash", 16) + 'Eliminar todo</button></div>'
+      : "";
+    var body = lista.length ? lista.map(function (t) {
+      var m = medico(t.med);
+      return '<button class="card" data-act="abrirTurno" data-v="' + t.id + '" aria-label="Turno con ' + m.nombre + ', ' + t.fecha + ' a las ' + t.hora + '. Ver detalle">' +
+        '<div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + m.esp + ' · ' + m.sede + '</div></div><span class="badge ' + t.cls + '">' + t.estado + '</span></div>' +
+        '<div class="tpie"><span class="meta">' + ic("calendar", 14) + t.fecha + '</span><span class="meta">' + ic("clock", 14) + t.hora + '</span><span class="chev">' + ic("right", 18) + '</span></div></button>';
+    }).join("") : '<div class="mut" style="text-align:center;margin-top:24px">' + (prox ? "No tenés turnos próximos." : "Tu historial de turnos está vacío.") + '</div>';
+    return '<div class="content"><div class="h1">Mis Turnos</div>' +
+      '<div class="seg" role="tablist"><button role="tab" aria-selected="' + prox + '" class="' + (prox ? "on" : "") + '" data-act="turnosTab" data-v="proximos">Próximos</button><button role="tab" aria-selected="' + !prox + '" class="' + (!prox ? "on" : "") + '" data-act="turnosTab" data-v="historial">Historial</button></div>' +
+      avisoHtml() + cabecera + '<div class="stack">' + body + '</div></div>' + tabbar("paciente", "turnos");
   };
 
+  function estudioPorId(id) { return ESTUDIOS.filter(function (e) { return e.id === id; })[0]; }
+  function tarjetaEstudio(e) {
+    var m = medico(e.med);
+    return '<button class="card" data-act="abrirEstudio" data-v="' + e.id + '" aria-label="' + e.tipo + ', ' + e.fecha + '. Ver detalle">' +
+      '<div class="row"><span class="circ-ic">' + ic("file", 18) + '</span><div class="grow name">' + e.tipo + '</div><span class="badge ok">Listo</span></div>' +
+      '<div class="tpie"><span class="meta">' + ic("calendar", 14) + e.fecha + '</span><span class="meta">' + ic("steth", 14) + m.nombre.replace(/^(Dra?\.) \S+ /, "$1 ") + '</span><span class="chev">' + ic("right", 18) + '</span></div></button>';
+  }
+  function tarjetaCarpeta(titulo, n, act, v) {
+    var cuantos = n + (n === 1 ? " estudio" : " estudios");
+    return '<button class="card" data-act="' + act + '" data-v="' + v + '" aria-label="Carpeta ' + titulo + ', ' + cuantos + '"><div class="row"><span class="circ-ic">' + ic("folder", 18) + '</span><div class="grow"><div class="name">' + titulo + '</div><div class="meta">' + cuantos + '</div></div><span class="mut">' + ic("right", 18) + '</span></div></button>';
+  }
+  function vacio(icono, titulo, texto) {
+    return '<div class="vacio"><span class="circ-ic" style="width:56px;height:56px">' + ic(icono, 26) + '</span><div class="h2">' + titulo + '</div><div class="small">' + texto + '</div></div>';
+  }
+  /* Archivados: carpetas año → mes según la fecha en que se archivó. Solo existen las que tienen algo. */
+  function carpetas() {
+    var anios = {};
+    ESTUDIOS.forEach(function (e) {
+      if (!e.archivado) return;
+      var a = e.archivado.anio;
+      anios[a] = anios[a] || {};
+      (anios[a][e.archivado.mes] = anios[a][e.archivado.mes] || []).push(e);
+    });
+    return anios;
+  }
+
   S.estudios = function () {
-    var res = ui.estudiosTab === "resultados";
-    function est(tipo, fecha, inst, med) {
-      return '<div class="card"><div class="row"><div class="iconbox">' + ic("file", 20) + '</div><div class="grow"><div class="name" style="font-size:14px">' + tipo + '</div><div class="meta">' + fecha + ' · ' + inst + '</div><div class="meta">Solicitó ' + med + '</div></div></div><div class="row" style="margin-top:10px;justify-content:space-between"><span class="badge ok">Resultado disponible</span><button class="link" data-act="toast" data-msg="Abre el informe del estudio (solo visible para el paciente y su médico).">Ver resultado</button></div></div>';
+    var res = ui.estudiosTab === "resultados", body;
+    if (res) {
+      var lista = ESTUDIOS.filter(function (e) { return !e.archivado; });
+      body = lista.length ? '<div class="stack">' + lista.map(tarjetaEstudio).join("") + '</div>' : vacio("file", "Sin resultados", "Cuando tengas estudios con resultado, van a aparecer acá.");
+    } else {
+      var c = carpetas(), anios = Object.keys(c).sort().reverse();
+      if (ui.archAnio && !c[ui.archAnio]) { ui.archAnio = null; ui.archMes = null; }
+      if (ui.archAnio && ui.archMes !== null && !c[ui.archAnio][ui.archMes]) ui.archMes = null;
+      if (!anios.length) {
+        body = vacio("archive", "Todavía no archivaste estudios", "Desde un resultado tocá Archivar: lo vas a encontrar acá, ordenado en carpetas por año y mes.");
+      } else {
+        var ruta = ui.archAnio ? '<button class="ruta" data-act="archAtras" aria-label="Volver a la carpeta anterior">' + ic("left", 18) + 'Archivados › ' + ui.archAnio + (ui.archMes !== null ? ' › ' + MESES[ui.archMes] : "") + '</button>' : "";
+        var items;
+        if (!ui.archAnio) {
+          items = anios.map(function (a) {
+            var n = 0;
+            Object.keys(c[a]).forEach(function (mm) { n += c[a][mm].length; });
+            return tarjetaCarpeta(a, n, "archAnio", a);
+          });
+        } else if (ui.archMes === null) {
+          items = Object.keys(c[ui.archAnio]).map(Number).sort(function (x, y) { return y - x; }).map(function (mm) {
+            return tarjetaCarpeta(MESES[mm], c[ui.archAnio][mm].length, "archMes", mm);
+          });
+        } else {
+          items = c[ui.archAnio][ui.archMes].map(tarjetaEstudio);
+        }
+        body = ruta + '<div class="stack">' + items.join("") + '</div>';
+      }
     }
-    var body = res
-      ? est("Análisis de Sangre Completo", "28 sep", "Hospital Italiano", "Dr. Méndez") + est("Electrocardiograma", "20 sep", "Hospital Alemán", "Dr. Méndez") + est("Radiografía de Tórax", "2 sep", "Hospital de Clínicas", "Dra. Fernández")
-      : '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><span class="name" style="font-size:14px">Orden de laboratorio</span><span class="badge warn">Pendiente</span></div><div class="meta">Dr. Roberto Méndez · 5 oct</div><div class="divider"></div><div class="small"><b>Estudios:</b> Análisis de Sangre Completo</div><div class="small mut" style="margin-top:4px"><b>Indicaciones:</b> Ayuno de 8 horas.</div><button class="btn outline" style="margin-top:12px" data-go="mapa" data-filtro="laboratorio">' + ic("pin", 16) + 'Buscar laboratorio</button></div>';
     return '<div class="content"><div class="h1">Mis Estudios</div>' +
-      '<div class="seg"><button class="' + (res ? "on" : "") + '" data-act="estudiosTab" data-v="resultados">Resultados</button><button class="' + (!res ? "on" : "") + '" data-act="estudiosTab" data-v="ordenes">Órdenes</button></div>' +
-      '<div class="stack">' + body + '</div></div>' + tabbar("paciente", "estudios");
+      '<div class="seg" role="tablist"><button role="tab" aria-selected="' + res + '" class="' + (res ? "on" : "") + '" data-act="estudiosTab" data-v="resultados">Resultados</button><button role="tab" aria-selected="' + !res + '" class="' + (!res ? "on" : "") + '" data-act="estudiosTab" data-v="archivados">Archivados</button></div>' +
+      avisoHtml() + body + '</div>' + tabbar("paciente", "estudios");
   };
 
   S.mapa = function () {
-    var visibles = CENTROS.filter(function (c) { return ui.mapaFiltro === "todos" || c.tipo === ui.mapaFiltro; });
-    var sel = visibles.filter(function (c) { return c.id === ui.mapaSel; })[0] || visibles[0];
-    var chips = [["todos", "Todos"], ["hospital", "Hospitales"], ["clinica", "Clínicas"], ["laboratorio", "Laboratorios"]];
-    var top = '<div class="map-top"><div class="row"><button class="roundbtn" data-go="inicio" aria-label="Volver">' + ic("left", 20) + '</button><div class="pill-search">' + ic("search", 16) + 'Aceptan OSDE 210</div><button class="roundbtn" data-act="vista" aria-label="Ver como ' + (ui.mapaVista === "mapa" ? "lista" : "mapa") + '">' + ic(ui.mapaVista === "mapa" ? "list" : "map", 20) + '</button></div>' +
-      '<div class="chips">' + chips.map(function (c) { return '<button class="chip' + (ui.mapaFiltro === c[0] ? " on" : "") + '" data-act="filtro" data-v="' + c[0] + '" style="box-shadow:0 2px 6px rgba(0,0,0,.12)">' + c[1] + '</button>'; }).join("") + '</div></div>';
-    function cobertura(c) { return c.publico ? '<span class="badge info">Público · atiende a todos</span>' : '<span class="badge ok">Acepta OSDE 210</span>'; }
+    var visibles = CENTROS.filter(function (c) { return ui.mapaFiltro === "todos" || c.tipo === ui.mapaFiltro; })
+      .sort(function (a, b) { return distanciaKm(YO, a) - distanciaKm(YO, b); });
+    var sel = visibles.filter(function (c) { return c.id === ui.mapaSel; })[0] || null;
+    var lista = ui.mapaVista === "lista";
+    var filtros = [["todos", "Todos"]].concat(TIPOS.map(function (t) { return [t, TIPO_PLURAL[t]]; }));
+    var top = '<div class="map-top"' + (lista ? ' style="position:static;padding-bottom:12px"' : "") + '><div class="row">' +
+      '<button class="roundbtn" data-go="inicio" aria-label="Volver">' + ic("left", 20) + '</button>' +
+      '<div class="pill-count">' + visibles.length + (visibles.length === 1 ? " centro" : " centros") + ' para OSDE 210</div>' +
+      '<button class="modebtn" data-act="vista" aria-label="' + (lista ? "Ver en el mapa" : "Ver como lista") + '">' + ic(lista ? "map" : "list", 18) + (lista ? "Mapa" : "Lista") + '</button></div>' +
+      '<div class="chips">' + filtros.map(function (f) { return '<button class="chip' + (ui.mapaFiltro === f[0] ? " on" : "") + '" data-act="filtro" data-v="' + f[0] + '">' + f[1] + '</button>'; }).join("") +
+      '<button class="chip" data-act="cercano">Más cercano</button></div></div>';
 
-    if (ui.mapaVista === "lista") {
-      var ord = visibles.slice().sort(function (a, b) { return distanciaKm(YO, a) - distanciaKm(YO, b); });
-      return '<div class="content flush" style="background:var(--a-bg)">' + top.replace('class="map-top"', 'class="map-top" style="position:static;padding-bottom:12px"') +
-        '<div class="stack" style="padding:0 16px 16px">' + (ord.length ? ord.map(function (c) {
-          return '<button class="card" data-act="sel" data-v="' + c.id + '"><div class="row"><span class="legend-dot" style="background:' + TIPO_COLOR[c.tipo] + '"></span><div class="grow"><div class="name" style="font-size:14px">' + c.nombre + '</div><div class="meta">' + c.dir + ' · ' + fmtKm(distanciaKm(YO, c)) + '</div><div style="margin-top:6px">' + cobertura(c) + '</div></div></div></button>';
-        }).join("") : '<div class="card mut" style="text-align:center">No hay laboratorios cargados todavía para tu cobertura en esta zona.</div>') + '</div>' +
-        '<div class="small mut" style="padding:0 16px 16px">Establecimientos: REFES — Ministerio de Salud de la Nación (CC BY 4.0)</div></div>';
+    if (lista) {
+      return '<div class="content flush" style="background:var(--a-bg)">' + top + '<div class="stack" style="padding:0 16px 16px">' +
+        (visibles.length ? visibles.map(function (c) {
+          return '<button class="card" data-act="sel" data-v="' + c.id + '" aria-label="' + c.nombre + ', ' + TIPO_LABEL[c.tipo] + ', ' + fmtKm(distanciaKm(YO, c)) + '. Ver en el mapa"><div class="row" style="align-items:flex-start"><span class="legend-dot" style="background:' + TIPO_COLOR[c.tipo] + ';width:12px;height:12px;margin-top:4px"></span>' +
+            '<div class="grow"><div class="name">' + c.nombre + '</div><div class="meta" style="display:block">' + TIPO_LABEL[c.tipo] + ' · ' + c.dir + ' · ' + fmtKm(distanciaKm(YO, c)) + '</div><div class="small" style="color:var(--a-pri);margin-top:3px">' + motivo(c) + '</div></div></div></button>';
+        }).join("") : '<div class="mut" style="text-align:center;padding:24px">No hay centros de este tipo para tu cobertura.</div>') + '</div></div>';
     }
 
     var me = proj(YO);
-    var pins = visibles.map(function (c) {
-      var p = proj(c), on = sel && c.id === sel.id;
-      return '<button class="pin' + (on ? " sel" : "") + '" style="left:' + p.x + 'px;top:' + p.y + 'px" data-act="sel" data-v="' + c.id + '" aria-label="' + c.nombre + '"><span class="head" style="background:' + TIPO_COLOR[c.tipo] + '">' + ic(c.tipo === "laboratorio" ? "flask" : "hospital", on ? 20 : 16, 2.2) + '</span></button>';
-    }).join("");
-    var card = sel
-      ? '<div class="card map-card" style="padding:16px"><div class="row" style="align-items:flex-start"><div class="grow"><div class="small mut">' + TIPO_LABEL[sel.tipo] + '</div><div class="name">' + sel.nombre + '</div><div class="meta" style="margin-top:2px">' + ic("pin", 13) + sel.dir + ', CABA · ' + fmtKm(distanciaKm(YO, sel)) + '</div></div></div>' +
-        '<div style="margin:10px 0 12px">' + cobertura(sel) + '</div>' +
-        '<div class="btnrow"><button class="btn" data-go="buscar">Ver turnos</button><button class="btn outline" data-act="toast" data-msg="Abre Google Maps con la ruta desde tu ubicación hasta ' + sel.dir + '.">' + ic("nav", 16) + 'Cómo llegar</button></div></div>'
-      : '<div class="card map-card mut" style="text-align:center">No hay laboratorios cargados todavía para tu cobertura en esta zona.</div>';
-    return '<div class="content flush"><div class="map">' + streetsSvg() + '<span class="me" style="left:' + me.x + 'px;top:' + me.y + 'px" aria-label="Tu ubicación"></span>' + pins + '</div>' +
-      top + '<button class="roundbtn" style="position:absolute;right:16px;bottom:' + (sel ? 236 : 110) + 'px" aria-label="Centrar en mi ubicación" data-act="toast" data-msg="GPS: centra el mapa en tu ubicación actual (expo-location).">' + ic("target", 20) + '</button>' +
-      card + '<span class="attrib">REFES — Min. de Salud de la Nación (CC BY 4.0) · Google</span></div>';
+    // Como en la app: el centro elegido sube un poco para que la tarjeta no lo tape.
+    var dy = sel ? Math.max(0, proj(sel).y - 330) : 0;
+    var capa = '<div class="map-capa" style="transform:translateY(' + (-dy) + 'px)">' + streetsSvg() + etiquetasMapa() +
+      '<span class="me" style="left:' + me.x + 'px;top:' + me.y + 'px" aria-label="Tu ubicación"></span>' + marcadores(visibles, sel && sel.id, true) + '</div>';
+    var medicos = sel ? MEDICOS.filter(function (m) { return m.centro === sel.id; }) : [];
+    var tarjeta = sel
+      ? '<div class="card" style="padding:16px"><div class="row" style="gap:10px"><span class="legend-dot" style="background:' + TIPO_COLOR[sel.tipo] + ';width:12px;height:12px"></span>' +
+        '<span class="grow small mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + TIPO_LABEL[sel.tipo] + ' · ' + motivo(sel) + '</span>' +
+        '<button style="width:32px;height:32px;border:0;background:none;color:var(--a-mutfg);display:grid;place-items:center" data-act="cerrarSel" aria-label="Cerrar">' + ic("x", 18) + '</button></div>' +
+        '<div class="h2" style="margin-top:6px">' + sel.nombre + '</div><div class="meta" style="display:block;margin-top:3px">' + sel.dir + ', CABA · ' + fmtKm(distanciaKm(YO, sel)) + '</div>' +
+        (medicos.length ? '<div class="row" style="flex-wrap:wrap;gap:2px 8px;margin-top:8px"><span class="small mut">Atienden acá:</span>' + medicos.map(function (m) {
+          return '<button class="enlace" style="min-height:30px;font-size:13px" data-go="medico" data-med="' + m.id + '" aria-label="Ver turnos con ' + m.nombre + '">' + m.nombre + '</button>';
+        }).join("") + '</div>' : "") +
+        '<div style="margin-top:14px"><button class="btn" data-act="toast" data-msg="Abre Google Maps con la ruta hasta ' + sel.dir + '.">Cómo llegar</button></div></div>'
+      : '<div class="leyenda" aria-label="Referencias de colores del mapa">' + TIPOS.map(function (t) {
+        return '<span><span class="legend-dot" style="background:' + TIPO_COLOR[t] + '"></span>' + TIPO_LABEL[t] + '</span>';
+      }).join("") + '</div>';
+    return '<div class="content flush"><div class="map">' + capa + '</div>' + top +
+      '<div class="map-pie"><div class="row" style="justify-content:space-between;align-items:flex-end">' +
+      '<span class="attrib"><i>i</i>OpenFreeMap © OpenMapTiles Data from OpenStreetMap</span>' +
+      '<button class="roundbtn" aria-label="Ir a mi ubicación" data-act="toast" data-msg="GPS: el mapa vuelve a tu ubicación (expo-location).">' + ic("target", 20) + '</button></div>' +
+      tarjeta + '</div></div>';
   };
 
   S.menu = function () {
@@ -773,13 +1036,14 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
   };
 
   S.plan = function () {
-    return '<div class="content">' + back("Mi plan médico", "menu") +
-      '<div class="credential"><div class="row" style="justify-content:space-between"><span class="lbl">Obra social</span>' + ic("shield", 20) + '</div><div class="big">OSDE 210</div>' +
-      '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><div class="lbl">Afiliado/a</div><div style="font-weight:600">Sofía Martínez</div></div><div style="text-align:right"><div class="lbl">DNI</div><div style="font-weight:600">12.345.678</div></div></div></div>' +
-      '<div class="sect"><span class="h2">Dónde te atienden</span></div>' +
-      '<div class="grid2" style="margin-bottom:12px"><div class="stat"><b>5</b><span>Instituciones que te cubren</span></div><div class="stat"><b>4</b><span>Profesionales disponibles</span></div></div>' +
-      '<button class="btn outline" data-go="mapa" style="margin-bottom:10px">' + ic("map", 16) + 'Ver mapa</button>' +
-      '<button class="btn ghost" data-act="toast" data-msg="Elegís otra obra social de las cargadas en la app y el mapa se actualiza.">Cambiar de obra social</button></div>';
+    var donde = [["Hospital General de Agudos Dr. Enrique Tornú", "Combatientes de Malvinas 3002, CABA"], ["Hospital General de Agudos José María Ramos Mejía", "General Urquiza 609, CABA"], ["Hospital General de Agudos P. Piñero", "Avenida Varela 1301, CABA"]];
+    return '<div class="content">' + back("Mi plan médico", "menu") + credencial(false) +
+      '<div class="grid2" style="margin:20px 0 4px"><div class="stat"><span class="iconbox" style="width:32px;height:32px;margin-bottom:8px">' + ic("hospital", 16) + '</span><b>162</b><span>Instituciones que te cubren</span></div>' +
+      '<div class="stat"><span class="iconbox" style="width:32px;height:32px;margin-bottom:8px">' + ic("steth", 16) + '</span><b>5</b><span>Profesionales disponibles</span></div></div>' +
+      '<div class="sect"><span class="h2">Dónde te atienden</span><button class="link" data-go="mapa">Ver mapa</button></div>' +
+      '<div class="stack">' + donde.map(function (d) { return '<div class="card" style="padding:12px 14px"><div class="row"><div class="iconbox" style="width:36px;height:36px">' + ic("hospital", 18) + '</div><div class="grow"><div class="name" style="font-size:14px">' + d[0] + '</div><div class="meta">' + d[1] + '</div></div></div></div>'; }).join("") + '</div>' +
+      '<div class="small mut" style="margin:10px 0 16px">Y 159 más: miralas todas en el mapa.</div>' +
+      '<button class="btn outline" data-act="toast" data-msg="Elegís otra obra social en Mi perfil y el mapa se actualiza.">Cambiar de obra social</button></div>';
   };
 
   S.calificar = function () {
@@ -799,15 +1063,27 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       '<button class="btn" data-act="toast" data-msg="¡Gracias! Tu opinión fue enviada.">Enviar opinión</button></div>';
   };
 
+  /* Miniatura de una pantalla con los colores de cada tema (vista previa del modo). */
+  var MINI = {
+    light: { bg: "#FFFFFF", fg: "#0F172A", card: "#FFFFFF", bd: "#E2E8F0", mutfg: "#64748B", pri: "#0284C7" },
+    dark: { bg: "#020617", fg: "#F8FAFC", card: "#0F172A", bd: "#334155", mutfg: "#94A3B8", pri: "#10B981" }
+  };
+  function miniApp(c) {
+    return '<span class="mini" style="background:' + c.bg + '"><span class="t" style="background:' + c.fg + '"></span><span class="c" style="background:' + c.card + ';border-color:' + c.bd + '">' +
+      '<span class="l" style="background:' + c.mutfg + ';width:80%"></span><span class="l" style="background:' + c.bd + ';width:55%"></span><span class="b" style="background:' + c.pri + '"></span></span></span>';
+  }
   S.configuracion = function () {
-    var ops = [["auto", "Automático", "Sigue el modo claro u oscuro de tu teléfono."], ["light", "Claro", "La app se ve siempre en modo claro."], ["dark", "Oscuro", "La app se ve siempre en modo oscuro."]];
+    // Sin "automático": la app arranca en claro aunque el teléfono esté en modo oscuro.
+    var ops = [["light", "Claro", "La app se ve en modo claro."], ["dark", "Oscuro", "La app se ve en modo oscuro."]];
+    var actual = ops.filter(function (o) { return o[0] === ui.pref; })[0];
     return '<div class="content">' + back("Configuración", "menu") +
       '<div class="sect" style="margin-top:4px"><span class="h2">Apariencia</span></div>' +
-      '<div class="card" style="padding:4px 14px"><div class="small mut" style="padding-top:10px">Modo de color</div>' + ops.map(function (o) {
-        return '<button class="radio' + (ui.pref === o[0] ? " on" : "") + '" data-act="pref" data-v="' + o[0] + '"><span class="r"></span><span><span style="font-weight:600;display:block">' + o[1] + '</span><span class="small mut">' + o[2] + '</span></span></button>';
-      }).join("") + '</div>' +
+      '<div class="card" style="padding:16px"><div style="font-weight:600;margin-bottom:14px">Modo de color</div><div class="modos" role="radiogroup" aria-label="Modo de color">' + ops.map(function (o) {
+        var on = ui.pref === o[0];
+        return '<button class="modo' + (on ? " on" : "") + '" role="radio" aria-checked="' + on + '" data-act="pref" data-v="' + o[0] + '" aria-label="' + o[1] + '. ' + o[2] + '"><span class="prev">' + miniApp(MINI[o[0]]) + (on ? '<span class="ok">' + ic("check", 12, 3) + '</span>' : "") + '</span><span class="lbl2">' + o[1] + '</span></button>';
+      }).join("") + '</div><div class="small mut" style="text-align:center;margin-top:14px">' + actual[2] + '</div></div>' +
       '<div class="sect"><span class="h2">Acerca de</span></div>' +
-      '<div class="card"><dl class="kv"><dt>Versión de la app</dt><dd>1.0.0</dd><dt>Establecimientos</dt><dd>REFES · Min. de Salud</dd></dl></div></div>';
+      '<div class="card"><div class="row"><span class="iconbox" style="width:36px;height:36px">' + ic("help", 18) + '</span><span class="grow" style="font-weight:600">Versión de la app</span><span class="mut">1.0.0</span></div></div></div>';
   };
 
   /* --- Profesional --- */
@@ -888,7 +1164,10 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       '<div class="grid2">' + field("Latitud", "-34.5915") + field("Longitud", "-58.4011") + '</div>' +
       '<div class="field"><label>Obras sociales aceptadas</label><div class="chips" style="flex-wrap:wrap"><button class="chip on">OSDE 210</button><button class="chip on">Swiss Medical SMG20</button><button class="chip">Galeno Oro</button><button class="chip">Medifé Plan 3000</button></div></div>' +
       '<button class="btn" data-act="toast" data-msg="La institución aparece en el mapa de los pacientes con esas coberturas.">Guardar institución</button></div>' +
-      '<div class="stack">' + CENTROS.slice(0, 3).map(function (c) { return '<div class="card" style="padding:12px 14px"><div class="row"><span class="legend-dot" style="background:' + TIPO_COLOR[c.tipo] + '"></span><div class="grow"><div class="name" style="font-size:14px">' + c.nombre + '</div><div class="meta">' + c.dir + ', CABA</div></div></div></div>'; }).join("") + '</div>' +
+      '<div class="sect"><span class="h2">Cargadas (1.077)</span></div><div class="small mut" style="margin:-4px 0 10px">Se muestran las primeras 30. Las que agregues aparecen arriba de todo.</div>' +
+      '<div class="stack">' + [CENTROS[0], CENTROS[1], CENTROS[5]].map(function (c) {
+        return '<div class="card" style="padding:12px 14px"><div class="row"><div class="iconbox" style="width:36px;height:36px">' + ic(TIPO_ICON[c.tipo], 18) + '</div><div class="grow"><div class="name" style="font-size:14px">' + c.nombre + '</div><div class="meta" style="display:block">' + TIPO_LABEL[c.tipo] + ' · ' + c.dir + ', CABA</div><div class="small mut">' + (c.publico ? "Público: atiende a todas las coberturas" : "Sin obras sociales cargadas") + '</div></div></div></div>';
+      }).join("") + '</div>' +
       '</div>' + tabbar("admin", "instituciones");
   };
 
@@ -896,10 +1175,7 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
   var NATIVO = {
     gps: { icon: "target", nombre: "GPS", lib: "expo-location",
       corto: "Ubica al paciente para mostrarle primero los centros más cercanos.",
-      why: "Pide permiso de ubicación en primer plano y lee la posición con getCurrentPositionAsync. La distancia a cada sede se calcula en el teléfono con la fórmula de Haversine. Si el permiso se niega, el mapa arranca en el Obelisco y la app sigue funcionando." },
-    mapa: { icon: "map", nombre: "Google Maps", lib: "react-native-maps",
-      corto: "Mapa nativo con los centros que aceptan la cobertura del paciente.",
-      why: "Usa el SDK nativo de Google Maps, gratis en móvil y requisito de la materia. Cada tipo de institución tiene su marcador, y «Cómo llegar» abre la app de Google Maps con la ruta ya calculada." },
+      why: "Pide permiso de ubicación en primer plano: primero usa la última posición conocida y después la actual, más precisa. La distancia a cada sede se calcula en el teléfono con la fórmula de Haversine. Si el permiso se niega, el mapa arranca en el Obelisco y la app sigue funcionando." },
     push: { icon: "bell", nombre: "Notificaciones push", lib: "expo-notifications", proximo: true,
       corto: "Recordatorio del turno y aviso cuando hay un resultado o receta nueva.",
       why: "Notificación local programada 24 h antes de cada turno y aviso al cargarse un resultado o una receta. Está planificada para el próximo sprint: hoy la lista de avisos usa datos de ejemplo." }
@@ -927,11 +1203,11 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       ir: [["registro", "Volver a Crear cuenta"]],
       datos: "authService.verificarProfesional() contra un padrón de ejemplo con el formato del Buscador Nacional (argentina.gob.ar)." },
     inicio: { rol: "paciente", titulo: "Inicio", ruta: "app/(paciente)/index.tsx",
-      resumen: "El próximo turno primero; todo lo demás, a un toque.",
-      clave: ["Próximo turno con «Cómo llegar»", "Accesos rápidos", "Centros cercanos en el mapa"],
-      ir: [["turnos", "Mis turnos"], ["mapa", "Mapa"], ["buscar", "Buscar"], ["notificaciones", "Notificaciones"]],
-      datos: "turnoService, notificacionService e institucionService.",
-      nativo: ["gps", "push"], plan: "Fase 5: los centros cercanos salen de la ubicación real del teléfono." },
+      resumen: "Próximo turno y credencial del plan en un carrusel; todo entra en una pantalla.",
+      clave: ["Carrusel: se alterna solo cada 4 s y se puede deslizar", "Sin turno próximo, se ve solo la credencial", "Vista previa del mapa, sin lista de nombres"],
+      ir: [["turnos", "Mis turnos"], ["plan", "Mi plan médico"], ["mapa", "Mapa"], ["notificaciones", "Notificaciones"]],
+      datos: "turnoService.getProximoTurno(), planMedicoService, notificacionService e institucionService.buscarCentros(). Componentes Carrusel, CredencialPlan y MapaCentros (modo vista previa).",
+      nativo: ["gps", "push"], plan: "Fase 3: la vista previa suma los centros privados que acepta tu obra social." },
     buscar: { rol: "paciente", titulo: "Buscar", ruta: "app/(paciente)/buscar.tsx",
       resumen: "Profesionales que atienden tu obra social, por especialidad.",
       clave: ["Solo aparece lo que cubre tu plan", "Filtro rápido por especialidad"],
@@ -948,26 +1224,26 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       ir: [["turnos", "Mis turnos"]],
       datos: "turnoService.getHorariosDisponibles() y reservarTurno()." },
     turnos: { rol: "paciente", titulo: "Mis turnos", ruta: "app/(paciente)/turnos.tsx",
-      resumen: "Turnos próximos e historial, cada uno con su estado.",
-      clave: ["Cancelar pide confirmación", "Los turnos cumplidos se pueden calificar"],
-      ir: [["calificar", "Calificar consulta"], ["inicio", "Inicio"]],
-      datos: "turnoService.listTurnosPaciente() y cancelarTurno()." },
+      resumen: "Tocá un turno para ver el detalle. Cancelar pide una segunda confirmación.",
+      clave: ["Detalle: profesional, fecha, tipo de consulta y sede con «Cómo llegar»", "Cancelar con segunda confirmación", "Historial: eliminar de a uno o todo (solo se oculta de la lista)"],
+      ir: [["medico", "Perfil profesional"], ["calificar", "Calificar consulta"], ["inicio", "Inicio"]],
+      datos: "turnoService.listMisTurnos(), cancelarTurno(), ocultarTurnoDelHistorial() y vaciarHistorialTurnos(). Paneles BottomSheet + Confirmacion." },
     calificar: { rol: "paciente", titulo: "Calificar consulta", ruta: "app/(paciente)/cuenta/calificar/[turnoId].tsx",
       resumen: "De 1 a 5 estrellas, solo después de un turno cumplido.",
       clave: ["Cinco criterios y un comentario opcional"],
       ir: [["turnos", "Mis turnos"]],
       datos: "feedbackService.enviarFeedback()." },
     estudios: { rol: "paciente", titulo: "Mis estudios", ruta: "app/(paciente)/estudios.tsx",
-      resumen: "Resultados y órdenes de laboratorio en un solo lugar.",
-      clave: ["Cada orden queda asociada al médico que la pidió", "Desde una orden se busca laboratorio en el mapa"],
-      ir: [["mapa", "Mapa"]],
-      datos: "estudioService." },
+      resumen: "Resultados y archivados. Cada estudio se abre en PDF dentro de la app.",
+      clave: ["Ver estudio: visor de PDF con zoom", "Archivar: carpetas por año y mes", "La orden médica se ve en el detalle del estudio"],
+      ir: [["inicio", "Inicio"]],
+      datos: "estudioService: listResultadosPaciente(), listArchivadosPaciente(), archivarEstudio() y getResultadoPdf() (PDF de ejemplo con datos ficticios). Visor: pdf.js en un WebView (src/components/visorPdf/)." },
     mapa: { rol: "paciente", titulo: "Mapa de centros", ruta: "app/(paciente)/mapa.tsx",
-      resumen: "Los centros de CABA que te atienden, ordenados por cercanía.",
-      clave: ["Los hospitales públicos atienden a todos", "Los privados aparecen solo si aceptan tu obra social", "Vista de mapa o de lista"],
-      ir: [["buscar", "Ver turnos"], ["inicio", "Inicio"]],
-      datos: "institucionService.listInstituciones({ planMedicoId, cerca }).",
-      nativo: ["gps", "mapa"], plan: "Fases 2 a 5: los establecimientos son reales, del REFES del Ministerio de Salud. Qué obra social acepta cada privado es un ejemplo por ahora." },
+      resumen: "Los centros de CABA que te atienden, en mapa o en lista.",
+      clave: ["Los hospitales públicos atienden a todos (regla 15)", "Los privados aparecen solo si aceptan tu obra social", "Filtros, «Más cercano» y tarjeta con «Cómo llegar»"],
+      ir: [["medico", "Perfil profesional"], ["inicio", "Inicio"]],
+      datos: "institucionService.buscarCentros({ planMedicoId, tipos, cerca }). Motor: MapLibre GL JS + OpenFreeMap en un WebView (src/components/mapa/): anda en Expo Go, web y la app compilada, sin clave.",
+      nativo: ["gps"], plan: "Fases 1, 2 y 5 hechas: 1.077 establecimientos reales del REFES. En la fase 3 se cargan los privados de cada obra social (hoy la app muestra los 162 públicos; acá los privados son un ejemplo)." },
     menu: { rol: "paciente", titulo: "Menú", ruta: "app/(paciente)/menu.tsx",
       resumen: "Tu cuenta en tarjetas agrupadas, con los avisos a la vista.",
       clave: ["Mi salud · Favoritos y avisos · Cuenta"],
@@ -980,14 +1256,14 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       datos: "notificacionService.listNotificaciones().", nativo: ["push"] },
     plan: { rol: "paciente", titulo: "Mi plan médico", ruta: "app/(paciente)/cuenta/plan.tsx",
       resumen: "Tu credencial y lo que cubre tu plan.",
-      clave: ["Cuántos centros y profesionales te atienden"],
+      clave: ["La misma credencial del carrusel del Inicio", "Cuántos centros y profesionales te atienden"],
       ir: [["mapa", "Ver mapa"], ["menu", "Menú"]],
-      datos: "planMedicoService e institucionService.", plan: "Fase 3: cada cobertura con su código oficial (OSDE: RNAS 400800)." },
+      datos: "planMedicoService e institucionService.listInstituciones({ planMedicoId }).", plan: "Fase 3: cada cobertura con su código oficial (OSDE: RNAS 400800) y los privados que acepta." },
     configuracion: { rol: "paciente", titulo: "Configuración", ruta: "app/(paciente)/cuenta/configuracion.tsx",
-      resumen: "Modo claro, oscuro o automático según el teléfono.",
-      clave: ["Probalo: el teléfono del emulador cambia de tema"],
+      resumen: "Modo claro (el predeterminado) u oscuro.",
+      clave: ["La app arranca en claro aunque el teléfono esté en modo oscuro", "Probalo: el teléfono del emulador cambia de tema"],
       ir: [["menu", "Menú"]],
-      datos: "useTheme().setPreferencia()." },
+      datos: "useTheme().setPreferencia(\"claro\" | \"oscuro\")." },
     agenda: { rol: "doctor", titulo: "Agenda", ruta: "app/(doctor)/index.tsx",
       resumen: "El día del profesional: cuántos turnos tiene y quién viene.",
       clave: ["Turnos de hoy y de los próximos 7 días"],
@@ -1020,7 +1296,7 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
       datos: "planMedicoService.crearPlanMedico().", plan: "Fase 3: código oficial RNAS o RNEMP en cada cobertura." },
     instituciones: { rol: "admin", titulo: "Instituciones", ruta: "app/(admin)/instituciones.tsx",
       resumen: "Alta de centros con su ubicación y las coberturas que aceptan.",
-      clave: ["Qué centro acepta qué cobertura no existe como dato público: se carga acá"],
+      clave: ["Qué centro acepta qué cobertura no existe como dato público: se carga acá", "La lista muestra 30 de los 1.077 establecimientos del REFES"],
       ir: [["panel", "Panel"]],
       datos: "institucionService.crearInstitucion().", plan: "Fase 6: Georef (API del Estado, gratis) completa latitud y longitud a partir de la dirección." }
   };
@@ -1043,12 +1319,97 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
 
   function rolDe(id) { return META[id].rol; }
 
+  var ultimaPantalla = null;
   function renderApp() {
-    var mode = ui.pref === "auto" ? ui.mode : ui.pref;
-    $app.setAttribute("data-mode", mode);
-    var inner = S[ui.screen]();
+    $app.setAttribute("data-mode", ui.pref);
+    var mismaPantalla = ultimaPantalla === ui.screen;
+    var prev = $app.querySelector(".content"), prevV = $app.querySelector(".vbody");
+    var scroll = mismaPantalla && prev ? prev.scrollTop : 0, scrollV = prevV ? [prevV.scrollLeft, prevV.scrollTop] : null;
+    var inner = S[ui.screen]() + (ui.hoja && HOJAS[ui.hoja.tipo] ? HOJAS[ui.hoja.tipo]() : "") + (ui.visor ? visorHtml() : "");
     var toast = ui.toast ? '<div class="toast" role="status">' + ui.toast + '</div>' : "";
     $app.innerHTML = statusbar() + inner + '<div class="homebar"><i></i></div>' + toast;
+    var c = $app.querySelector(".content");
+    if (c && scroll) c.scrollTop = scroll;
+    if (c && !mismaPantalla) c.classList.add("entra-pantalla");
+    var v = $app.querySelector(".vbody");
+    if (v && scrollV) { v.scrollLeft = scrollV[0]; v.scrollTop = scrollV[1]; }
+    ultimaPantalla = ui.screen;
+    // La animación de entrada de paneles y visor se usa una sola vez (no en cada redibujo).
+    if (ui.hojaAnim === "entra") ui.hojaAnim = "";
+    if (ui.visorAnim === "entra") ui.visorAnim = "";
+    carrPreparar();
+  }
+
+  /* ---------------- Paneles inferiores (BottomSheet) y visor de PDF ---------------- */
+  function hoja(titulo, extra, cuerpo, pie) {
+    return '<div class="hoja' + (ui.hojaAnim ? " " + ui.hojaAnim : "") + '" role="dialog" aria-modal="true" aria-label="' + titulo + '">' +
+      '<div class="fondo" data-act="cerrarHoja" aria-label="Cerrar"></div>' +
+      '<div class="panel"><span class="manija"></span><div class="phead"><span class="h2">' + titulo + '</span>' + (extra || "") +
+      '<button class="x" data-act="cerrarHoja" aria-label="Cerrar">' + ic("x", 20) + '</button></div>' +
+      '<div class="pbody">' + cuerpo + '</div>' + (pie ? '<div class="ppie">' + pie + '</div>' : "") + '</div></div>';
+  }
+  function seccion(icono, titulo, valor) {
+    return '<div class="sec"><div class="sec-t">' + ic(icono, 14) + titulo + '</div>' + valor + '</div>';
+  }
+  /* Segunda confirmación antes de algo que no se deshace (Confirmacion). */
+  function confirmacion(mensaje, si, no) {
+    return '<div class="confirm"><span class="alerta">' + ic("alert", 22) + '</span><p>' + mensaje + '</p>' +
+      '<div class="stack"><button class="btn dangerfill" data-act="ejecutar">' + si + '</button><button class="btn outline" data-act="volver">' + no + '</button></div></div>';
+  }
+  var HOJAS = {
+    turno: function () {
+      var t = turnoPorId(ui.hoja.id), m = medico(t.med);
+      if (ui.confirmar === "cancelar") {
+        return hoja("Cancelar turno", "", confirmacion("¿Seguro que querés cancelar tu turno con " + m.nombre + " del " + t.larga + " a las " + t.hora + "? El horario queda libre para otra persona.", "Sí, cancelar turno", "No, mantener turno"));
+      }
+      if (ui.confirmar === "ocultar") {
+        return hoja("Eliminar del historial", "", confirmacion("¿Eliminar este turno de tu historial? Solo deja de verse en esta lista: tu historial médico y lo que registró el profesional no cambian.", "Sí, eliminar", "No, volver"));
+      }
+      var cuerpo = '<button class="prof" data-go="medico" data-med="' + m.id + '" aria-label="Ver perfil de ' + m.nombre + '"><div class="av" style="width:52px;height:52px">' + m.ini + '</div>' +
+        '<div class="grow"><div class="name" style="font-size:16px;font-weight:700">' + m.nombre + '</div><div class="meta">' + m.esp + ' · Mat. ' + m.matricula + '</div></div><span class="mut">' + ic("right", 18) + '</span></button>' +
+        seccion("calendar", "Fecha y horario", '<div class="sec-v">' + t.larga + ' · ' + t.hora + ' h</div>') +
+        seccion("steth", "Tipo de consulta", '<div class="sec-v">' + t.tipo + '</div>') +
+        seccion("pin", "Sede", '<div class="sec-v">' + m.sede + '</div><div class="small mut">' + m.dir + ', CABA</div><button class="enlace" data-act="toast" data-msg="Abre Google Maps con la ruta hasta ' + m.sede + '.">Cómo llegar</button>');
+      var pie = t.prox
+        ? '<button class="btn outline" data-act="confirmar" data-v="cancelar">Cancelar turno</button>'
+        : '<button class="btn outline" data-act="confirmar" data-v="ocultar">Eliminar del historial</button>';
+      return hoja("Detalle del turno", '<span class="badge ' + t.cls + '">' + t.estado + '</span>', cuerpo, pie);
+    },
+    vaciar: function () {
+      var n = turnosDe(false).length;
+      return hoja("Eliminar historial", "", confirmacion("¿Eliminar " + (n === 1 ? "el turno" : "los " + n + " turnos") + " de tu historial? Solo dejan de verse en esta lista: tu historial médico no cambia.", "Sí, eliminar todo", "No, volver"));
+    },
+    estudio: function () {
+      var e = estudioPorId(ui.hoja.id), m = medico(e.med);
+      var cuerpo = seccion("steth", "Médico solicitante", '<div class="sec-v">' + m.nombre + '</div><div class="small mut">' + m.esp + '</div>') +
+        seccion("calendar", "Fecha del estudio", '<div class="sec-v">' + e.larga + '</div>') +
+        seccion("building", "Dónde se hizo", '<div class="sec-v">' + e.inst + '</div><div class="small mut">' + e.dir + '</div>') +
+        (e.orden ? seccion("clipboard", "Orden médica", '<div class="sec-v">Del ' + e.orden.fecha + '</div><div class="small mut">Indicaciones: ' + e.orden.ind + '</div>') : "") +
+        (e.archivado ? seccion("archive", "Archivado", '<div class="sec-v">' + e.archivado.larga + '</div><div class="small mut">Carpeta ' + e.archivado.anio + ' › ' + MESES[e.archivado.mes] + '</div>') : "");
+      var pie = '<button class="btn" data-act="ver">Ver estudio</button><button class="btn outline" data-act="archivar">' + (e.archivado ? "Desarchivar" : "Archivar") + '</button>';
+      return hoja(e.tipo, '<span class="badge ok">Listo</span>', cuerpo, pie);
+    }
+  };
+
+  /* Visor de PDF (VisorPdfModal): réplica del PDF de ejemplo que arma getResultadoPdf(). */
+  function visorHtml() {
+    var e = estudioPorId(ui.visor.id), m = medico(e.med), z = ZOOMS[ui.visor.nivel];
+    var secciones = e.pdf.map(function (sec) {
+      var tabla = sec.tabla ? '<table><tr>' + sec.tabla[0].map(function (h) { return '<th>' + h + '</th>'; }).join("") + '</tr>' +
+        sec.tabla.slice(1).map(function (f) { return '<tr>' + f.map(function (x) { return '<td>' + x + '</td>'; }).join("") + '</tr>'; }).join("") + '</table>' : "";
+      return '<div class="secpdf">' + sec.titulo + '</div>' + tabla + (sec.lineas || []).map(function (l) { return '<div class="linea">' + l + '</div>'; }).join("");
+    }).join("");
+    var campos = [["Paciente", "Sofía Martínez (DNI 12345678)"], ["Médico solicitante", m.nombre], ["Institución", e.inst], ["Fecha", e.larga]].map(function (k) {
+      return '<div class="campo"><span>' + k[0] + '</span><b>' + k[1] + '</b></div>';
+    }).join("");
+    return '<div class="visor' + (ui.visorAnim ? " " + ui.visorAnim : "") + '" role="dialog" aria-modal="true" aria-label="' + e.tipo + '"><div class="vbar">' +
+      '<button class="vbtn sinborde" data-act="cerrarVisor" aria-label="Cerrar estudio">' + ic("x", 22) + '</button><span class="h2">' + e.tipo + '</span>' +
+      '<button class="vbtn" data-act="zoomMenos" aria-label="Alejar"' + (ui.visor.nivel === 0 ? " disabled" : "") + '>' + ic("minus", 18) + '</button>' +
+      '<span class="pct">' + Math.round(z * 100) + '%</span>' +
+      '<button class="vbtn" data-act="zoomMas" aria-label="Acercar"' + (ui.visor.nivel === ZOOMS.length - 1 ? " disabled" : "") + '>' + ic("plus", 18) + '</button></div>' +
+      '<div class="vbody"><div class="pdfpag" style="zoom:' + z + '"><div class="banda"><b>DocApp Go</b><span>Resultado de estudio</span></div>' +
+      '<div class="cuerpo"><h3>' + e.tipo + '</h3><div class="avisopdf">Documento de ejemplo con datos ficticios, generado para la demo de DocApp Go.</div>' + campos + secciones + '</div>' +
+      '<div class="piepdf">Este documento no tiene validez médica.</div></div></div></div>';
   }
 
   function renderSide() {
@@ -1102,30 +1463,184 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { ui.toast = null; renderApp(); }, 2800);
   }
+  var avisoTimer = null;
+  function avisar(msg) {
+    ui.aviso = msg;
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function () { ui.aviso = null; renderApp(); }, 3000);
+  }
+
+  var hojaTimer = null;
+  function abrirHoja(h) {
+    clearTimeout(hojaTimer);
+    ui.hoja = h; ui.confirmar = null; ui.hojaAnim = "entra";
+    renderApp();
+  }
+  /* Al cerrar se sigue mostrando el mismo contenido mientras baja (como SheetModal); el cambio
+     de datos (cancelar, archivar...) se aplica recién cuando terminó de bajar. */
+  function cerrarHoja(despues) {
+    if (!ui.hoja || ui.hojaAnim === "sale") return;
+    ui.hojaAnim = "sale";
+    renderApp();
+    hojaTimer = setTimeout(function () {
+      ui.hoja = null; ui.confirmar = null; ui.hojaAnim = "";
+      if (despues) despues();
+      renderApp();
+    }, 220);
+  }
+  function cerrarVisor() {
+    if (!ui.visor || ui.visorAnim === "sale") return;
+    ui.visorAnim = "sale"; renderApp();
+    setTimeout(function () { ui.visor = null; ui.visorAnim = ""; renderApp(); }, 220);
+  }
+  function ejecutar() {
+    var h = ui.hoja, accion = ui.confirmar;
+    if (h.tipo === "vaciar") {
+      cerrarHoja(function () {
+        turnosDe(false).forEach(function (t) { t.oculto = true; });
+        avisar("Eliminaste todo tu historial de turnos.");
+      });
+      return;
+    }
+    var t = turnoPorId(h.id);
+    cerrarHoja(function () {
+      if (accion === "cancelar") {
+        t.prox = false; t.estado = "Cancelado"; t.cls = "danger";
+        avisar("Cancelaste el turno. Lo vas a ver en el historial.");
+      } else {
+        t.oculto = true;
+        avisar("Eliminaste el turno de tu historial.");
+      }
+    });
+  }
+  function alternarArchivo() {
+    var e = estudioPorId(ui.hoja.id);
+    cerrarHoja(function () {
+      if (e.archivado) {
+        e.archivado = null;
+        avisar('"' + e.tipo + '" volvió a Resultados.');
+      } else {
+        var d = new Date();
+        e.archivado = { anio: String(d.getFullYear()), mes: d.getMonth(), larga: d.getDate() + " de " + MESES[d.getMonth()].toLowerCase() + " de " + d.getFullYear() };
+        avisar("Archivado en " + e.archivado.anio + " › " + MESES[e.archivado.mes] + ".");
+      }
+    });
+  }
+
+  /* ---------------- Carrusel del Inicio ---------------- */
+  var escala = 1;
+  var sinMovimiento = false;
+  try { sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (err) { /* sin preferencia */ }
+  function carrEl() { return $app.querySelector("#carr"); }
+  function carrActualizar(i) {
+    ui.carrusel = i;
+    var titulo = $app.querySelector(".carr-head .h2");
+    if (titulo) titulo.textContent = CARR_TITULOS[i];
+    Array.prototype.forEach.call($app.querySelectorAll(".dots button"), function (b, k) { b.classList.toggle("on", k === i); });
+  }
+  // Con desplazamiento suave, el título y los puntos cambian cuando la tarjeta pasa la mitad (lo
+  // detecta el evento scroll); así no vuelven un instante al título anterior.
+  function carrIrA(i, suave) {
+    var c = carrEl();
+    if (!c) return;
+    c.scrollTo({ left: i * c.clientWidth, behavior: suave ? "smooth" : "auto" });
+    if (!suave) carrActualizar(i);
+  }
+  function carrPreparar() {
+    var c = carrEl();
+    if (!c) return;
+    c.scrollLeft = ui.carrusel * c.clientWidth;
+    c.addEventListener("scroll", function () {
+      var i = Math.round(c.scrollLeft / c.clientWidth);
+      if (i !== ui.carrusel && i >= 0 && i < CARR_TITULOS.length) carrActualizar(i);
+    }, { passive: true });
+    c.addEventListener("touchstart", function () { ui.carrInteraccion = Date.now(); }, { passive: true });
+    c.addEventListener("wheel", function () { ui.carrInteraccion = Date.now(); }, { passive: true });
+    // Con el mouse también se puede arrastrar (en el celular se desliza con el dedo).
+    var x0 = 0, s0 = 0, arrastrando = false, movio = false;
+    c.addEventListener("pointerdown", function (e) {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      arrastrando = true; movio = false; x0 = e.clientX; s0 = c.scrollLeft;
+      ui.carrInteraccion = Date.now();
+    });
+    c.addEventListener("pointermove", function (e) {
+      if (!arrastrando) return;
+      var dx = (e.clientX - x0) / escala;
+      if (!movio && Math.abs(dx) > 5) { movio = true; c.classList.add("arrastrando"); c.setPointerCapture(e.pointerId); }
+      if (movio) c.scrollLeft = s0 - dx;
+    });
+    function soltar(e) {
+      if (!arrastrando) return;
+      arrastrando = false;
+      if (!movio) return;
+      var dx = (e.clientX - x0) / escala, w = c.clientWidth, i = Math.round(s0 / w);
+      if (dx < -w * 0.15) i++; else if (dx > w * 0.15) i--;
+      i = Math.max(0, Math.min(CARR_TITULOS.length - 1, i));
+      c.classList.remove("arrastrando");
+      carrIrA(i, true);
+      ui.carrInteraccion = Date.now();
+      ui.ignorarClic = true;
+    }
+    c.addEventListener("pointerup", soltar);
+    c.addEventListener("pointercancel", soltar);
+  }
+  // Avanza solo cada 4 s, salvo que el usuario lo haya movido hace poco o haya un panel abierto.
+  setInterval(function () {
+    if (sinMovimiento || ui.screen !== "inicio" || ui.hoja || ui.visor || document.hidden) return;
+    if (Date.now() - ui.carrInteraccion < 4000) return;
+    carrIrA((ui.carrusel + 1) % CARR_TITULOS.length, true);
+  }, 4000);
 
   function go(id) {
     if (!S[id]) return;
+    clearTimeout(hojaTimer);
     ui.screen = id; ui.overlay = null; ui.toast = null;
+    ui.hoja = null; ui.hojaAnim = ""; ui.confirmar = null; ui.visor = null; ui.visorAnim = ""; ui.aviso = null;
     renderApp(); renderSide();
     var c = $app.querySelector(".content"); if (c) c.scrollTop = 0;
   }
 
   $app.addEventListener("click", function (e) {
+    if (ui.ignorarClic) { ui.ignorarClic = false; return; }
     var el = e.target.closest("[data-go],[data-act]");
     if (!el || !$app.contains(el)) return;
     if (el.dataset.med) ui.medico = el.dataset.med;
-    if (el.dataset.sel) { ui.mapaSel = el.dataset.sel; ui.mapaFiltro = "todos"; ui.mapaVista = "mapa"; }
-    if (el.dataset.filtro) { ui.mapaFiltro = el.dataset.filtro; ui.mapaVista = "mapa"; }
     if (el.dataset.go) { go(el.dataset.go); return; }
     var a = el.dataset.act, v = el.dataset.v;
     if (a === "toast") { showToast(el.dataset.msg); return; }
+    if (a === "carr") { ui.carrInteraccion = Date.now(); carrIrA(+v, true); return; }
+    if (a === "abrirTurno") { abrirHoja({ tipo: "turno", id: v }); return; }
+    if (a === "abrirEstudio") { abrirHoja({ tipo: "estudio", id: v }); return; }
+    if (a === "vaciar") { abrirHoja({ tipo: "vaciar" }); return; }
+    if (a === "cerrarHoja") { cerrarHoja(); return; }
+    if (a === "ejecutar") { ejecutar(); return; }
+    if (a === "archivar") { alternarArchivo(); return; }
+    if (a === "ver") {
+      var id = ui.hoja.id;
+      cerrarHoja(function () { ui.visor = { id: id, nivel: 0 }; ui.visorAnim = "entra"; });
+      return;
+    }
+    if (a === "cerrarVisor") { cerrarVisor(); return; }
     if (a === "esp") ui.esp = v;
     else if (a === "day") ui.day = +v;
     else if (a === "slot") ui.slot = v;
     else if (a === "turnosTab") ui.turnosTab = v;
     else if (a === "estudiosTab") ui.estudiosTab = v;
-    else if (a === "filtro") { ui.mapaFiltro = v; }
+    else if (a === "confirmar") ui.confirmar = v;
+    else if (a === "volver") ui.confirmar = null;
+    else if (a === "archAnio") { ui.archAnio = v; ui.archMes = null; }
+    else if (a === "archMes") ui.archMes = +v;
+    else if (a === "archAtras") { if (ui.archMes !== null) ui.archMes = null; else ui.archAnio = null; }
+    else if (a === "zoomMas") ui.visor.nivel = Math.min(ZOOMS.length - 1, ui.visor.nivel + 1);
+    else if (a === "zoomMenos") ui.visor.nivel = Math.max(0, ui.visor.nivel - 1);
+    else if (a === "filtro") ui.mapaFiltro = v;
     else if (a === "sel") { ui.mapaSel = v; ui.mapaVista = "mapa"; }
+    else if (a === "cerrarSel") ui.mapaSel = null;
+    else if (a === "cercano") {
+      var cerca = CENTROS.filter(function (c) { return ui.mapaFiltro === "todos" || c.tipo === ui.mapaFiltro; })
+        .sort(function (x, y) { return distanciaKm(YO, x) - distanciaKm(YO, y); })[0];
+      if (cerca) { ui.mapaSel = cerca.id; ui.mapaVista = "mapa"; }
+    }
     else if (a === "vista") ui.mapaVista = ui.mapaVista === "mapa" ? "lista" : "mapa";
     else if (a === "rating") ui.rating = +v;
     else if (a.indexOf("crit") === 0) ui.criterios[+a.slice(4)] = +v;
@@ -1143,19 +1658,19 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
   document.getElementById("prev").addEventListener("click", function () { var i = ORDER.indexOf(ui.screen); if (i > 0) go(ORDER[i - 1]); });
   document.getElementById("next").addEventListener("click", function () { var i = ORDER.indexOf(ui.screen); if (i < ORDER.length - 1) go(ORDER[i + 1]); });
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { if (ui.visor) cerrarVisor(); else if (ui.hoja) cerrarHoja(); return; }
     if (e.key === "ArrowRight") document.getElementById("next").click();
     if (e.key === "ArrowLeft") document.getElementById("prev").click();
   });
 
   function syncModeSwitch() {
-    var mode = ui.pref === "auto" ? ui.mode : ui.pref;
     Array.prototype.forEach.call(document.querySelectorAll("#modeSwitch button"), function (b) {
-      b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+      b.setAttribute("aria-pressed", String(b.dataset.mode === ui.pref));
     });
   }
   document.getElementById("modeSwitch").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
-    ui.mode = b.dataset.mode; ui.pref = ui.pref === "auto" ? "auto" : b.dataset.mode;
+    ui.pref = b.dataset.mode;
     syncModeSwitch(); renderApp();
   });
 
@@ -1170,6 +1685,7 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
     $viewport.style.width = (375 * s) + "px";
     $viewport.style.height = (812 * s) + "px";
     $app.style.transform = "scale(" + s + ")";
+    escala = s;
     $device.style.borderRadius = (46 * s + 4) + "px";
     $viewport.style.borderRadius = (37 * s) + "px";
     $device.style.padding = Math.max(6, 10 * s) + "px";
@@ -1177,9 +1693,7 @@ button.card { width: 100%; text-align: left; color: inherit; display: block; }
   if (window.ResizeObserver) new ResizeObserver(fit).observe($stage);
   window.addEventListener("resize", fit);
 
-  try {
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ui.mode = "dark";
-  } catch (err) { /* sin preferencia: queda claro */ }
+  // Como la app: arranca en modo claro aunque el sistema esté en oscuro.
   syncModeSwitch();
   renderApp(); renderSide(); fit();
 })();

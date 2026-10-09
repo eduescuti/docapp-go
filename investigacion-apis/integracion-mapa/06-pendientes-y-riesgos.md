@@ -11,7 +11,7 @@
 | 0.3 / 3 | **Relevar las cartillas** de OSDE, Swiss Medical y Galeno (sanatorios, clínicas y laboratorios de CABA) y cargarlas como `FuenteCobertura` | La cartilla de OSDE es pública y no pide login, pero un cartel de tutorial bloqueó la navegación automática. Sumar `registro` y `codigoOficial` a los planes (OSDE: RNAS 400800) |
 | 4 | Que la reserva y la búsqueda de médicos respeten la regla de cobertura **de la sede** · `crearInstitucion` con `origen` | `buscarCentros` y `aceptaCobertura` ya están |
 | 6 | **Georef** en el alta de instituciones del admin (dirección → coordenadas) y selector Público / Privado | API gratis y sin clave |
-| 7 | Actualizar el **mockup HTML** (todavía dice "Google Maps SDK" en componentes nativos) y la documentación final | |
+| 7 | Documentación final | El **mockup HTML** ya está al día (09/10/2026): mapa MapLibre, carrusel del Inicio, Turnos y Estudios nuevos, modo claro por defecto y componentes nativos GPS + push |
 
 ## 2. A confirmar
 
