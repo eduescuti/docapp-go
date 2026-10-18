@@ -1,18 +1,71 @@
+import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
 import { ChevronRight, EyeOff, Fingerprint, KeyRound, ShieldCheck, Smartphone } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import { BackHeader, Card, IconBadge, LogoutButton, ScreenContainer, SectionHeader, Text } from "@/components";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
 import { formatFechaHora } from "@/utils/format";
+import { estaBiometriaHabilitada, guardarSesionBiometrica, setBiometriaHabilitada } from "@/services/biometria";
 
 /** Seguridad: sesión activa, acceso a cambiar la contraseña y cómo se protegen los datos. */
 export default function SeguridadScreen() {
   const { theme } = useTheme();
-  const { sesion } = useAuth();
+  const { sesion, rol } = useAuth();
   const router = useRouter();
+
+  const [biometriaActiva, setBiometriaActiva] = useState(false);
+  const [soportaHardware, setSoportaHardware] = useState(false);
+
+  useEffect(() => {
+    chequearEstadoInicial();
+  }, []);
+
+  const chequearEstadoInicial = async () => {
+    try {
+      const tieneHardware = await LocalAuthentication.hasHardwareAsync();
+      const estaRegistrado = await LocalAuthentication.isEnrolledAsync();
+      setSoportaHardware(tieneHardware && estaRegistrado);
+
+      const habilitada = await estaBiometriaHabilitada();
+      setBiometriaActiva(habilitada);
+    } catch {
+      setSoportaHardware(false);
+    }
+  };
+
+  const handleToggleBiometria = async (activar: boolean) => {
+    if (activar) {
+      if (!soportaHardware) {
+        Alert.alert(
+          "Biometría no disponible",
+          "Tu dispositivo no cuenta con sensor biométrico o no tenés ninguna huella/rostro registrado en los ajustes del sistema."
+        );
+        return;
+      }
+
+      // Validar identidad con el sensor antes de encender el interruptor
+      const res = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Confirmá tu huella para habilitar el ingreso biométrico",
+        cancelLabel: "Cancelar",
+        disableDeviceFallback: false,
+      });
+
+      if (res.success) {
+        await setBiometriaHabilitada(true);
+        if (sesion?.dni && rol) {
+          await guardarSesionBiometrica(sesion.dni, rol);
+        }
+        setBiometriaActiva(true);
+      }
+    } else {
+      await setBiometriaHabilitada(false);
+      setBiometriaActiva(false);
+    }
+  };
 
   return (
     <ScreenContainer>
@@ -42,8 +95,27 @@ export default function SeguridadScreen() {
           <ChevronRight size={18} color={theme.colors.mutedForeground} />
         </View>
       </Card>
+
+      {/* Switch interactivo de Biometría */}
+      <Card style={styles.bloque}>
+        <View style={styles.row}>
+          <IconBadge icon={Fingerprint} size={40} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.titulo, { color: theme.colors.foreground }]}>Ingreso con huella digital</Text>
+            <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+              {biometriaActiva ? "Habilitado para este dispositivo" : "Deshabilitado"}
+            </Text>
+          </View>
+          <Switch
+            value={biometriaActiva}
+            onValueChange={handleToggleBiometria}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor={Platform.OS === "android" ? (biometriaActiva ? theme.colors.primaryForeground : theme.colors.card) : undefined}
+          />
+        </View>
+      </Card>
+
       <Proximamente icon={ShieldCheck} titulo="Verificación en dos pasos" />
-      <Proximamente icon={Fingerprint} titulo="Ingreso con huella o rostro" />
 
       <View style={{ height: 16 }} />
       <SectionHeader title="Tus datos" />

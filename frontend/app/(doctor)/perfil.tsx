@@ -1,39 +1,91 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import { BadgeCheck, Clock, MapPin, Star } from "lucide-react-native";
+import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
+import { BadgeCheck, Clock, Fingerprint, MapPin, Star } from "lucide-react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import { Avatar, Card, LogoutButton, ScreenContainer, SectionHeader, Text } from "@/components";
 import { Especialidad, Medico, Sede } from "@/domain";
+import { useAuth } from "@/hooks/useAuth";
 import { getEspecialidad, getMedicoActual, getSede } from "@/services";
+import {
+  estaBiometriaHabilitada,
+  guardarSesionBiometrica,
+  limpiarSesionBiometrica,
+  setBiometriaHabilitada,
+} from "@/services/biometria";
 import { useTheme } from "@/theme";
 import { iniciales } from "@/utils/format";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-/** Perfil profesional: datos de matrícula, lugares y horarios de atención. */
+/** Perfil profesional: datos de matrícula, lugares, horarios de atención y ajustes de seguridad. */
 export default function DoctorPerfilScreen() {
   const { theme } = useTheme();
+  const { sesion } = useAuth();
+
   const [medico, setMedico] = useState<Medico | null>(null);
   const [especialidad, setEspecialidad] = useState<Especialidad | undefined>();
   const [sedes, setSedes] = useState<Sede[]>([]);
+  const [biometriaActiva, setBiometriaActiva] = useState(false);
+  const [soportaBiometria, setSoportaBiometria] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       let activo = true;
       (async () => {
-        const m = await getMedicoActual();
+        const [m, tieneHardware, tieneEnrolamiento, habilitada] = await Promise.all([
+          getMedicoActual(),
+          LocalAuthentication.hasHardwareAsync(),
+          LocalAuthentication.isEnrolledAsync(),
+          estaBiometriaHabilitada(),
+        ]);
+
         const [esp, ...s] = await Promise.all([getEspecialidad(m.especialidadId), ...m.sedesIds.map(getSede)]);
+
         if (!activo) return;
         setMedico(m);
         setEspecialidad(esp);
         setSedes(s.filter((x): x is Sede => x !== undefined));
+        setSoportaBiometria(tieneHardware && tieneEnrolamiento);
+        setBiometriaActiva(habilitada);
       })();
+
       return () => {
         activo = false;
       };
     }, []),
   );
+
+  const toggleBiometria = async (valor: boolean) => {
+    if (!valor) {
+      await setBiometriaHabilitada(false);
+      await limpiarSesionBiometrica();
+      setBiometriaActiva(false);
+      return;
+    }
+
+    try {
+      const resultado = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Confirmá tu huella para habilitar el ingreso rápido",
+        cancelLabel: "Cancelar",
+        disableDeviceFallback: true,
+      });
+
+      if (resultado.success) {
+        await setBiometriaHabilitada(true);
+        if (sesion?.dni) {
+          await guardarSesionBiometrica(sesion.dni);
+        }
+        setBiometriaActiva(true);
+      } else {
+        setBiometriaActiva(false);
+      }
+    } catch {
+      Alert.alert("Error", "No se pudo vincular la huella digital en este dispositivo.");
+      setBiometriaActiva(false);
+    }
+  };
 
   if (!medico) {
     return (
@@ -47,7 +99,9 @@ export default function DoctorPerfilScreen() {
 
   return (
     <ScreenContainer>
-      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Mi perfil</Text>
+      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
+        Mi perfil
+      </Text>
 
       <Card style={styles.perfil}>
         <Avatar uri={medico.avatarUrl} iniciales={iniciales(medico.nombre, medico.apellido)} size={72} />
@@ -104,7 +158,34 @@ export default function DoctorPerfilScreen() {
         </Card>
       ))}
 
-      <View style={{ marginTop: 24 }}>
+      {/* Ajuste de ingreso con huella para el médico */}
+      {soportaBiometria ? (
+        <>
+          <View style={{ height: 16 }} />
+          <SectionHeader title="Seguridad de la cuenta" />
+          <Card style={styles.item}>
+            <View style={styles.itemRow}>
+              <Fingerprint size={22} color={theme.colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>
+                  Ingreso con huella digital
+                </Text>
+                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+                  Accedé rápidamente a tus turnos sin escribir tu contraseña.
+                </Text>
+              </View>
+              <Switch
+                value={biometriaActiva}
+                onValueChange={toggleBiometria}
+                thumbColor={Platform.OS === "android" ? (biometriaActiva ? theme.colors.primary : "#f4f3f4") : undefined}
+                trackColor={{ false: theme.colors.border, true: `${theme.colors.primary}80` }}
+              />
+            </View>
+          </Card>
+        </>
+      ) : null}
+
+      <View style={{ marginTop: 24, marginBottom: 32 }}>
         <LogoutButton />
       </View>
     </ScreenContainer>
