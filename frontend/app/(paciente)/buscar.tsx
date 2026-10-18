@@ -54,9 +54,6 @@ export default function BuscarScreen() {
             style={[styles.searchInput, { color: theme.colors.foreground }]}
           />
         </View>
-        <View style={[styles.filterButton, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-          <SlidersHorizontal size={20} color={theme.colors.foreground} />
-        </View>
       </View>
 
       <FlatList

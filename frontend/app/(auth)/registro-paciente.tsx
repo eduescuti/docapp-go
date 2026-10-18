@@ -1,14 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
+import { ShieldCheck } from "lucide-react-native";
 
-import { BackHeader, FormLayout, PasswordField, PrimaryButton, SelectField, Text, TextField } from "@/components";
+import {
+  BackHeader,
+  Card,
+  FormLayout,
+  IconBadge,
+  PasswordField,
+  PrimaryButton,
+  SelectField,
+  Text,
+  TextField,
+} from "@/components";
 import { PlanMedico } from "@/domain";
 import { listPlanesMedicos, registrarPaciente } from "@/services";
 import { useTheme } from "@/theme";
 import { esDniValido, esPasswordValida } from "@/utils/validation";
 
-/** Registro de paciente. Sprint 1: valida los datos pero todavía no guarda la cuenta. */
+/** Registro de paciente. Sprint 1: valida los datos y muestra confirmación con botón al Login. */
 export default function RegistroPacienteScreen() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -22,6 +33,7 @@ export default function RegistroPacienteScreen() {
   const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [cuentaCreada, setCuentaCreada] = useState(false);
 
   useEffect(() => {
     listPlanesMedicos().then(setPlanes);
@@ -49,11 +61,7 @@ export default function RegistroPacienteScreen() {
     setCargando(true);
     try {
       await registrarPaciente({ nombre, apellido, dni, password, planMedicoId: planId });
-      Alert.alert(
-        "¡Cuenta creada!",
-        "Tus datos son válidos. Por ahora la cuenta no se guarda (todavía no hay base de datos), así que para probar la app ingresá con un usuario de prueba.",
-        [{ text: "Ir al inicio de sesión", onPress: () => router.replace("/(auth)/login") }],
-      );
+      setCuentaCreada(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");
     } finally {
@@ -61,19 +69,72 @@ export default function RegistroPacienteScreen() {
     }
   };
 
+  // Si la cuenta ya fue creada, mostramos la pantalla de éxito con el botón directo al Login
+  if (cuentaCreada) {
+    return (
+      <FormLayout
+        header={<BackHeader titulo="Registro completado" onBack={() => router.replace("/(auth)/login")} />}
+        footer={
+          <PrimaryButton
+            label="Ir al inicio de sesión"
+            onPress={() => router.replace("/(auth)/login")}
+          />
+        }
+      >
+        <View style={styles.finalWrapper}>
+          <Card style={styles.finalCard}>
+            <IconBadge icon={ShieldCheck} size={56} />
+            <Text variant="heading" style={[styles.tituloExito, { color: theme.colors.foreground }]}>
+              ¡Todo listo, {nombre}!
+            </Text>
+            <Text style={[styles.subtituloExito, { color: theme.colors.mutedForeground }]}>
+              Tu cuenta fue registrada. Vas a ingresar con tu DNI {dni} y la contraseña que elegiste.
+            </Text>
+            <Text style={[styles.nota, { color: theme.colors.mutedForeground }]}>
+              (Para ingresar durante el sprint podés usar los usuarios de prueba habilitados).
+            </Text>
+          </Card>
+        </View>
+      </FormLayout>
+    );
+  }
+
   return (
     <FormLayout
       header={<BackHeader titulo="Registro de paciente" subtitulo="Completá tus datos y tu cobertura" />}
-      footer={<PrimaryButton label="Crear cuenta" onPress={handleCrear} loading={cargando} />}
+      footer={
+        <>
+          <PrimaryButton label="Crear cuenta" onPress={handleCrear} loading={cargando} />
+          <TouchableOpacity
+            onPress={() => router.replace("/(auth)/login")}
+            style={styles.linkWrapper}
+          >
+            <Text style={[styles.linkTexto, { color: theme.colors.mutedForeground }]}>
+              ¿Ya tenés una cuenta?{" "}
+              <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>Iniciá sesión</Text>
+            </Text>
+          </TouchableOpacity>
+        </>
+      }
     >
-      <View style={styles.fila}>
-        <View style={styles.col}>
-          <TextField label="Nombre" value={nombre} onChangeText={setNombre} placeholder="Ej. Sofía" autoComplete="given-name" error={mostrar("nombre")} />
-        </View>
-        <View style={styles.col}>
-          <TextField label="Apellido" value={apellido} onChangeText={setApellido} placeholder="Ej. Martínez" autoComplete="family-name" error={mostrar("apellido")} />
-        </View>
-      </View>
+      <TextField
+        label="Nombre"
+        value={nombre}
+        onChangeText={setNombre}
+        placeholder="Ej. Sofía"
+        autoComplete="given-name"
+        error={mostrar("nombre")}
+      />
+
+      <TextField
+        label="Apellido"
+        value={apellido}
+        onChangeText={setApellido}
+        placeholder="Ej. Martínez"
+        autoComplete="family-name"
+        error={mostrar("apellido")}
+      />
+
       <TextField
         label="DNI"
         value={dni}
@@ -83,6 +144,7 @@ export default function RegistroPacienteScreen() {
         maxLength={10}
         error={mostrar("dni")}
       />
+
       <SelectField
         label="Obra social / prepaga"
         placeholder="Elegí tu cobertura"
@@ -91,6 +153,7 @@ export default function RegistroPacienteScreen() {
         onChange={setPlanId}
         error={mostrar("plan")}
       />
+
       <PasswordField
         label="Contraseña"
         value={password}
@@ -107,6 +170,37 @@ export default function RegistroPacienteScreen() {
 }
 
 const styles = StyleSheet.create({
-  fila: { flexDirection: "row", gap: 12 },
-  col: { flex: 1 },
+  finalWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  finalCard: {
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 28,
+  },
+  tituloExito: {
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  subtituloExito: {
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  nota: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  linkWrapper: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  linkTexto: {
+    fontSize: 14,
+    textAlign: "center",
+  },
 });

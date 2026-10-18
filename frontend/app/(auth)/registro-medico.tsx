@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { BadgeCheck, ShieldCheck } from "lucide-react-native";
 
@@ -101,7 +101,18 @@ export default function RegistroMedicoScreen() {
 
   const footer =
     paso === 0 ? (
-      <PrimaryButton label="Verificar matrícula" onPress={handleVerificar} loading={cargando} />
+      <>
+        <PrimaryButton label="Verificar matrícula" onPress={handleVerificar} loading={cargando} />
+        <TouchableOpacity
+          onPress={() => router.replace("/(auth)/login")}
+          style={styles.linkWrapper}
+        >
+          <Text style={[styles.linkTexto, { color: theme.colors.mutedForeground }]}>
+            ¿Ya tenés una cuenta?{" "}
+            <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>Iniciá sesión</Text>
+          </Text>
+        </TouchableOpacity>
+      </>
     ) : paso === 1 ? (
       <>
         <PrimaryButton label="Sí, soy yo" onPress={() => setPaso(2)} />
@@ -109,12 +120,22 @@ export default function RegistroMedicoScreen() {
       </>
     ) : (
       <>
-        <PrimaryButton label="Crear cuenta" onPress={handleCrear} loading={cargando} disabled={!REGISTRO_HABILITADO} />
+        <PrimaryButton
+          label="Crear cuenta"
+          onPress={handleCrear}
+          loading={cargando}
+          disabled={!REGISTRO_HABILITADO}
+        />
         {!REGISTRO_HABILITADO && (
           <Text style={[styles.nota, { color: theme.colors.mutedForeground }]}>
             Tu matrícula fue verificada. La creación de cuentas se habilita cuando conectemos la base de datos.
           </Text>
         )}
+        <PrimaryButton
+          label="Volver al inicio de sesión"
+          variant="outline"
+          onPress={() => router.replace("/(auth)/login")}
+        />
       </>
     );
 
@@ -235,4 +256,6 @@ const styles = StyleSheet.create({
   nota: { fontSize: 13, textAlign: "center" },
   finalWrapper: { flex: 1, justifyContent: "center" },
   finalCard: { alignItems: "center", gap: 12, paddingVertical: 28 },
+  linkWrapper: {paddingVertical: 12,alignItems: "center",},
+  linkTexto: {fontSize: 14,textAlign: "center",},
 });
