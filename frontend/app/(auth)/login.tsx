@@ -1,25 +1,53 @@
-import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
-import { useRouter } from "expo-router";
-import { HeartPulse } from "lucide-react-native";
+import { useCallback, useState } from "react";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { Fingerprint, HeartPulse } from "lucide-react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import { Card, PasswordField, PrimaryButton, ScreenContainer, Text, TextField } from "@/components";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
+import { estaBiometriaHabilitada, guardarSesionBiometrica, obtenerDatosSesionBiometrica } from "@/services/biometria";
 
-/**
- * Inicio de sesión único para los tres roles: el rol lo determina la cuenta
- * (DNI + contraseña), no un selector en pantalla.
- */
 export default function LoginScreen() {
   const { theme } = useTheme();
-  const { login } = useAuth();
+  const { login, loginBiometrico } = useAuth();
   const router = useRouter();
 
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [biometriaHabilitada, setBiometriaHabilitada] = useState(false);
+  const [dniGuardado, setDniGuardado] = useState<string | null>(null);
+
+  // La huella solo se considera activa si está habilitada en el teléfono Y el DNI en pantalla coincide con la cuenta configurada
+  const coincideDni = dni.trim().length > 0 && dni.trim() === dniGuardado;
+  const huellaValidaParaEsteUsuario = biometriaHabilitada && coincideDni;
+
+  // Revisa si el usuario activó la huella en Seguridad cada vez que la pantalla vuelve al foco
+  useFocusEffect(
+    useCallback(() => {
+      chequearBiometria();
+    }, [])
+  );
+
+  const chequearBiometria = async () => {
+    try {
+      const habilitada = await estaBiometriaHabilitada();
+      const sesion = await obtenerDatosSesionBiometrica();
+      if (habilitada && sesion.dni) {
+        setBiometriaHabilitada(true);
+        setDniGuardado(sesion.dni);
+        setDni(sesion.dni);
+      } else {
+        setBiometriaHabilitada(false);
+        setDniGuardado(null);
+      }
+    } catch {
+      setBiometriaHabilitada(false);
+    }
+  };
 
   const puedeEnviar = dni.trim().length > 0 && password.length > 0;
 
@@ -29,9 +57,74 @@ export default function LoginScreen() {
     setCargando(true);
     try {
       await login(dni, password);
+      // Registra el DNI como el último usuario logueado en este dispositivo
+      await guardarSesionBiometrica(dni.trim());
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo iniciar sesión.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const handleAutenticacionBiometrica = async () => {
+    setError(null);
+
+    // 1. Validar que el DNI no esté vacío
+    if (!dni.trim()) {
+      setError("Ingresá tu DNI para verificar si tenés habilitado el acceso biométrico.");
+      return;
+    }
+
+    // 2. Si el DNI en pantalla fue modificado o no tiene huella asociada
+    if (dni.trim() !== dniGuardado || !biometriaHabilitada) {
+      Alert.alert(
+        "Huella no configurada para este DNI",
+        `El usuario con DNI ${dni.trim()} no tiene configurado el ingreso biométrico en este dispositivo. Iniciá sesión con contraseña y activalo en Seguridad.`
+      );
+      return;
+    }
+
+    // 3. Chequeo de hardware en el teléfono
+    const tieneHardware = await LocalAuthentication.hasHardwareAsync();
+    const tieneEnrolamiento = await LocalAuthentication.isEnrolledAsync();
+
+    if (!tieneHardware || !tieneEnrolamiento) {
+      Alert.alert(
+        "Sensor no disponible",
+        "Tu dispositivo no tiene sensor biométrico activo o no tenés huellas configuradas en Android."
+      );
+      return;
+    }
+
+    // 4. Lectura física de la huella
+    let resultado;
+    try {
+      resultado = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Accedé a DocApp Go con tu huella",
+        cancelLabel: "Cancelar",
+        fallbackLabel: "Usar contraseña",
+        disableDeviceFallback: false,
+      });
+    } catch {
+      setError("Error al comunicarse con el sensor biométrico.");
+      return;
+    }
+
+    if (!resultado.success) {
+      if (resultado.error !== "user_cancel" && resultado.error !== "system_cancel") {
+        setError("No se reconoció la huella digital.");
+      }
+      return;
+    }
+
+    // 5. Ingreso directo: el sensor ya certificó la identidad para el DNI ingresado
+    try {
+      setCargando(true);
+      await loginBiometrico(dni.trim());
+      router.replace("/");
+    } catch (errLogin) {
+      setError(errLogin instanceof Error ? errLogin.message : "Error al iniciar sesión.");
     } finally {
       setCargando(false);
     }
@@ -92,13 +185,37 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          <PrimaryButton
-            label="Iniciar sesión"
-            onPress={handleIngresar}
-            disabled={!puedeEnviar}
-            loading={cargando}
-            accessibilityLabel="Iniciar sesión"
-          />
+          <View style={styles.botonesFila}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton
+                label="Iniciar sesión"
+                onPress={handleIngresar}
+                disabled={!puedeEnviar}
+                loading={cargando}
+                accessibilityLabel="Iniciar sesión"
+              />
+            </View>
+
+            {/* Ícono de huella digital integrado junto al botón */}
+            <TouchableOpacity
+              onPress={handleAutenticacionBiometrica}
+              style={[
+                styles.biometriaIconBoton,
+                {
+                  borderColor: huellaValidaParaEsteUsuario ? theme.colors.primary : theme.colors.border,
+                  backgroundColor: huellaValidaParaEsteUsuario ? `${theme.colors.primary}18` : theme.colors.card,
+                  opacity: huellaValidaParaEsteUsuario ? 1 : 0.6,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Iniciar sesión con huella"
+            >
+              <Fingerprint
+                size={26}
+                color={huellaValidaParaEsteUsuario ? theme.colors.primary : theme.colors.mutedForeground}
+              />
+            </TouchableOpacity>
+          </View>
         </Card>
 
         <Pressable
@@ -133,5 +250,19 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 17, fontWeight: "600", textAlign: "center", marginBottom: 20 },
   errorBox: { padding: 12, marginBottom: 16 },
   errorText: { fontSize: 13 },
+  botonesFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 8,
+  },
+  biometriaIconBoton: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   registroLink: { minHeight: 44, alignItems: "center", justifyContent: "center", marginTop: 20 },
 });

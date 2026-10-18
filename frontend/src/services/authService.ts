@@ -62,6 +62,48 @@ export async function iniciarSesion(dni: string, password: string): Promise<Sesi
   return delay(sesion, 400);
 }
 
+/**
+ * Inicia sesión tras una autenticación biométrica exitosa en el dispositivo.
+ * No requiere contraseña porque la identidad ya fue validada por el hardware local.
+ */
+export async function iniciarSesionBiometrica(dni: string): Promise<Sesion> {
+  const usuario = usuarios.find((u) => u.dni === normalizarDni(dni.trim()));
+  if (!usuario) {
+    await delay(null, 300);
+    throw new Error("No se encontró una cuenta asociada a este DNI.");
+  }
+
+  const iniciadaEn = format(new Date(), "yyyy-MM-dd'T'HH:mm");
+  let sesion: Sesion;
+
+  if (usuario.rol === "admin") {
+    sesion = { rol: "admin", dni: usuario.dni, nombreCompleto: "Administrador", iniciadaEn };
+  } else if (usuario.rol === "paciente") {
+    const paciente = pacientesMock.find((p) => p.id === usuario.pacienteId);
+    if (!paciente) throw new Error(ERROR_CREDENCIALES);
+    sesion = {
+      rol: "paciente",
+      dni: usuario.dni,
+      nombreCompleto: `${paciente.nombre} ${paciente.apellido}`,
+      pacienteId: paciente.id,
+      iniciadaEn,
+    };
+  } else {
+    const medico = medicosMock.find((m) => m.id === usuario.medicoId);
+    if (!medico) throw new Error(ERROR_CREDENCIALES);
+    sesion = {
+      rol: "doctor",
+      dni: usuario.dni,
+      nombreCompleto: `${medico.nombre} ${medico.apellido}`,
+      medicoId: medico.id,
+      iniciadaEn,
+    };
+  }
+
+  sesionActual = sesion;
+  return delay(sesion, 300);
+}
+
 export function cerrarSesion(): void {
   sesionActual = null;
 }

@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from "expo-router";
 import { Calendar, FileText, Home, Menu as MenuIcon, Search } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
@@ -28,6 +29,7 @@ const RUTAS_OCULTAS = [
 export default function PacienteLayout() {
   const { theme } = useTheme();
   const { rol } = useAuth();
+  const insets = useSafeAreaInsets();
 
   // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
   if (rol !== "paciente") return <Redirect href={rutaInicio(rol)} />;
@@ -43,8 +45,8 @@ export default function PacienteLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
-          height: 64,
-          paddingBottom: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 8,
         },
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
