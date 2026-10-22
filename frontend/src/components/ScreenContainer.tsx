@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useContext } from "react";
 import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { BarraInferiorContext } from "./BarraInferiorContext";
 
 interface ScreenContainerProps {
   children: React.ReactNode;
@@ -14,10 +15,12 @@ interface ScreenContainerProps {
 export function ScreenContainer({ children, scroll = true, style }: ScreenContainerProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const conBarra = useContext(BarraInferiorContext);
+  const areaInferior = conBarra ? 0 : insets.bottom;
 
   const containerStyle = [
     styles.base,
-    { backgroundColor: theme.colors.background, paddingTop: insets.top + 16 },
+    { backgroundColor: theme.colors.background, paddingTop: insets.top + 16, paddingBottom: areaInferior },
     style,
   ];
 
@@ -28,7 +31,7 @@ export function ScreenContainer({ children, scroll = true, style }: ScreenContai
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }, style]}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16, paddingBottom: 32 + areaInferior }, style]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >

@@ -1,7 +1,7 @@
-import React from "react";
 import { Pressable, StyleSheet, View, ViewProps } from "react-native";
 
 import { useTheme } from "@/theme";
+import { alPresionar } from "@/utils/presionado";
 
 interface CardProps extends ViewProps {
   onPress?: () => void;
@@ -39,7 +39,7 @@ export function Card({ children, style, onPress, accessibilityLabel, padded = tr
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       hitSlop={4}
-      style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+      style={({ pressed }) => alPresionar(pressed)}
     >
       {content}
     </Pressable>

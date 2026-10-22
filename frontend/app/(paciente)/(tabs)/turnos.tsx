@@ -1,75 +1,123 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
-import { useFocusEffect, useRouter } from "expo-router";
-import { FlatList, Linking, Pressable, StyleSheet, View } from "react-native";
-import { Calendar, CheckCircle2, ChevronRight, Clock, MapPin, Stethoscope, Trash2 } from "lucide-react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { Calendar, CheckCircle2, ChevronRight, Clock, History, MapPin, Stethoscope, Trash2 } from "lucide-react-native";
 
 import {
   Avatar,
   BottomSheet,
+  CampoBusqueda,
   Card,
+  Chip,
   Confirmacion,
+  EncabezadoTab,
   PrimaryButton,
+  ReservaTurno,
   ScreenContainer,
   StatusBadge,
   TabSwitch,
   Text,
 } from "@/components";
-import { Especialidad, Institucion, Medico, Sede, Turno } from "@/domain";
+import { EstadoTurno } from "@/domain";
 import {
   cancelarTurno,
-  getEspecialidad,
-  getInstitucion,
-  getMedico,
   getPacienteActual,
-  getSede,
   listMisTurnos,
   ocultarTurnoDelHistorial,
+  TurnoConDetalle,
   vaciarHistorialTurnos,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { conservarSiIgual } from "@/utils/estable";
 import { etiquetaTipoConsulta, formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
+import { etiquetaEstado } from "@/components/StatusBadge";
 
-type Filtro = "proximos" | "historial";
+type Filtro = "reservar" | "proximos";
 type Confirmando = "cancelar" | "ocultar" | null;
 
-interface TurnoDetalle {
-  turno: Turno;
-  medico?: Medico;
-  especialidad?: Especialidad;
-  sede?: Sede;
-  institucion?: Institucion;
+/** Sin tildes ni mayúsculas, para que "cardiologia" encuentre "Cardiología". */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Todo lo que se puede buscar de un turno: tipo (especialidad), estado, fecha, horario, profesional y lugar. */
+function textoBuscable({ turno, medico, especialidad, institucion }: TurnoConDetalle): string {
+  const fecha = parseISO(turno.fecha);
+  return normalizar(
+    [
+      especialidad?.nombre,
+      medico?.profesion,
+      medico ? `${nombreConTitulo(medico)} ${medico.apellido}` : undefined,
+      etiquetaEstado(turno.estado),
+      formatFechaCorta(turno.fecha),
+      formatFechaLarga(turno.fecha),
+      format(fecha, "EEEE d MMMM", { locale: es }),
+      format(fecha, "dd/MM/yyyy"),
+      turno.fecha,
+      turno.hora,
+      institucion?.nombre,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 }
 
-async function conDetalle(turno: Turno): Promise<TurnoDetalle> {
-  const [medico, sede] = await Promise.all([getMedico(turno.medicoId), getSede(turno.sedeId)]);
-  const [especialidad, institucion] = await Promise.all([
-    medico ? getEspecialidad(medico.especialidadId) : undefined,
-    sede ? getInstitucion(sede.institucionId) : undefined,
-  ]);
-  return { turno, medico, especialidad, sede, institucion };
+/**
+ * Cada palabra buscada tiene que ser el comienzo de alguna palabra del turno: "cardio" encuentra
+ * Cardiología y "26 oct" el 26 de octubre, pero "26" no encuentra el año 2026.
+ */
+function coincide(item: TurnoConDetalle, consulta: string): boolean {
+  const buscadas = normalizar(consulta).split(/\s+/).filter(Boolean);
+  if (buscadas.length === 0) return true;
+  const palabras = textoBuscable(item).split(/[\s,.·()-]+/);
+  return buscadas.every((b) => palabras.some((p) => p.startsWith(b)));
+}
+
+const PLURAL_ESTADO: Partial<Record<EstadoTurno, string>> = {
+  confirmado: "Confirmados",
+  reprogramado: "Reprogramados",
+  pendiente: "Pendientes",
+  rechazado: "Rechazados",
+  completado: "Completados",
+  cancelado: "Cancelados",
+};
+
+/** Estados que se pueden filtrar en cada lista (los reprogramados solo si hay alguno). */
+function estadosFiltrables(verHistorial: boolean, lista: TurnoConDetalle[]): EstadoTurno[] {
+  if (verHistorial) return ["completado", "cancelado"];
+  const base: EstadoTurno[] = ["confirmado", "pendiente", "rechazado"];
+  return lista.some((t) => t.turno.estado === "reprogramado") ? ["confirmado", "reprogramado", "pendiente", "rechazado"] : base;
 }
 
 export default function TurnosScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  // Llega "proximos-<n>" después de reservar desde el perfil de un profesional.
+  const { ver, sedeElegida, n } = useLocalSearchParams<{ ver?: string; sedeElegida?: string; n?: string }>();
+  // Hospital que el paciente eligió en el mapa mientras reservaba.
+  const sedeDelMapa = sedeElegida && n ? { sedeId: sedeElegida, n } : undefined;
 
   const [pacienteId, setPacienteId] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<Filtro>("proximos");
-  const [proximos, setProximos] = useState<TurnoDetalle[]>([]);
-  const [historial, setHistorial] = useState<TurnoDetalle[]>([]);
-  const [abierto, setAbierto] = useState<TurnoDetalle | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>("reservar");
+  // El historial de turnos se abre desde el botón de arriba, aparte de las pestañas.
+  const [verHistorial, setVerHistorial] = useState(false);
+  const [proximos, setProximos] = useState<TurnoConDetalle[]>([]);
+  const [historial, setHistorial] = useState<TurnoConDetalle[]>([]);
+  const [abierto, setAbierto] = useState<TurnoConDetalle | null>(null);
   const [confirmando, setConfirmando] = useState<Confirmando>(null);
   const [vaciando, setVaciando] = useState(false);
   const [procesando, setProcesando] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoTurno | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     const paciente = await getPacienteActual();
     setPacienteId(paciente.id);
+    // Un solo pedido: los turnos ya vienen con profesional, especialidad y lugar.
     const mis = await listMisTurnos(paciente.id);
-    const [p, h] = await Promise.all([Promise.all(mis.proximos.map(conDetalle)), Promise.all(mis.historial.map(conDetalle))]);
-    setProximos(p);
-    setHistorial(h);
+    setProximos((anterior) => conservarSiIgual(anterior, mis.proximos));
+    setHistorial((anterior) => conservarSiIgual(anterior, mis.historial));
   }, []);
 
   useFocusEffect(
@@ -78,6 +126,28 @@ export default function TurnosScreen() {
     }, [cargar]),
   );
 
+  useEffect(() => {
+    if (ver?.startsWith("proximos")) {
+      setVerHistorial(false);
+      setFiltro("proximos");
+      setAviso("Reservaste tu turno. Lo ves en Próximos.");
+    }
+  }, [ver]);
+
+  // Al volver del mapa con un hospital elegido, se sigue con la reserva.
+  useEffect(() => {
+    if (n) {
+      setVerHistorial(false);
+      setFiltro("reservar");
+    }
+  }, [n]);
+
+  // La búsqueda y el filtro son de cada lista: al cambiar de lista se limpian.
+  useEffect(() => {
+    setBusqueda("");
+    setEstadoFiltro(null);
+  }, [verHistorial, filtro]);
+
   // El aviso de éxito se va solo a los 3 segundos.
   useEffect(() => {
     if (!aviso) return;
@@ -85,7 +155,7 @@ export default function TurnosScreen() {
     return () => clearTimeout(t);
   }, [aviso]);
 
-  const abrir = (item: TurnoDetalle) => {
+  const abrir = (item: TurnoConDetalle) => {
     setConfirmando(null);
     setAbierto(item);
   };
@@ -124,22 +194,46 @@ export default function TurnosScreen() {
     }
   };
 
-  const lista = filtro === "proximos" ? proximos : historial;
-  const nombreMedico = (item: TurnoDetalle) => (item.medico ? nombreConTitulo(item.medico) : "Profesional");
+  const origen = verHistorial ? historial : proximos;
+  const estados = estadosFiltrables(verHistorial, origen);
+  const lista = origen.filter((t) => (!estadoFiltro || t.turno.estado === estadoFiltro) && coincide(t, busqueda));
+  const hayFiltros = busqueda.trim().length > 0 || estadoFiltro !== null;
+  /** El tipo de turno (la especialidad pedida) es lo principal; el profesional va debajo. */
+  const tipoTurno = (item: TurnoConDetalle) => item.especialidad?.nombre ?? item.medico?.profesion ?? "Turno";
+  const nombreMedico = (item: TurnoConDetalle) => (item.medico ? nombreConTitulo(item.medico) : "Profesional");
   const esProximo = abierto ? proximos.some((p) => p.turno.id === abierto.turno.id) : false;
 
   return (
     <ScreenContainer scroll={false}>
-      <Text variant="heading" style={[styles.titulo, { color: theme.colors.foreground }]}>Mis Turnos</Text>
-
-      <TabSwitch
-        opciones={[
-          { valor: "proximos", etiqueta: "Próximos" },
-          { valor: "historial", etiqueta: "Historial" },
-        ]}
-        valor={filtro}
-        onChange={setFiltro}
+      <EncabezadoTab
+        titulo={verHistorial ? "Historial de turnos" : "Turnos"}
+        onVolver={verHistorial ? () => setVerHistorial(false) : undefined}
+        etiquetaVolver="Volver a Turnos"
+        accion={
+          verHistorial ? undefined : (
+            <Pressable
+              onPress={() => setVerHistorial(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Ver el historial de turnos"
+              hitSlop={8}
+              style={[styles.botonHistorial, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
+            >
+              <History size={20} color={theme.colors.primary} />
+            </Pressable>
+          )
+        }
       />
+
+      {verHistorial ? null : (
+        <TabSwitch
+          opciones={[
+            { valor: "reservar", etiqueta: "Reservar" },
+            { valor: "proximos", etiqueta: "Próximos" },
+          ]}
+          valor={filtro}
+          onChange={setFiltro}
+        />
+      )}
 
       {aviso ? (
         <View style={[styles.aviso, { backgroundColor: `${theme.colors.success}1F` }]} accessibilityLiveRegion="polite">
@@ -148,16 +242,55 @@ export default function TurnosScreen() {
         </View>
       ) : null}
 
+      {!verHistorial && filtro === "reservar" ? (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.lista}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <ReservaTurno
+            sedeDelMapa={sedeDelMapa}
+            onReservado={async () => {
+              setFiltro("proximos");
+              setAviso("Reservaste tu turno. Lo ves en Próximos.");
+              await cargar();
+            }}
+          />
+        </ScrollView>
+      ) : (
+      <>
+      {origen.length > 0 ? (
+        <View style={styles.filtros}>
+          <CampoBusqueda
+            valor={busqueda}
+            onChange={setBusqueda}
+            placeholder="Especialidad, estado, fecha, horario o profesional"
+            accessibilityLabel="Buscar turnos por especialidad, estado, fecha, horario o profesional"
+          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            <Chip label="Todos" selected={estadoFiltro === null} onPress={() => setEstadoFiltro(null)} />
+            {estados.map((estado) => (
+              <Chip
+                key={estado}
+                label={`${PLURAL_ESTADO[estado]} · ${origen.filter((t) => t.turno.estado === estado).length}`}
+                selected={estadoFiltro === estado}
+                onPress={() => setEstadoFiltro(estadoFiltro === estado ? null : estado)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
       <FlatList
         data={lista}
         keyExtractor={({ turno }) => turno.id}
         contentContainerStyle={styles.lista}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
-          filtro === "historial" && historial.length > 0 ? (
+          verHistorial && historial.length > 0 ? (
             <View style={styles.encabezadoHistorial}>
               <Text style={[styles.cantidad, { color: theme.colors.mutedForeground }]}>
-                {historial.length} {historial.length === 1 ? "turno" : "turnos"}
+                {hayFiltros ? `${lista.length} de ${historial.length}` : historial.length} {historial.length === 1 ? "turno" : "turnos"}
               </Text>
               <Pressable
                 onPress={() => setVaciando(true)}
@@ -174,14 +307,18 @@ export default function TurnosScreen() {
         }
         ListEmptyComponent={
           <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
-            {filtro === "proximos" ? "No tenés turnos próximos." : "Tu historial de turnos está vacío."}
+            {hayFiltros
+              ? "Ningún turno coincide con tu búsqueda."
+              : verHistorial
+                ? "Tu historial de turnos está vacío."
+                : "No tenés turnos próximos. Reservá uno desde la pestaña Reservar."}
           </Text>
         }
         renderItem={({ item }) => (
           <Card
             style={styles.tarjeta}
             onPress={() => abrir(item)}
-            accessibilityLabel={`Turno con ${nombreMedico(item)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
+            accessibilityLabel={`${tipoTurno(item)} con ${nombreMedico(item)}, ${etiquetaEstado(item.turno.estado)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
           >
             <View style={styles.fila}>
               <Avatar
@@ -190,11 +327,11 @@ export default function TurnosScreen() {
                 size={44}
               />
               <View style={styles.flex}>
-                <Text style={[styles.nombre, { color: theme.colors.foreground }]} numberOfLines={1}>
-                  {nombreMedico(item)}
+                <Text variant="heading" style={[styles.tipoTurno, { color: theme.colors.foreground }]} numberOfLines={1}>
+                  {tipoTurno(item)}
                 </Text>
-                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
-                  {[item.especialidad?.nombre, item.institucion?.nombre].filter(Boolean).join(" · ")}
+                <Text style={[styles.nombre, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
+                  {nombreMedico(item)}
                 </Text>
               </View>
               <StatusBadge estado={item.turno.estado} />
@@ -214,6 +351,8 @@ export default function TurnosScreen() {
           </Card>
         )}
       />
+      </>
+      )}
 
       {/* Detalle del turno y sus acciones, con segunda confirmación antes de cancelar o eliminar. */}
       <BottomSheet
@@ -222,7 +361,7 @@ export default function TurnosScreen() {
         extraTitulo={abierto && !confirmando ? <StatusBadge estado={abierto.turno.estado} /> : undefined}
         onClose={cerrar}
         pie={
-          abierto && !confirmando ? (
+          abierto && !confirmando && abierto.turno.estado !== "rechazado" ? (
             esProximo ? (
               <PrimaryButton label="Cancelar turno" variant="outline" onPress={() => setConfirmando("cancelar")} />
             ) : (
@@ -262,13 +401,20 @@ export default function TurnosScreen() {
                 size={52}
               />
               <View style={styles.flex}>
-                <Text style={[styles.nombreDetalle, { color: theme.colors.foreground }]}>{nombreMedico(abierto)}</Text>
-                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-                  {[abierto.especialidad?.nombre, abierto.medico ? `Mat. ${abierto.medico.matricula}` : null].filter(Boolean).join(" · ")}
-                </Text>
+                <Text variant="heading" style={[styles.nombreDetalle, { color: theme.colors.foreground }]}>{tipoTurno(abierto)}</Text>
+                <Text style={[styles.valor, { color: theme.colors.foreground }]}>{nombreMedico(abierto)}</Text>
+                {abierto.medico ? (
+                  <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>Mat. {abierto.medico.matricula}</Text>
+                ) : null}
               </View>
               <ChevronRight size={18} color={theme.colors.mutedForeground} />
             </Pressable>
+
+            {abierto.turno.estado === "rechazado" ? (
+              <Text style={[styles.meta, { color: theme.colors.danger, marginTop: 12 }]}>
+                La institución no aceptó esta solicitud. Podés pedir otro turno desde Reservar.
+              </Text>
+            ) : null}
 
             <Seccion icono={Calendar} titulo="Fecha y horario">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>
@@ -335,7 +481,10 @@ function Seccion({ icono: Icono, titulo, children }: { icono: typeof Calendar; t
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  titulo: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
+  botonHistorial: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  filtros: { gap: 10, marginBottom: 14 },
+  chips: { gap: 8, alignItems: "center" },
+  tipoTurno: { fontSize: 17, fontWeight: "700" },
   aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
   avisoTexto: { flex: 1, fontSize: 13 },
   lista: { paddingBottom: 32 },
@@ -346,13 +495,13 @@ const styles = StyleSheet.create({
   vacio: { marginTop: 24, textAlign: "center" },
   tarjeta: { marginBottom: 12 },
   fila: { flexDirection: "row", alignItems: "center", gap: 12 },
-  nombre: { fontSize: 15, fontWeight: "600" },
+  nombre: { fontSize: 13, marginTop: 2 },
   meta: { fontSize: 12, marginTop: 2 },
   pieTarjeta: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
   dato: { flexDirection: "row", alignItems: "center", gap: 6 },
   datoTexto: { fontSize: 13 },
   detalle: { gap: 4 },
-  nombreDetalle: { fontSize: 16, fontWeight: "700" },
+  nombreDetalle: { fontSize: 18, fontWeight: "700" },
   seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
   seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   valor: { fontSize: 15, fontWeight: "500" },

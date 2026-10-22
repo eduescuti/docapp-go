@@ -17,6 +17,26 @@ export const ordenesLaboratorioMock: OrdenLaboratorio[] = [
     institucionId: "refes-51020062319036",
     estado: "resultado_disponible",
   },
+  {
+    id: "orden-2",
+    medicoId: "med-mendez",
+    pacienteId: "pac-sofia",
+    fecha: iso(52),
+    estudiosSolicitados: ["Electrocardiograma", "Radiografía de Tórax"],
+    indicaciones: "Sin preparación previa. Llevar la orden impresa o en el celular.",
+    institucionId: "refes-50020012115367",
+    estado: "resultado_disponible",
+  },
+  {
+    id: "orden-3",
+    medicoId: "med-fernandez",
+    pacienteId: "pac-sofia",
+    fecha: iso(2),
+    estudiosSolicitados: ["Perfil lipídico", "Glucemia en ayunas"],
+    indicaciones: "Ayuno de 12 horas. Evitar el alcohol las 24 horas previas.",
+    institucionId: "refes-51020062319036",
+    estado: "pendiente",
+  },
 ];
 
 export const estudiosMock: Estudio[] = [
@@ -33,6 +53,7 @@ export const estudiosMock: Estudio[] = [
   },
   {
     id: "est-2",
+    ordenId: "orden-2",
     pacienteId: "pac-sofia",
     tipo: "Electrocardiograma",
     institucionId: "refes-50020012115367",
@@ -42,6 +63,7 @@ export const estudiosMock: Estudio[] = [
   },
   {
     id: "est-3",
+    ordenId: "orden-2",
     pacienteId: "pac-sofia",
     tipo: "Radiografía de Tórax",
     institucionId: "refes-10020012315256",

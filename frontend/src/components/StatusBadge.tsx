@@ -1,4 +1,3 @@
-import React from "react";
 import { StyleSheet, View } from "react-native";
 
 import { useTheme } from "@/theme";
@@ -12,10 +11,15 @@ const ETIQUETAS: Record<EstadoTurno | EstadoEstudio, string> = {
   cancelado: "Cancelado",
   reprogramado: "Reprogramado",
   completado: "Completado",
+  rechazado: "Rechazado",
   agendado: "Agendado",
   realizado: "Realizado",
   resultado_disponible: "Listo",
 };
+
+export function etiquetaEstado(estado: EstadoTurno | EstadoEstudio): string {
+  return ETIQUETAS[estado];
+}
 
 interface StatusBadgeProps {
   estado: EstadoTurno | EstadoEstudio;
@@ -24,7 +28,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ estado }: StatusBadgeProps) {
   const { theme } = useTheme();
   const esPositivo = estado === "confirmado" || estado === "completado" || estado === "resultado_disponible";
-  const esNegativo = estado === "cancelado";
+  const esNegativo = estado === "cancelado" || estado === "rechazado";
 
   const backgroundColor = esNegativo ? `${theme.colors.danger}22` : esPositivo ? `${theme.colors.success}22` : theme.colors.accent;
   const color = esNegativo ? theme.colors.danger : esPositivo ? theme.colors.success : theme.colors.accentForeground;

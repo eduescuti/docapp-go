@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 
 import { Rol, Sesion } from "@/domain";
 import { cerrarSesion, iniciarSesion, iniciarSesionBiometrica } from "@/services";
+import { reiniciarPistaCarrusel } from "@/utils/pistaCarrusel";
 
 export type { Rol };
 
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     cerrarSesion();
+    reiniciarPistaCarrusel();
     setSesion(null);
   }, []);
 

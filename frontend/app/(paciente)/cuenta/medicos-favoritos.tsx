@@ -7,6 +7,7 @@ import { Avatar, BackHeader, Card, EmptyState, ScreenContainer, Text } from "@/c
 import { Especialidad, Medico, Paciente } from "@/domain";
 import { getMedico, getPacienteActual, listEspecialidades, quitarMedicoFavorito } from "@/services";
 import { useTheme } from "@/theme";
+import { alPresionar } from "@/utils/presionado";
 import { iniciales, nombreConTitulo } from "@/utils/format";
 
 /** Profesionales que el paciente marcó como favoritos. */
@@ -51,7 +52,7 @@ export default function MedicosFavoritosScreen() {
               onPress={() => router.push(`/medico/${m.id}`)}
               accessibilityRole="button"
               accessibilityLabel={`Ver perfil de ${nombreConTitulo(m)}`}
-              style={({ pressed }) => [styles.row, styles.perfil, { opacity: pressed ? 0.85 : 1 }]}
+              style={({ pressed }) => [styles.row, styles.perfil, alPresionar(pressed)]}
             >
               <Avatar uri={m.avatarUrl} iniciales={iniciales(m.nombre, m.apellido)} size={52} />
               <View style={{ flex: 1 }}>

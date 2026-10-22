@@ -1,4 +1,3 @@
-import React from "react";
 import { useRouter } from "expo-router";
 
 import { useAuth } from "@/hooks/useAuth";

@@ -118,7 +118,7 @@ export default function DoctorPacienteScreen() {
 
   const { paciente, plan, turnos, recetas, estudios, notas } = ficha;
   const hoy = hoyIso();
-  const proximos = turnos.filter((t) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado");
+  const proximos = turnos.filter((t) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado" && t.estado !== "rechazado");
   const historial = turnos
     .filter((t) => !proximos.includes(t))
     .sort((a, b) => `${b.fecha}${b.hora}`.localeCompare(`${a.fecha}${a.hora}`));

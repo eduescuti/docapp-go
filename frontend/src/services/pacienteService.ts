@@ -9,12 +9,17 @@ import { getTurnosEnMemoria } from "./turnoService";
 // Estado en memoria: el paciente puede editar sus datos durante la sesión.
 let pacientes: Paciente[] = pacientesMock.map((p) => ({ ...p }));
 
+/**
+ * El paciente de la sesión. No simula latencia: son los datos de quien inició sesión, que la app ya tiene
+ * cargados (con backend, se piden una vez al ingresar y se guardan). Las pantallas lo usan para armar el
+ * resto de los pedidos, así que hacerlo esperar demoraba todas en 250 ms.
+ */
 export async function getPacienteActual(): Promise<Paciente> {
   const sesion = getSesionActual();
   if (sesion?.rol !== "paciente") throw new Error("No hay paciente autenticado");
   const paciente = pacientes.find((p) => p.id === sesion.pacienteId);
   if (!paciente) throw new Error("No hay paciente autenticado");
-  return delay(paciente);
+  return paciente;
 }
 
 export async function getPaciente(id: string): Promise<Paciente | undefined> {
@@ -34,7 +39,7 @@ export async function listPacientesAsignados(medicoId: string): Promise<Paciente
   const ids = new Set(
     getTurnosEnMemoria()
       .filter((t) => t.medicoId === medicoId && t.fecha >= hoy)
-      .filter((t) => t.estado !== "cancelado" && t.estado !== "completado")
+      .filter((t) => t.estado !== "cancelado" && t.estado !== "completado" && t.estado !== "rechazado")
       .map((t) => t.pacienteId),
   );
   return delay(pacientes.filter((p) => ids.has(p.id)));
@@ -58,6 +63,20 @@ export async function quitarMedicoFavorito(pacienteId: string, medicoId: string)
   const paciente = pacientes.find((p) => p.id === pacienteId);
   if (!paciente) throw new Error("Paciente no encontrado");
   return delay(actualizar(pacienteId, { medicosFavoritosIds: paciente.medicosFavoritosIds.filter((id) => id !== medicoId) }));
+}
+
+/** Marca o desmarca una institución como favorita. La favorita queda de opción por defecto al reservar un turno. */
+export async function alternarInstitucionFavorita(pacienteId: string, institucionId: string): Promise<Paciente> {
+  const paciente = pacientes.find((p) => p.id === pacienteId);
+  if (!paciente) throw new Error("Paciente no encontrado");
+  const favoritas = paciente.institucionesFavoritasIds;
+  return delay(
+    actualizar(pacienteId, {
+      institucionesFavoritasIds: favoritas.includes(institucionId)
+        ? favoritas.filter((id) => id !== institucionId)
+        : [...favoritas, institucionId],
+    }),
+  );
 }
 
 export async function quitarInstitucionFavorita(pacienteId: string, institucionId: string): Promise<Paciente> {

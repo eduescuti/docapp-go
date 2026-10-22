@@ -1,6 +1,3 @@
-import type { LucideIcon } from "lucide-react-native";
-import { Building2, FlaskConical, Hospital, Stethoscope } from "lucide-react-native";
-
 import type { TipoInstitucion } from "@/domain";
 import type { ThemeMapa } from "@/theme";
 
@@ -17,13 +14,6 @@ export const ETIQUETA_TIPO_PLURAL: Record<TipoInstitucion, string> = {
   clinica: "Clínicas",
   centro_medico: "Centros médicos",
   laboratorio: "Laboratorios",
-};
-
-export const ICONO_TIPO: Record<TipoInstitucion, LucideIcon> = {
-  hospital: Hospital,
-  clinica: Building2,
-  centro_medico: Stethoscope,
-  laboratorio: FlaskConical,
 };
 
 /** Color del marcador de cada tipo, tomado del tema (el mismo que usa el mapa). */

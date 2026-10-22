@@ -7,7 +7,15 @@ import * as LocalAuthentication from "expo-local-authentication";
 import { Card, PasswordField, PrimaryButton, ScreenContainer, Text, TextField } from "@/components";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
-import { estaBiometriaHabilitada, guardarSesionBiometrica, obtenerDatosSesionBiometrica } from "@/services/biometria";
+import {
+  estaBiometriaHabilitada,
+  guardarSesionBiometrica,
+  habilitarBiometriaAutomatica,
+  obtenerDatosSesionBiometrica,
+} from "@/services/biometria";
+
+// La huella se pide sola una vez por apertura de la app; después queda el ícono para reintentar.
+let huellaAutomaticaIntentada = false;
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -40,6 +48,10 @@ export default function LoginScreen() {
         setBiometriaHabilitada(true);
         setDniGuardado(sesion.dni);
         setDni(sesion.dni);
+        if (!huellaAutomaticaIntentada) {
+          huellaAutomaticaIntentada = true;
+          ingresarConHuella(sesion.dni, true);
+        }
       } else {
         setBiometriaHabilitada(false);
         setDniGuardado(null);
@@ -56,9 +68,19 @@ export default function LoginScreen() {
     setError(null);
     setCargando(true);
     try {
-      await login(dni, password);
+      const sesion = await login(dni, password);
+      // Si cierra sesión después, no se le vuelve a pedir la huella sola en esta apertura de la app.
+      huellaAutomaticaIntentada = true;
       // Registra el DNI como el último usuario logueado en este dispositivo
       await guardarSesionBiometrica(dni.trim());
+      // Si el teléfono tiene huella registrada, el ingreso con huella queda activo sin pedírselo al usuario.
+      try {
+        if ((await LocalAuthentication.hasHardwareAsync()) && (await LocalAuthentication.isEnrolledAsync())) {
+          await habilitarBiometriaAutomatica(sesion.rol === "paciente");
+        }
+      } catch {
+        // Sin sensor disponible: se sigue con contraseña.
+      }
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo iniciar sesión.");
@@ -67,33 +89,45 @@ export default function LoginScreen() {
     }
   };
 
-  const handleAutenticacionBiometrica = async () => {
+  /**
+   * Ingreso con huella. `automatico`: lo dispara la app al abrirse con el DNI guardado, así que no
+   * muestra avisos si algo no está disponible (el usuario sigue con su contraseña).
+   */
+  const ingresarConHuella = async (dniAUsar: string, automatico = false) => {
     setError(null);
+    const dniIngresado = dniAUsar.trim();
 
-    // 1. Validar que el DNI no esté vacío
-    if (!dni.trim()) {
-      setError("Ingresá tu DNI para verificar si tenés habilitado el acceso biométrico.");
-      return;
-    }
+    if (!automatico) {
+      // 1. Validar que el DNI no esté vacío
+      if (!dniIngresado) {
+        setError("Ingresá tu DNI para verificar si tenés habilitado el acceso biométrico.");
+        return;
+      }
 
-    // 2. Si el DNI en pantalla fue modificado o no tiene huella asociada
-    if (dni.trim() !== dniGuardado || !biometriaHabilitada) {
-      Alert.alert(
-        "Huella no configurada para este DNI",
-        `El usuario con DNI ${dni.trim()} no tiene configurado el ingreso biométrico en este dispositivo. Iniciá sesión con contraseña y activalo en Seguridad.`
-      );
-      return;
+      // 2. Si el DNI en pantalla fue modificado o no tiene huella asociada
+      if (dniIngresado !== dniGuardado || !biometriaHabilitada) {
+        Alert.alert(
+          "Huella no configurada para este DNI",
+          `El usuario con DNI ${dniIngresado} no tiene configurado el ingreso biométrico en este dispositivo. Iniciá sesión con tu contraseña: la huella se activa sola.`
+        );
+        return;
+      }
     }
 
     // 3. Chequeo de hardware en el teléfono
-    const tieneHardware = await LocalAuthentication.hasHardwareAsync();
-    const tieneEnrolamiento = await LocalAuthentication.isEnrolledAsync();
-
-    if (!tieneHardware || !tieneEnrolamiento) {
-      Alert.alert(
-        "Sensor no disponible",
-        "Tu dispositivo no tiene sensor biométrico activo o no tenés huellas configuradas en Android."
-      );
+    let tieneSensor = false;
+    try {
+      tieneSensor = (await LocalAuthentication.hasHardwareAsync()) && (await LocalAuthentication.isEnrolledAsync());
+    } catch {
+      tieneSensor = false;
+    }
+    if (!tieneSensor) {
+      if (!automatico) {
+        Alert.alert(
+          "Sensor no disponible",
+          "Tu dispositivo no tiene sensor biométrico activo o no tenés huellas configuradas en Android."
+        );
+      }
       return;
     }
 
@@ -121,7 +155,7 @@ export default function LoginScreen() {
     // 5. Ingreso directo: el sensor ya certificó la identidad para el DNI ingresado
     try {
       setCargando(true);
-      await loginBiometrico(dni.trim());
+      await loginBiometrico(dniIngresado);
       router.replace("/");
     } catch (errLogin) {
       setError(errLogin instanceof Error ? errLogin.message : "Error al iniciar sesión.");
@@ -129,6 +163,8 @@ export default function LoginScreen() {
       setCargando(false);
     }
   };
+
+  const handleAutenticacionBiometrica = () => ingresarConHuella(dni);
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>

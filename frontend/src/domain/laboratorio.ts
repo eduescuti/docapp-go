@@ -9,6 +9,8 @@ export interface OrdenLaboratorio {
   indicaciones: string;
   institucionId: string;
   estado: EstadoEstudio;
+  /** Fecha en que el paciente la archivó ("yyyy-MM-dd"). Define su carpeta (año → mes) en Archivados. */
+  archivadoEl?: string;
 }
 
 export interface Estudio {

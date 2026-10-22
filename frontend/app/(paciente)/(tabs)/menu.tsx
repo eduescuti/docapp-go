@@ -5,7 +5,6 @@ import type { LucideIcon } from "lucide-react-native";
 import {
   Bell,
   CreditCard,
-  FileText,
   Heart,
   HelpCircle,
   History,
@@ -13,11 +12,10 @@ import {
   Settings,
   Shield,
   Star,
-  Stethoscope,
 } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 
-import { Avatar, Card, ScreenContainer, SectionHeader, Text } from "@/components";
+import { Avatar, Card, EncabezadoTab, ScreenContainer, SectionHeader, Text } from "@/components";
 import { Paciente, PlanMedico } from "@/domain";
 import { getPacienteActual, getPlanMedico, listNotificacionesPaciente } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,8 +25,6 @@ import { iniciales } from "@/utils/format";
 type RutaCuenta =
   | "/cuenta/perfil"
   | "/cuenta/plan"
-  | "/cuenta/recetas"
-  | "/cuenta/ordenes"
   | "/cuenta/medicos-favoritos"
   | "/cuenta/instituciones-favoritas"
   | "/cuenta/notificaciones"
@@ -55,8 +51,6 @@ const SECCIONES: Seccion[] = [
     titulo: "Mi salud",
     items: [
       { icon: CreditCard, label: "Mi plan médico", ruta: "/cuenta/plan" },
-      { icon: Stethoscope, label: "Mis recetas", ruta: "/cuenta/recetas" },
-      { icon: FileText, label: "Órdenes médicas", ruta: "/cuenta/ordenes" },
       { icon: History, label: "Historial", ruta: "/cuenta/historial" },
     ],
   },
@@ -107,7 +101,7 @@ export default function MenuScreen() {
 
   return (
     <ScreenContainer>
-      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>Menú</Text>
+      <EncabezadoTab titulo="Menú" />
 
       <Card style={styles.profileCard} onPress={() => router.push("/cuenta/perfil")} accessibilityLabel="Ver mi perfil">
         <View style={styles.profileRow}>
@@ -171,7 +165,6 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 24 },
   profileCard: { marginBottom: 24 },
   profileRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   profileNombre: { fontSize: 16, fontWeight: "700" },

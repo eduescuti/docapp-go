@@ -1,13 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, List, LocateFixed, Map as MapaIcono, MapPinOff, X } from "lucide-react-native";
+import { ArrowLeft, Heart, List, LocateFixed, Map as MapaIcono, MapPinOff, X } from "lucide-react-native";
 
 import { Card, Chip, MapaCentros, PedidoVuelo, PrimaryButton, PuntoMapa, Text } from "@/components";
 import { Medico, PlanMedico, TipoInstitucion } from "@/domain";
 import { CENTRO_CABA, useUbicacion } from "@/hooks/useUbicacion";
-import { buscarCentros, CentroCercano, getPacienteActual, getPlanMedico, searchMedicos } from "@/services";
+import {
+  alternarInstitucionFavorita,
+  buscarCentros,
+  CentroCercano,
+  getPacienteActual,
+  getPlanMedico,
+  listCentrosPorSedes,
+  searchMedicos,
+} from "@/services";
 import { useTheme } from "@/theme";
 import { formatDistancia, nombreConTitulo } from "@/utils/format";
 import { colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL } from "@/utils/institucion";
@@ -17,16 +25,31 @@ const TIPOS: TipoInstitucion[] = ["hospital", "clinica", "centro_medico", "labor
 /**
  * Centros de salud que acepta la cobertura del paciente, en mapa y en lista (CLAUDE.md §9).
  * El mapa es MapLibre + OpenFreeMap: anda igual en Expo Go, en la app compilada y en web.
+ *
+ * Con `elegir=1` es el selector de hospital de la reserva de turnos: muestra solo las sedes de `sedes`
+ * (las que tienen turnos libres) y cada tarjeta tiene "Elegir este hospital", que vuelve a Turnos.
  */
 export default function MapaScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const { elegir, sedes: sedesParam } = useLocalSearchParams<{ elegir?: string; sedes?: string }>();
+  const eligiendo = elegir === "1";
+
+  // Los favoritos se pueden cambiar desde otras pantallas: se vuelven a leer cada vez que el mapa vuelve a la vista.
+  useFocusEffect(
+    useCallback(() => {
+      getPacienteActual().then((p) => setFavoritas(p.institucionesFavoritasIds));
+    }, []),
+  );
   const insets = useSafeAreaInsets();
   const { estado: estadoUbicacion, coordenada, actualizar } = useUbicacion({ pedirPermiso: true });
 
+  const [pacienteId, setPacienteId] = useState<string>();
+  const [favoritas, setFavoritas] = useState<string[]>([]);
+  const [soloFavoritas, setSoloFavoritas] = useState(false);
   const [planMedicoId, setPlanMedicoId] = useState<string>();
   const [plan, setPlan] = useState<PlanMedico>();
-  const [centros, setCentros] = useState<CentroCercano[]>([]);
+  const [centrosCargados, setCentrosCargados] = useState<CentroCercano[]>([]);
   const [tipo, setTipo] = useState<TipoInstitucion | null>(null);
   const [modo, setModo] = useState<"mapa" | "lista">("mapa");
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
@@ -40,6 +63,7 @@ export default function MapaScreen() {
 
   useEffect(() => {
     getPacienteActual().then(async (p) => {
+      setPacienteId(p.id);
       setPlanMedicoId(p.planMedicoId);
       setPlan(await getPlanMedico(p.planMedicoId));
     });
@@ -48,13 +72,18 @@ export default function MapaScreen() {
   useEffect(() => {
     if (!planMedicoId) return;
     let activo = true;
-    buscarCentros({ planMedicoId, tipos: tipo ? [tipo] : undefined, cerca: coordenada ?? undefined }).then((resultado) => {
-      if (activo) setCentros(resultado);
+    const pedido = eligiendo
+      ? listCentrosPorSedes(sedesParam ? sedesParam.split(",") : [], coordenada ?? undefined).then((todos) =>
+          tipo ? todos.filter((c) => c.institucion.tipo === tipo) : todos,
+        )
+      : buscarCentros({ planMedicoId, tipos: tipo ? [tipo] : undefined, cerca: coordenada ?? undefined });
+    pedido.then((resultado) => {
+      if (activo) setCentrosCargados(resultado);
     });
     return () => {
       activo = false;
     };
-  }, [planMedicoId, tipo, coordenada]);
+  }, [planMedicoId, tipo, coordenada, eligiendo, sedesParam]);
 
   // La primera vez que llega la ubicación, la cámara va hasta el paciente.
   useEffect(() => {
@@ -63,6 +92,17 @@ export default function MapaScreen() {
       setVolarA({ id: Date.now(), coordenada, zoom: 14 });
     }
   }, [coordenada]);
+
+  const centros = useMemo(
+    () => (soloFavoritas ? centrosCargados.filter((c) => favoritas.includes(c.institucion.id)) : centrosCargados),
+    [centrosCargados, soloFavoritas, favoritas],
+  );
+
+  const alternarFavorita = async (institucionId: string) => {
+    if (!pacienteId) return;
+    const paciente = await alternarInstitucionFavorita(pacienteId, institucionId);
+    setFavoritas(paciente.institucionesFavoritasIds);
+  };
 
   const puntos = useMemo<PuntoMapa[]>(
     () => centros.map((c) => ({ id: c.institucion.id, latitud: c.sede.latitud, longitud: c.sede.longitud, tipo: c.institucion.tipo })),
@@ -110,7 +150,14 @@ export default function MapaScreen() {
   const motivo = (c: CentroCercano) =>
     c.motivo === "publica" ? "Público · atiende a todas las coberturas" : `Acepta ${plan?.nombre ?? "tu cobertura"}`;
 
-  const cantidad = `${centros.length} ${centros.length === 1 ? "centro" : "centros"}${plan ? ` para ${plan.nombre}` : ""}`;
+  const cantidad = eligiendo
+    ? `Elegí dónde atenderte · ${centros.length} ${centros.length === 1 ? "opción" : "opciones"}`
+    : `${centros.length} ${centros.length === 1 ? "centro" : "centros"}${plan ? ` para ${plan.nombre}` : ""}`;
+
+  // Vuelve a Turnos con el hospital elegido; "n" cambia siempre para que se aplique aunque sea el mismo.
+  const elegirHospital = (sedeId: string) => {
+    router.dismissTo({ pathname: "/turnos", params: { sedeElegida: sedeId, n: String(Date.now()) } });
+  };
   const sinUbicacion = estadoUbicacion === "denegada" || estadoUbicacion === "error";
   const fondoFlotante = { backgroundColor: theme.colors.card, borderColor: theme.colors.border, ...theme.shadow };
 
@@ -139,7 +186,7 @@ export default function MapaScreen() {
           initialNumToRender={15}
           ListEmptyComponent={
             <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
-              No hay centros de este tipo para tu cobertura.
+              {soloFavoritas ? "Todavía no marcaste favoritos entre estos centros." : "No hay centros de este tipo para tu cobertura."}
             </Text>
           }
           renderItem={({ item }) => (
@@ -160,6 +207,9 @@ export default function MapaScreen() {
                   </Text>
                   <Text style={[styles.meta, { color: theme.colors.primary }]}>{motivo(item)}</Text>
                 </View>
+                {favoritas.includes(item.institucion.id) ? (
+                  <Heart size={18} color={theme.colors.danger} fill={theme.colors.danger} accessibilityLabel="Favorito" />
+                ) : null}
               </View>
             </Card>
           )}
@@ -202,6 +252,7 @@ export default function MapaScreen() {
           {TIPOS.map((t) => (
             <Chip key={t} label={ETIQUETA_TIPO_PLURAL[t]} selected={tipo === t} onPress={() => setTipo(t)} />
           ))}
+          <Chip label="Favoritos" selected={soloFavoritas} onPress={() => setSoloFavoritas((v) => !v)} />
           {coordenada && centros.length > 0 ? <Chip label="Más cercano" onPress={verMasCercano} /> : null}
         </ScrollView>
 
@@ -219,7 +270,7 @@ export default function MapaScreen() {
       </View>
 
       {modo === "mapa" && (
-        <View style={styles.pie} pointerEvents="box-none" onLayout={(e) => setAltoPie(e.nativeEvent.layout.height)}>
+        <View style={[styles.pie, { bottom: 16 + insets.bottom }]} pointerEvents="box-none" onLayout={(e) => setAltoPie(e.nativeEvent.layout.height)}>
           <Pressable
             onPress={irAMiUbicacion}
             accessibilityRole="button"
@@ -252,6 +303,24 @@ export default function MapaScreen() {
                   {ETIQUETA_TIPO[seleccionado.institucion.tipo]} · {motivo(seleccionado)}
                 </Text>
                 <Pressable
+                  onPress={() => alternarFavorita(seleccionado.institucion.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    favoritas.includes(seleccionado.institucion.id)
+                      ? `Quitar ${seleccionado.institucion.nombre} de favoritos`
+                      : `Agregar ${seleccionado.institucion.nombre} a favoritos`
+                  }
+                  accessibilityState={{ selected: favoritas.includes(seleccionado.institucion.id) }}
+                  hitSlop={8}
+                  style={styles.botonCorazon}
+                >
+                  <Heart
+                    size={22}
+                    color={favoritas.includes(seleccionado.institucion.id) ? theme.colors.danger : theme.colors.mutedForeground}
+                    fill={favoritas.includes(seleccionado.institucion.id) ? theme.colors.danger : "transparent"}
+                  />
+                </Pressable>
+                <Pressable
                   onPress={() => setSeleccionadoId(null)}
                   accessibilityRole="button"
                   accessibilityLabel="Cerrar"
@@ -268,7 +337,7 @@ export default function MapaScreen() {
                 {seleccionado.distanciaKm !== undefined ? ` · ${formatDistancia(seleccionado.distanciaKm)}` : ""}
               </Text>
 
-              {profesionales.length > 0 && (
+              {!eligiendo && profesionales.length > 0 && (
                 <View style={styles.profesionales}>
                   <Text style={[styles.meta, { color: theme.colors.mutedForeground, marginTop: 0 }]}>Atienden acá:</Text>
                   {profesionales.slice(0, 3).map((m) => (
@@ -285,9 +354,22 @@ export default function MapaScreen() {
                 </View>
               )}
 
+              {eligiendo ? (
+                <View style={styles.acciones}>
+                  <View style={styles.flex}>
+                    <PrimaryButton
+                      label="Elegir este hospital"
+                      onPress={() => elegirHospital(seleccionado.sede.id)}
+                      accessibilityLabel={`Elegir ${seleccionado.institucion.nombre} para el turno`}
+                    />
+                  </View>
+                </View>
+              ) : null}
+
               <View style={styles.acciones}>
                 <View style={styles.flex}>
                   <PrimaryButton
+                    variant={eligiendo ? "outline" : "primary"}
                     label="Cómo llegar"
                     onPress={() =>
                       Linking.openURL(
@@ -374,6 +456,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, marginTop: 3 },
   pie: { position: "absolute", left: 16, right: 16, bottom: 16, gap: 12 },
   botonUbicacion: { alignSelf: "flex-end" },
+  botonCorazon: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginVertical: -10 },
   profesionales: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 4, marginTop: 10 },
   profesional: { minHeight: 32, justifyContent: "center", paddingHorizontal: 4 },
   profesionalTexto: { fontSize: 13, fontWeight: "600" },

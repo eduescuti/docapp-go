@@ -1,4 +1,8 @@
-export type EstadoTurno = "confirmado" | "pendiente" | "cancelado" | "reprogramado" | "completado";
+/**
+ * `rechazado`: la institución o el profesional no aceptó el turno solicitado. El paciente lo ve en
+ * sus turnos solicitados con ese estado; no ocupa el horario.
+ */
+export type EstadoTurno = "confirmado" | "pendiente" | "cancelado" | "reprogramado" | "completado" | "rechazado";
 
 export type TipoConsulta =
   | "presencial"

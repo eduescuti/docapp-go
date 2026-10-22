@@ -22,6 +22,21 @@ export async function setBiometriaHabilitada(habilitada: boolean): Promise<void>
   }
 }
 
+/**
+ * Activa el ingreso con huella sin que el usuario lo pida (la pantalla Seguridad ya no tiene
+ * interruptor). Con `forzar` lo activa siempre; si no, solo cuando nunca se eligió, para respetar
+ * la preferencia de quien lo apagó a mano (hoy, desde el perfil del profesional).
+ */
+export async function habilitarBiometriaAutomatica(forzar: boolean): Promise<void> {
+  try {
+    if (forzar || (await AsyncStorage.getItem(KEY_BIOMETRIA_HABILITADA)) === null) {
+      await AsyncStorage.setItem(KEY_BIOMETRIA_HABILITADA, "true");
+    }
+  } catch (e) {
+    console.error("Error activando la huella automática", e);
+  }
+}
+
 export async function guardarSesionBiometrica(dni: string, clave?: string, rol?: string): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY_ULTIMO_DNI, dni);
@@ -53,7 +68,8 @@ export async function obtenerDatosSesionBiometrica(): Promise<{
 
 export async function limpiarSesionBiometrica(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(KEY_BIOMETRIA_HABILITADA);
+    // La preferencia queda en "false" (no se borra) para que se sepa que se apagó a propósito.
+    await AsyncStorage.setItem(KEY_BIOMETRIA_HABILITADA, "false");
     await AsyncStorage.removeItem(KEY_ULTIMO_DNI);
     await AsyncStorage.removeItem(KEY_ULTIMA_CLAVE);
     await AsyncStorage.removeItem(KEY_ULTIMO_ROL);

@@ -1,5 +1,4 @@
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 
@@ -12,6 +11,29 @@ interface BackHeaderProps {
   onBack?: () => void;
 }
 
+/**
+ * Vuelve a la pantalla anterior. Si hay teclado abierto (formularios), primero lo cierra y espera a que
+ * termine: cerrar el teclado y deslizar la pantalla a la vez hace que Android redimensione la pantalla
+ * en medio de la animación y se entrecorte.
+ */
+function volverSinTeclado(router: { back: () => void }) {
+  if (!Keyboard.isVisible()) {
+    router.back();
+    return;
+  }
+  let listo = false;
+  const volver = () => {
+    if (listo) return;
+    listo = true;
+    suscripcion.remove();
+    router.back();
+  };
+  const suscripcion = Keyboard.addListener("keyboardDidHide", volver);
+  // Por si el evento no llega (teclado físico, simulador): no se queda esperando.
+  setTimeout(volver, 400);
+  Keyboard.dismiss();
+}
+
 /** Encabezado de pantalla secundaria con botón de volver (área táctil 44px). */
 export function BackHeader({ titulo, subtitulo, onBack }: BackHeaderProps) {
   const { theme } = useTheme();
@@ -20,7 +42,7 @@ export function BackHeader({ titulo, subtitulo, onBack }: BackHeaderProps) {
   return (
     <View style={styles.row}>
       <Pressable
-        onPress={onBack ?? (() => router.back())}
+        onPress={onBack ?? (() => volverSinTeclado(router))}
         accessibilityRole="button"
         accessibilityLabel="Volver"
         hitSlop={8}

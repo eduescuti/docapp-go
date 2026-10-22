@@ -1,4 +1,3 @@
-import React from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BellOff, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -1,4 +1,3 @@
-import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   Bell,
@@ -15,6 +14,7 @@ import { es } from "date-fns/locale";
 
 import { Notificacion, TipoNotificacion } from "@/domain";
 import { useTheme } from "@/theme";
+import { alPresionar } from "@/utils/presionado";
 import { Text } from "./Text";
 
 const ICONOS: Record<TipoNotificacion, LucideIcon> = {
@@ -48,8 +48,8 @@ export function NotificacionItem({ notificacion: n, onPress }: NotificacionItemP
         {
           backgroundColor: n.leida ? "transparent" : `${theme.colors.primary}14`,
           borderRadius: theme.radii.md,
-          opacity: pressed ? 0.8 : 1,
         },
+        alPresionar(pressed, 0.99),
       ]}
     >
       <View style={[styles.icono, { backgroundColor: theme.colors.accent, borderRadius: theme.radii.full }]}>

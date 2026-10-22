@@ -47,6 +47,17 @@ export const turnosMock: Turno[] = [
     tipoConsulta: "control",
     estado: "completado",
   },
+  // Solicitud que la institución no aceptó: se ve en Turnos con estado "Rechazado".
+  {
+    id: "turno-13",
+    pacienteId: "pac-sofia",
+    medicoId: "med-lopez",
+    sedeId: "sede-10020012215220",
+    fecha: iso(7),
+    hora: "09:30",
+    tipoConsulta: "primera_consulta",
+    estado: "rechazado",
+  },
   // Agenda de la profesional de ejemplo (med-sosa).
   {
     id: "turno-5",

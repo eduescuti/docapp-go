@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Bell, Calendar, Clock, FileText, MapPin, Search, Stethoscope } from "lucide-react-native";
+import { Bell, Calendar, Clock, FileText, MapPin, Pill, Stethoscope } from "lucide-react-native";
 
 import {
   Avatar,
@@ -20,21 +20,20 @@ import {
   Text,
 } from "@/components";
 import { Especialidad, Institucion, Medico, Notificacion, Paciente, PlanMedico, Sede, Turno } from "@/domain";
+import { useTabsEnFoco } from "@/hooks/useTabsEnFoco";
 import { CENTRO_CABA, useUbicacion } from "@/hooks/useUbicacion";
 import {
-  getEspecialidad,
-  getInstitucion,
-  getMedico,
   getPacienteActual,
   getPlanMedico,
   getProximoTurno,
-  getSede,
   buscarCentros,
   listNotificacionesPaciente,
   marcarNotificacionLeida,
   marcarTodasLeidas,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { conservarSiIgual } from "@/utils/estable";
+import { alPresionar } from "@/utils/presionado";
 import { formatFechaCorta, iniciales, nombreConTitulo } from "@/utils/format";
 
 interface ProximoTurnoInfo {
@@ -54,18 +53,31 @@ export default function HomeScreen() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [proximo, setProximo] = useState<ProximoTurnoInfo | null>(null);
   const [plan, setPlan] = useState<PlanMedico | undefined>();
-  // El carrusel solo avanza solo mientras el Inicio está a la vista.
+  // El carrusel se muestra recién cuando se sabe si hay próximo turno: si no, aparece primero la credencial
+  // del plan y el turno entra un par de segundos después.
+  const [cargado, setCargado] = useState(false);
+  // La pista de deslizamiento del carrusel solo corre mientras el Inicio está a la vista.
   const [enFoco, setEnFoco] = useState(false);
   const [puntosMapa, setPuntosMapa] = useState<PuntoMapa[]>([]);
   const [volarA, setVolarA] = useState<PedidoVuelo | null>(null);
   const [errorMapa, setErrorMapa] = useState(false);
+  // El mapa de la vista previa es un WebView: es lo más pesado de las pestañas. Mientras hay otra pantalla encima
+  // se suelta, y al volver se arma recién cuando termina la animación. Así volver no tiene que reconstruirlo
+  // (eso dejaba la pantalla en blanco un rato antes de animar).
+  const tabsEnFoco = useTabsEnFoco();
+  const [mapaMontado, setMapaMontado] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMapaMontado(tabsEnFoco), tabsEnFoco ? 450 : 400);
+    return () => clearTimeout(t);
+  }, [tabsEnFoco]);
   // Solo usa la ubicación si el permiso ya se dio (en el mapa): el Inicio no muestra el aviso del sistema.
   const { coordenada } = useUbicacion({ pedirPermiso: false });
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [panelAbierto, setPanelAbierto] = useState(false);
 
   const recargarNotificaciones = useCallback(async (pacienteId: string) => {
-    setNotificaciones(await listNotificacionesPaciente(pacienteId));
+    const lista = await listNotificacionesPaciente(pacienteId);
+    setNotificaciones((anterior) => conservarSiIgual(anterior, lista));
   }, []);
 
   useFocusEffect(
@@ -76,22 +88,18 @@ export default function HomeScreen() {
       (async () => {
         const p = await getPacienteActual();
         if (!activo) return;
-        setPaciente(p);
         recargarNotificaciones(p.id);
-        getPlanMedico(p.planMedicoId).then((pl) => activo && setPlan(pl));
 
-        const turno = await getProximoTurno(p.id);
-        if (turno) {
-          const medico = await getMedico(turno.medicoId);
-          if (medico && activo) {
-            // La institución sale de la sede del turno: el médico puede atender en varias.
-            const [especialidad, sede] = await Promise.all([getEspecialidad(medico.especialidadId), getSede(turno.sedeId)]);
-            const institucion = sede ? await getInstitucion(sede.institucionId) : undefined;
-            setProximo({ turno, medico, especialidad, institucion, sede });
-          }
-        } else if (activo) {
-          setProximo(null);
-        }
+        // Plan y próximo turno (ya con profesional, especialidad y lugar) se piden juntos y se muestran juntos.
+        const [pl, detalle] = await Promise.all([getPlanMedico(p.planMedicoId), getProximoTurno(p.id)]);
+        const info: ProximoTurnoInfo | null = detalle?.medico
+          ? { turno: detalle.turno, medico: detalle.medico, especialidad: detalle.especialidad, institucion: detalle.institucion, sede: detalle.sede }
+          : null;
+        if (!activo) return;
+        setPaciente(p);
+        setPlan(pl);
+        setProximo((anterior) => conservarSiIgual(anterior, info));
+        setCargado(true);
       })();
 
       return () => {
@@ -141,7 +149,8 @@ export default function HomeScreen() {
           accessibilityLabel={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
           style={({ pressed }) => [
             styles.bellButton,
-            { borderColor: theme.colors.border, backgroundColor: theme.colors.card, opacity: pressed ? 0.8 : 1 },
+            { borderColor: theme.colors.border, backgroundColor: theme.colors.card },
+            alPresionar(pressed, 0.92),
           ]}
         >
           <Bell size={20} color={theme.colors.foreground} />
@@ -175,8 +184,10 @@ export default function HomeScreen() {
       />
 
       <View style={styles.section}>
-        {/* Próximo turno y credencial del plan: se alternan solas cada 4 s y se pueden deslizar.
+        {/* Próximo turno y credencial del plan: se deslizan con el dedo (no avanzan solas). Una sola
+            vez, a 1 s de entrar, se corren un poquito dos veces para indicar que se pueden deslizar.
             Sin turno próximo, queda solo la credencial. */}
+        {cargado ? (
         <Carrusel
           activo={enFoco}
           anchoInicial={anchoPantalla - 48}
@@ -207,14 +218,21 @@ export default function HomeScreen() {
             },
           ]}
         />
+        ) : (
+          // Mientras carga, un hueco del alto de la tarjeta para que el Inicio no salte cuando aparece.
+          <View
+            accessibilityLabel="Cargando tu próximo turno"
+            style={[styles.carruselCargando, { backgroundColor: theme.colors.muted, borderRadius: theme.radii.lg }]}
+          />
+        )}
       </View>
 
       <View style={styles.section}>
         <SectionHeader title="Accesos rápidos" />
         <View style={styles.quickAccessGrid}>
-          <QuickAccess icon={Search} label="Buscar" onPress={() => router.push("/(paciente)/buscar")} />
-          <QuickAccess icon={Stethoscope} label="Turnos" onPress={() => router.push("/(paciente)/turnos")} />
-          <QuickAccess icon={FileText} label="Estudios" onPress={() => router.push("/(paciente)/estudios")} />
+          <QuickAccess icon={Pill} label="Recetas" onPress={() => router.navigate("/recetas")} />
+          <QuickAccess icon={Stethoscope} label="Turnos" onPress={() => router.navigate("/turnos")} />
+          <QuickAccess icon={FileText} label="Estudios" onPress={() => router.navigate("/estudios")} />
           <QuickAccess icon={MapPin} label="Centros" onPress={() => router.push("/mapa")} />
         </View>
       </View>
@@ -228,7 +246,7 @@ export default function HomeScreen() {
             <View style={[styles.mapaFallback, { backgroundColor: theme.colors.muted }]}>
               <MapPin size={28} color={theme.colors.primary} />
             </View>
-          ) : (
+          ) : !mapaMontado ? null : (
             <MapaCentros
               style={StyleSheet.absoluteFill}
               interactivo={false}
@@ -266,18 +284,19 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
       <Pressable
         onPress={() => router.push(`/medico/${proximo.medico.id}`)}
         accessibilityRole="button"
-        accessibilityLabel="Ver próximo turno"
-        style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
+        accessibilityLabel={`Ver próximo turno de ${proximo.especialidad?.nombre ?? proximo.medico.profesion} con ${nombreConTitulo(proximo.medico)}`}
+        style={({ pressed }) => alPresionar(pressed, 0.99)}
       >
         <View style={styles.turnoRow}>
           <View style={styles.turnoDoctor}>
             <Avatar uri={proximo.medico.avatarUrl} iniciales={iniciales(proximo.medico.nombre, proximo.medico.apellido)} />
-            <View>
-              <Text style={[styles.doctorName, { color: theme.colors.foreground }]}>
-                {nombreConTitulo(proximo.medico)}
+            {/* Lo principal es el tipo de turno pedido (la especialidad); el profesional va debajo. */}
+            <View style={styles.turnoTextos}>
+              <Text variant="heading" style={[styles.tipoTurno, { color: theme.colors.foreground }]} numberOfLines={1}>
+                {proximo.especialidad?.nombre ?? proximo.medico.profesion}
               </Text>
-              <Text style={[styles.doctorSpecialty, { color: theme.colors.mutedForeground }]}>
-                {[proximo.especialidad?.nombre, proximo.institucion?.nombre].filter(Boolean).join(" · ")}
+              <Text style={[styles.doctorName, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
+                {nombreConTitulo(proximo.medico)}
               </Text>
             </View>
           </View>
@@ -301,7 +320,7 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
           <PrimaryButton
             label="Ver turno"
             variant="outline"
-            onPress={() => router.push("/(paciente)/turnos")}
+            onPress={() => router.navigate("/turnos")}
             accessibilityLabel="Ver turno"
           />
         </View>
@@ -323,7 +342,7 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
   );
 }
 
-function QuickAccess({ icon, label, onPress }: { icon: typeof Search; label: string; onPress: () => void }) {
+function QuickAccess({ icon, label, onPress }: { icon: typeof Pill; label: string; onPress: () => void }) {
   const { theme } = useTheme();
   return (
     <View style={styles.quickAccessItem}>
@@ -369,12 +388,14 @@ const styles = StyleSheet.create({
   section: { marginBottom: 20 },
   tarjetaTurno: { flex: 1 },
   credencial: { flex: 1 },
+  carruselCargando: { height: 211 },
   seccionMapa: { flex: 1, marginBottom: 0 },
   accentBar: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4 },
   turnoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
   turnoDoctor: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, marginRight: 8 },
-  doctorName: { fontSize: 15, fontWeight: "600" },
-  doctorSpecialty: { fontSize: 12, marginTop: 2 },
+  turnoTextos: { flex: 1 },
+  tipoTurno: { fontSize: 17, fontWeight: "700" },
+  doctorName: { fontSize: 13, marginTop: 2 },
   turnoMeta: { flexDirection: "row", gap: 16 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13 },

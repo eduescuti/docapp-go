@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { Check, ChevronDown, X } from "lucide-react-native";
+import { Check, ChevronDown, Heart, HelpCircle, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { Colapsable } from "./Colapsable";
 import { SheetModal } from "./SheetModal";
 import { Text } from "./Text";
 
@@ -11,6 +12,15 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  /** Título de la sección en que se agrupa la opción en la lista (las de un mismo grupo van juntas). */
+  group?: string;
+  /** Se marca más que el resto (fondo suave, barra lateral y un corazón): p. ej. los hospitales favoritos. */
+  destacada?: boolean;
+  /**
+   * Explicación del grupo: junto al título del grupo aparece un "?" que despliega este texto
+   * (se toma de la primera opción del grupo).
+   */
+  ayudaGrupo?: { titulo: string; lineas: string[] };
 }
 
 interface SelectFieldProps {
@@ -20,44 +30,55 @@ interface SelectFieldProps {
   value: string | null;
   onChange: (value: string) => void;
   error?: string;
+  /** Botón a la derecha del campo (p. ej. elegir en el mapa). Debería medir 48 px de alto, como el campo. */
+  accion?: React.ReactNode;
 }
 
 /** Selector de una opción: campo que abre un bottom sheet con la lista (equivalente RN de un `<select>`). */
-export function SelectField({ label, placeholder = "Seleccionar", options, value, onChange, error }: SelectFieldProps) {
+export function SelectField({ label, placeholder = "Seleccionar", options, value, onChange, error, accion }: SelectFieldProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [abierto, setAbierto] = useState(false);
+  // Grupo cuyo "?" está desplegado.
+  const [ayudaAbierta, setAyudaAbierta] = useState<string | null>(null);
   const seleccionada = options.find((o) => o.value === value);
 
   return (
     <View style={styles.wrapper}>
       <Text style={[styles.label, { color: theme.colors.mutedForeground }]}>{label}</Text>
-      <Pressable
-        onPress={() => setAbierto(true)}
-        accessibilityRole="button"
-        accessibilityLabel={`${label}: ${seleccionada?.label ?? "sin seleccionar"}`}
-        style={[
-          styles.field,
-          {
-            backgroundColor: theme.colors.muted,
-            borderColor: error ? theme.colors.danger : theme.colors.border,
-            borderRadius: theme.radii.md,
-          },
-        ]}
-      >
-        <Text
-          style={[styles.fieldText, { color: seleccionada ? theme.colors.foreground : theme.colors.mutedForeground }]}
-          numberOfLines={1}
+      <View style={styles.filaCampo}>
+        <Pressable
+          onPress={() => setAbierto(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${seleccionada?.label ?? "sin seleccionar"}`}
+          style={[
+            styles.field,
+            {
+              backgroundColor: theme.colors.muted,
+              borderColor: error ? theme.colors.danger : theme.colors.border,
+              borderRadius: theme.radii.md,
+            },
+          ]}
         >
-          {seleccionada?.label ?? placeholder}
-        </Text>
-        <ChevronDown size={18} color={theme.colors.mutedForeground} />
-      </Pressable>
+          {seleccionada?.destacada ? <Heart size={14} color={theme.colors.danger} fill={theme.colors.danger} /> : null}
+          <Text
+            style={[styles.fieldText, { color: seleccionada ? theme.colors.foreground : theme.colors.mutedForeground }]}
+            numberOfLines={1}
+          >
+            {seleccionada?.label ?? placeholder}
+          </Text>
+          <ChevronDown size={18} color={theme.colors.mutedForeground} />
+        </Pressable>
+        {accion}
+      </View>
       {error ? <Text style={[styles.error, { color: theme.colors.danger }]}>{error}</Text> : null}
 
       <SheetModal
         visible={abierto}
-        onClose={() => setAbierto(false)}
+        onClose={() => {
+          setAbierto(false);
+          setAyudaAbierta(null);
+        }}
         etiquetaFondo="Cerrar selector"
         style={[
           styles.sheet,
@@ -84,28 +105,78 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
         </View>
         <FlatList
           data={options}
+          extraData={ayudaAbierta}
           keyExtractor={(o) => o.value}
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const activa = item.value === value;
+            const abreGrupo = !!item.group && item.group !== options[index - 1]?.group;
             return (
-              <Pressable
-                onPress={() => {
-                  onChange(item.value);
-                  setAbierto(false);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
-                accessibilityState={{ selected: activa }}
-                style={[styles.option, { borderBottomColor: theme.colors.border }]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.optionLabel, { color: theme.colors.foreground }]}>{item.label}</Text>
-                  {item.description ? (
-                    <Text style={[styles.optionDesc, { color: theme.colors.mutedForeground }]}>{item.description}</Text>
-                  ) : null}
-                </View>
-                {activa && <Check size={18} color={theme.colors.primary} />}
-              </Pressable>
+              <View>
+                {abreGrupo ? (
+                  <>
+                    <View style={styles.grupoFila}>
+                      {item.destacada ? <Heart size={12} color={theme.colors.danger} fill={theme.colors.danger} /> : null}
+                      <Text style={[styles.grupo, { color: item.destacada ? theme.colors.primary : theme.colors.mutedForeground }]}>{item.group}</Text>
+                      {item.ayudaGrupo ? (
+                        <Pressable
+                          onPress={() => setAyudaAbierta((actual) => (actual === item.group ? null : (item.group ?? null)))}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Más información sobre ${item.group?.toLowerCase()}`}
+                          accessibilityState={{ expanded: ayudaAbierta === item.group }}
+                          hitSlop={10}
+                          style={styles.botonAyuda}
+                        >
+                          <HelpCircle size={16} color={ayudaAbierta === item.group ? theme.colors.primary : theme.colors.mutedForeground} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                    {item.ayudaGrupo ? (
+                      <Colapsable abierto={ayudaAbierta === item.group}>
+                        <View
+                          style={[styles.ayuda, { backgroundColor: `${theme.colors.primary}14`, borderColor: `${theme.colors.primary}33` }]}
+                          accessibilityLiveRegion="polite"
+                        >
+                          <Text style={[styles.ayudaTitulo, { color: theme.colors.foreground }]}>{item.ayudaGrupo.titulo}</Text>
+                          {item.ayudaGrupo.lineas.map((linea) => (
+                            <View key={linea} style={styles.ayudaLinea}>
+                              <View style={[styles.ayudaPunto, { backgroundColor: theme.colors.primary }]} />
+                              <Text style={[styles.ayudaTexto, { color: theme.colors.foreground }]}>{linea}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </Colapsable>
+                    ) : null}
+                  </>
+                ) : null}
+                <Pressable
+                  onPress={() => {
+                    onChange(item.value);
+                    setAbierto(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.destacada ? `${item.label}, favorito` : item.label}
+                  accessibilityState={{ selected: activa }}
+                  style={[
+                    styles.option,
+                    { borderBottomColor: theme.colors.border },
+                    // Las destacadas: fondo suave del color primario y una barra a la izquierda, sin la línea de abajo.
+                    item.destacada && [
+                      styles.optionDestacada,
+                      { backgroundColor: `${theme.colors.primary}14`, borderLeftColor: theme.colors.primary },
+                    ],
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.optionLabel, { color: theme.colors.foreground }, item.destacada && styles.optionLabelDestacada]}>
+                      {item.label}
+                    </Text>
+                    {item.description ? (
+                      <Text style={[styles.optionDesc, { color: theme.colors.mutedForeground }]}>{item.description}</Text>
+                    ) : null}
+                  </View>
+                  {activa && <Check size={18} color={theme.colors.primary} />}
+                </Pressable>
+              </View>
             );
           }}
         />
@@ -117,7 +188,9 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 12 },
   label: { fontSize: 12, fontWeight: "500", marginBottom: 6 },
+  filaCampo: { flexDirection: "row", alignItems: "center", gap: 8 },
   field: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -133,6 +206,16 @@ const styles = StyleSheet.create({
   sheetTitle: { fontSize: 17, fontWeight: "600" },
   closeBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   option: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingVertical: 10, borderBottomWidth: 1, gap: 12 },
+  grupoFila: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14, marginBottom: 2 },
+  botonAyuda: { width: 24, height: 24, alignItems: "center", justifyContent: "center" },
+  ayuda: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 6, marginBottom: 6, gap: 6 },
+  ayudaTitulo: { fontSize: 13, fontWeight: "700" },
+  ayudaLinea: { flexDirection: "row", gap: 8, alignItems: "flex-start" },
+  ayudaPunto: { width: 5, height: 5, borderRadius: 3, marginTop: 7 },
+  ayudaTexto: { flex: 1, fontSize: 13, lineHeight: 19 },
+  grupo: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  optionDestacada: { borderRadius: 12, borderLeftWidth: 3, borderBottomWidth: 0, paddingHorizontal: 12, marginVertical: 4 },
   optionLabel: { fontSize: 15 },
+  optionLabelDestacada: { fontWeight: "600" },
   optionDesc: { fontSize: 12, marginTop: 2 },
 });

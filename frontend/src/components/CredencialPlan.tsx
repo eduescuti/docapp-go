@@ -1,9 +1,9 @@
-import React from "react";
 import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { ShieldCheck } from "lucide-react-native";
 
 import type { PlanMedico } from "@/domain";
 import { useTheme } from "@/theme";
+import { alPresionar } from "@/utils/presionado";
 import { Text } from "./Text";
 
 interface CredencialPlanProps {
@@ -56,7 +56,7 @@ export function CredencialPlan({ plan, afiliado, dni, onPress, style }: Credenci
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${descripcion}. Ver mi plan médico`}
-      style={({ pressed }) => [styles.base, fondo, { opacity: pressed ? 0.9 : 1 }, style]}
+      style={({ pressed }) => [styles.base, fondo, alPresionar(pressed), style]}
     >
       {contenido}
     </Pressable>

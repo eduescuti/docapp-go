@@ -1,5 +1,4 @@
-import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { format } from "date-fns";
 
 import { Estudio, OrdenLaboratorio } from "@/domain";
 import { estudiosMock, ordenesLaboratorioMock, resultadosEstudiosMock } from "@/mocks";
@@ -7,6 +6,7 @@ import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 import { crearPdfSimple } from "@/utils/pdf";
 
 import { delay } from "./apiClient";
+import { agruparEnCarpetas, CarpetaAnio } from "./carpetas";
 import { getInstitucion } from "./institucionService";
 import { getMedico } from "./medicoService";
 import { getPaciente } from "./pacienteService";
@@ -14,7 +14,9 @@ import { getPaciente } from "./pacienteService";
 // Estado en memoria: archivar cambia el estudio hasta que exista backend real.
 let estudios: Estudio[] = [...estudiosMock];
 
-const masReciente = (a: Estudio, b: Estudio) => b.fecha.localeCompare(a.fecha);
+let ordenes: OrdenLaboratorio[] = [...ordenesLaboratorioMock];
+
+const masReciente = (a: { fecha: string }, b: { fecha: string }) => b.fecha.localeCompare(a.fecha);
 
 /** Todos los estudios del paciente, archivados o no (historial médico). */
 export async function listEstudiosPaciente(pacienteId: string): Promise<Estudio[]> {
@@ -26,41 +28,20 @@ export async function listResultadosPaciente(pacienteId: string): Promise<Estudi
   return delay(estudios.filter((e) => e.pacienteId === pacienteId && !e.archivadoEl).sort(masReciente));
 }
 
-export interface CarpetaMes {
-  /** "2026-10" */
-  clave: string;
-  /** "Octubre" */
-  nombre: string;
-  estudios: Estudio[];
+/** Archivados → Resultados: los estudios archivados, en carpetas año → mes. */
+export async function listArchivadosPaciente(pacienteId: string): Promise<CarpetaAnio<Estudio>[]> {
+  return delay(agruparEnCarpetas(
+      estudios.filter((e) => e.pacienteId === pacienteId && e.archivadoEl),
+      (e) => ({ fecha: e.fecha, archivadoEl: e.archivadoEl! }),
+    ));
 }
 
-export interface CarpetaAnio {
-  anio: string;
-  meses: CarpetaMes[];
-  cantidad: number;
-}
-
-/**
- * Pestaña "Archivados": carpetas por año y, adentro, por mes en que se archivó. Solo existen las
- * carpetas que tienen algún estudio (las más nuevas primero).
- */
-export async function listArchivadosPaciente(pacienteId: string): Promise<CarpetaAnio[]> {
-  const archivados = estudios.filter((e) => e.pacienteId === pacienteId && e.archivadoEl);
-  const porMes = new Map<string, Estudio[]>();
-  for (const estudio of archivados) {
-    const clave = estudio.archivadoEl!.slice(0, 7);
-    porMes.set(clave, [...(porMes.get(clave) ?? []), estudio]);
-  }
-  const anios = new Map<string, CarpetaMes[]>();
-  for (const [clave, lista] of [...porMes].sort((a, b) => b[0].localeCompare(a[0]))) {
-    const nombre = format(parseISO(`${clave}-01`), "LLLL", { locale: es });
-    const mes: CarpetaMes = { clave, nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1), estudios: lista.sort(masReciente) };
-    const anio = clave.slice(0, 4);
-    anios.set(anio, [...(anios.get(anio) ?? []), mes]);
-  }
-  return delay(
-    [...anios].map(([anio, meses]) => ({ anio, meses, cantidad: meses.reduce((n, m) => n + m.estudios.length, 0) })),
-  );
+/** Archivados → Órdenes: las órdenes archivadas, en carpetas año → mes. */
+export async function listOrdenesArchivadasPaciente(pacienteId: string): Promise<CarpetaAnio<OrdenLaboratorio>[]> {
+  return delay(agruparEnCarpetas(
+      ordenes.filter((o) => o.pacienteId === pacienteId && o.archivadoEl),
+      (o) => ({ fecha: o.fecha, archivadoEl: o.archivadoEl! }),
+    ));
 }
 
 /** Lo pasa a Archivados, en la carpeta del día de hoy (año → mes). */
@@ -80,12 +61,30 @@ export async function desarchivarEstudio(estudioId: string): Promise<Estudio> {
   return delay(actualizado);
 }
 
+/** Pestaña "Órdenes": las que no están archivadas, de la más reciente a la más vieja. */
 export async function listOrdenesPaciente(pacienteId: string): Promise<OrdenLaboratorio[]> {
-  return delay(ordenesLaboratorioMock.filter((o) => o.pacienteId === pacienteId));
+  return delay(ordenes.filter((o) => o.pacienteId === pacienteId && !o.archivadoEl).sort(masReciente));
 }
 
 export async function getOrden(ordenId: string): Promise<OrdenLaboratorio | undefined> {
-  return delay(ordenesLaboratorioMock.find((o) => o.id === ordenId));
+  return delay(ordenes.find((o) => o.id === ordenId));
+}
+
+/** Pasa la orden a Archivados, en la carpeta del día de hoy (año → mes). */
+export async function archivarOrden(ordenId: string): Promise<OrdenLaboratorio> {
+  const hoy = format(new Date(), "yyyy-MM-dd");
+  ordenes = ordenes.map((o) => (o.id === ordenId ? { ...o, archivadoEl: hoy } : o));
+  const actualizada = ordenes.find((o) => o.id === ordenId);
+  if (!actualizada) throw new Error("Orden no encontrada");
+  return delay(actualizada);
+}
+
+/** La devuelve a Órdenes. */
+export async function desarchivarOrden(ordenId: string): Promise<OrdenLaboratorio> {
+  ordenes = ordenes.map((o) => (o.id === ordenId ? { ...o, archivadoEl: undefined } : o));
+  const actualizada = ordenes.find((o) => o.id === ordenId);
+  if (!actualizada) throw new Error("Orden no encontrada");
+  return delay(actualizada);
 }
 
 /** Estudios que un profesional le pidió a un paciente. */

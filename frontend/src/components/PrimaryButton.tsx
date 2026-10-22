@@ -1,7 +1,7 @@
-import React from "react";
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
 import { useTheme } from "@/theme";
+import { alPresionar } from "@/utils/presionado";
 import { Text } from "./Text";
 
 interface PrimaryButtonProps {
@@ -42,8 +42,9 @@ export function PrimaryButton({
           borderColor: relleno,
           borderWidth: isOutline ? 1 : 0,
           borderRadius: theme.radii.full,
-          opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+          opacity: disabled ? 0.5 : 1,
         },
+        !disabled && alPresionar(pressed, 0.97),
       ]}
     >
       {loading ? (

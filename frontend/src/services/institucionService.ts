@@ -73,6 +73,43 @@ export async function buscarCentros(filtros: FiltrosCentros): Promise<CentroCerc
   return delay(limite ? centros.slice(0, limite) : centros);
 }
 
+/**
+ * Los centros de esas sedes puntuales (p. ej. las que tienen turnos libres en la reserva), para
+ * elegir uno en el mapa. No filtra por cobertura: quien llama ya eligió cuáles mostrar.
+ */
+export async function listCentrosPorSedes(
+  sedeIds: string[],
+  cerca?: { latitud: number; longitud: number },
+): Promise<CentroCercano[]> {
+  const centros: CentroCercano[] = [];
+  for (const institucion of instituciones) {
+    for (const sede of institucion.sedes) {
+      if (!sedeIds.includes(sede.id)) continue;
+      centros.push({
+        institucion,
+        sede,
+        distanciaKm: cerca ? distanciaKm(cerca.latitud, cerca.longitud, sede.latitud, sede.longitud) : undefined,
+        motivo: institucion.origen === "publico" ? "publica" : "cobertura",
+      });
+    }
+  }
+  centros.sort((a, b) =>
+    a.distanciaKm !== undefined && b.distanciaKm !== undefined
+      ? a.distanciaKm - b.distanciaKm
+      : a.institucion.nombre.localeCompare(b.institucion.nombre, "es"),
+  );
+  return delay(centros);
+}
+
+/** Acceso sincrónico para otros services (p. ej. el detalle de un turno). Las pantallas usan las funciones async. */
+export function getInstitucionEnMemoria(id: string): Institucion | undefined {
+  return instituciones.find((i) => i.id === id);
+}
+
+export function getSedeEnMemoria(sedeId: string): Sede | undefined {
+  return instituciones.flatMap((i) => i.sedes).find((s) => s.id === sedeId);
+}
+
 export async function getInstitucion(id: string): Promise<Institucion | undefined> {
   return delay(instituciones.find((i) => i.id === id));
 }

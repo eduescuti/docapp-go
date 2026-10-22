@@ -43,7 +43,8 @@ export default function DoctorPacientesScreen() {
               t.pacienteId === paciente.id &&
               t.fecha >= hoy &&
               t.estado !== "cancelado" &&
-              t.estado !== "completado",
+              t.estado !== "completado" &&
+              t.estado !== "rechazado",
           ),
         }));
         lista.sort((a, b) =>

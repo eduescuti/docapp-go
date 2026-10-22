@@ -24,7 +24,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style={theme.isDark ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
+      <Stack screenOptions={{ headerShown: false, animation: "fade", contentStyle: { backgroundColor: theme.colors.background } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(paciente)" />
         <Stack.Screen name="(doctor)" />

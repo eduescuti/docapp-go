@@ -46,7 +46,7 @@ export default function DoctorAgendaScreen() {
           listPacientesAsignados(m.id),
         ]);
         const futuros = turnos.filter(
-          (t) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado",
+          (t) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado" && t.estado !== "rechazado",
         );
         const conDatos = await Promise.all(
           futuros.map(async (turno) => ({
