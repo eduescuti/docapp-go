@@ -210,7 +210,9 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
     () => sedesOpcionIds.filter((id) => favoritas.includes(sedes[id]?.institucion.id ?? "")),
     [sedesOpcionIds, favoritas, sedes],
   );
-  const favoritaPorDefectoId = favoritasOpcionIds.length === 1 ? favoritasOpcionIds[0] : null;
+
+  //Si hay uno o más favoritos disponibles, propone el primero de la lista
+  const favoritaPorDefectoId = favoritasOpcionIds.length > 0 ? favoritasOpcionIds[0] : null;
   // Lo que rige sin que el paciente haya elegido (favorito o única opción) no se guarda: si cambia el horario se recalcula.
   const sedeEfectivaId =
     sedeId === CUALQUIERA ? null : (sedeId ?? favoritaPorDefectoId ?? (sedesOpcionIds.length === 1 ? sedesOpcionIds[0] : null));
@@ -313,26 +315,36 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
   };
 
   const hayFavoritas = favoritasOpcionIds.length > 0;
+
   const opcionesSede: SelectOption[] = [
     { value: CUALQUIERA, label: "Cualquiera", description: "Ver profesionales de todos los lugares" },
     ...sedesOpcionIds
       .map((id) => sedes[id])
       .filter((x): x is SedeConInstitucion => !!x)
-      // Los favoritos primero, el resto por nombre.
-      .sort(
-        (a, b) =>
-          Number(favoritas.includes(b.institucion.id)) - Number(favoritas.includes(a.institucion.id)) ||
-          a.institucion.nombre.localeCompare(b.institucion.nombre, "es"),
-      )
+      .sort((a, b) => {
+        const aEsFav = favoritas.includes(a.institucion.id);
+        const bEsFav = favoritas.includes(b.institucion.id);
+        if (aEsFav && !bEsFav) return -1;
+        if (!aEsFav && bEsFav) return 1;
+        return a.institucion.nombre.localeCompare(b.institucion.nombre, "es");
+      })
       .map(({ sede, institucion }): SelectOption => {
-        const cantidad = sinRepetidos(delHorario.filter((l) => l.sedeId === sede.id).map((l) => l.medicoId)).length;
+        const esFav = favoritas.includes(institucion.id);
+        const cantidad = sinRepetidos(
+          delHorario.filter((l) => l.sedeId === sede.id).map((l) => l.medicoId)
+        ).length;
+
         return {
           value: sede.id,
           label: institucion.nombre,
-          description: `${ETIQUETA_TIPO[institucion.tipo]}${institucion.origen === "publico" ? " público" : ""} · ${sede.direccion} · ${cantidad} ${cantidad === 1 ? "profesional" : "profesionales"}`,
-          group: hayFavoritas ? (favoritas.includes(institucion.id) ? "Tus favoritos" : "Otros lugares") : undefined,
-          destacada: favoritas.includes(institucion.id),
-          ayudaGrupo: favoritas.includes(institucion.id) ? AYUDA_FAVORITOS : undefined,
+          description: `${ETIQUETA_TIPO[institucion.tipo]}${
+            institucion.origen === "publico" ? " público" : ""
+          } · ${sede.direccion} · ${cantidad} ${
+            cantidad === 1 ? "profesional" : "profesionales"
+          }`,
+          group: esFav ? "Tus favoritos" : "Otros lugares",
+          destacada: esFav,
+          ayudaGrupo: esFav ? AYUDA_FAVORITOS : undefined,
         };
       }),
   ];

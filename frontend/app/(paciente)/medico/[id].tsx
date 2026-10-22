@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Star } from "lucide-react-native";
+import { ArrowLeft, Heart, Star } from "lucide-react-native";
 
-import { Card, PrimaryButton, Text } from "@/components";
+import { Card, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
-import { getEspecialidad, getMedico } from "@/services";
+import {
+  alternarMedicoFavorito,
+  esMedicoFavorito,
+  getEspecialidad,
+  getMedico,
+} from "@/services";
 import { useTheme } from "@/theme";
 import { nombreConTitulo } from "@/utils/format";
 
@@ -18,14 +23,25 @@ export default function MedicoProfileScreen() {
 
   const [medico, setMedico] = useState<Medico | null>(null);
   const [especialidad, setEspecialidad] = useState<Especialidad | null>(null);
+  const [esFavorito, setEsFavorito] = useState(false);
 
   useEffect(() => {
+    if (!id) return;
+
     getMedico(id).then((m) => {
       if (!m) return;
       setMedico(m);
       getEspecialidad(m.especialidadId).then((e) => setEspecialidad(e ?? null));
     });
+
+    esMedicoFavorito(id).then(setEsFavorito);
   }, [id]);
+
+  const handleToggleFavorito = async () => {
+    if (!id) return;
+    const nuevoEstado = await alternarMedicoFavorito(id);
+    setEsFavorito(nuevoEstado);
+  };
 
   if (!medico) return null;
 
@@ -36,15 +52,33 @@ export default function MedicoProfileScreen() {
         <View style={[styles.heroOverlay, { backgroundColor: theme.colors.background }]} />
       </View>
 
+      {/* Botón Volver (Izquierda) */}
       <View style={[styles.backButtonWrapper, { top: insets.top + 12 }]}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Volver"
           hitSlop={8}
-          style={[styles.backButton, { backgroundColor: `${theme.colors.card}CC`, borderColor: theme.colors.border }]}
+          style={[styles.actionButton, { backgroundColor: `${theme.colors.card}CC`, borderColor: theme.colors.border }]}
         >
           <ArrowLeft size={20} color={theme.colors.foreground} />
+        </Pressable>
+      </View>
+
+      {/* Botón Favorito (Derecha) */}
+      <View style={[styles.favoriteButtonWrapper, { top: insets.top + 12 }]}>
+        <Pressable
+          onPress={handleToggleFavorito}
+          accessibilityRole="button"
+          accessibilityLabel={esFavorito ? "Quitar de favoritos" : "Agregar a favoritos"}
+          hitSlop={8}
+          style={[styles.actionButton, { backgroundColor: `${theme.colors.card}CC`, borderColor: theme.colors.border }]}
+        >
+          <Heart
+            size={20}
+            color={esFavorito ? "#EF4444" : theme.colors.foreground}
+            fill={esFavorito ? "#EF4444" : "transparent"}
+          />
         </Pressable>
       </View>
 
@@ -73,14 +107,6 @@ export default function MedicoProfileScreen() {
 
         <Text style={[styles.sectionTitle, { color: theme.colors.foreground }]}>Sobre el/la profesional</Text>
         <Text style={[styles.descripcion, { color: theme.colors.mutedForeground }]}>{medico.descripcion}</Text>
-
-        <View style={{ marginTop: 24 }}>
-          <PrimaryButton
-            label="Solicitar Turno"
-            onPress={() => router.push(`/reservar/${medico.id}`)}
-            accessibilityLabel="Solicitar turno"
-          />
-        </View>
       </ScrollView>
     </View>
   );
@@ -90,8 +116,9 @@ const styles = StyleSheet.create({
   heroImageWrapper: { height: 220, width: "100%" },
   heroImage: { width: "100%", height: "100%", opacity: 0.85 },
   heroOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: 100, opacity: 0.001 },
-  backButtonWrapper: { position: "absolute", left: 24 },
-  backButton: {
+  backButtonWrapper: { position: "absolute", left: 24, zIndex: 10 },
+  favoriteButtonWrapper: { position: "absolute", right: 24, zIndex: 10 },
+  actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,

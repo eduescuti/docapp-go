@@ -62,10 +62,18 @@ export async function listMisRecetas(pacienteId: string): Promise<MisRecetas> {
 export async function archivarReceta(recetaId: string): Promise<Receta> {
   const receta = recetas.find((r) => r.id === recetaId);
   if (!receta) throw new Error("Receta no encontrada");
-  if (esRecetaActiva(receta)) throw new Error("Solo se pueden archivar las recetas pasadas.");
-  const archivada = { ...receta, archivadoEl: format(new Date(), "yyyy-MM-dd") };
-  recetas = recetas.map((r) => (r.id === recetaId ? archivada : r));
-  return delay(archivada);
+
+  // ✅ Usar la fecha de vigencia/emisión de la receta para que coincida con su mes real
+  const fechaCarpeta = receta.vigenteHasta ?? receta.fecha;
+
+  const actualizada = {
+    ...receta,
+    archivadoEl: fechaCarpeta, // o new Date().toISOString() si guardás cuándo se archivó, pero agrupando por receta.vigenteHasta
+  };
+
+  // Guardar en el array de recetas en memoria
+  recetas = recetas.map((r) => (r.id === recetaId ? actualizada : r));
+  return delay(actualizada);
 }
 
 /** La devuelve a Pasadas. */

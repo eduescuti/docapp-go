@@ -88,3 +88,29 @@ export async function quitarInstitucionFavorita(pacienteId: string, institucionI
     }),
   );
 }
+
+/**
+ * Alterna (agrega o quita) un médico en la lista de favoritos del paciente actual.
+ */
+export async function alternarMedicoFavorito(medicoId: string): Promise<boolean> {
+  const paciente = await getPacienteActual();
+  const esFavorito = paciente.medicosFavoritosIds.includes(medicoId);
+  const nuevasFavoritas = esFavorito
+    ? paciente.medicosFavoritosIds.filter((id) => id !== medicoId)
+    : [...paciente.medicosFavoritosIds, medicoId];
+
+  actualizar(paciente.id, { medicosFavoritosIds: nuevasFavoritas });
+  return !esFavorito;
+}
+
+/**
+ * Consulta si un médico está marcado como favorito por el paciente actual.
+ */
+export async function esMedicoFavorito(medicoId: string): Promise<boolean> {
+  try {
+    const paciente = await getPacienteActual();
+    return paciente.medicosFavoritosIds.includes(medicoId);
+  } catch {
+    return false;
+  }
+}

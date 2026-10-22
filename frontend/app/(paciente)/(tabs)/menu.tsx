@@ -17,7 +17,12 @@ import { StyleSheet, View } from "react-native";
 
 import { Avatar, Card, EncabezadoTab, ScreenContainer, SectionHeader, Text } from "@/components";
 import { Paciente, PlanMedico } from "@/domain";
-import { getPacienteActual, getPlanMedico, listNotificacionesPaciente } from "@/services";
+import {
+  countFeedbacksPendientes,
+  getPacienteActual,
+  getPlanMedico,
+  listNotificacionesPaciente,
+} from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
 import { iniciales } from "@/utils/format";
@@ -45,7 +50,6 @@ interface Seccion {
   items: MenuItem[];
 }
 
-/** Agrupado por tema para dar jerarquía (CLAUDE.md §8: el menú no puede sentirse genérico). */
 const SECCIONES: Seccion[] = [
   {
     titulo: "Mi salud",
@@ -82,14 +86,20 @@ export default function MenuScreen() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [plan, setPlan] = useState<PlanMedico | null>(null);
   const [noLeidas, setNoLeidas] = useState(0);
+  const [feedbacksPendientes, setFeedbacksPendientes] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       getPacienteActual().then(async (p) => {
         setPaciente(p);
-        const [pl, notifs] = await Promise.all([getPlanMedico(p.planMedicoId), listNotificacionesPaciente(p.id)]);
+        const [pl, notifs, pendientesFb] = await Promise.all([
+          getPlanMedico(p.planMedicoId),
+          listNotificacionesPaciente(p.id),
+          countFeedbacksPendientes(p.id),
+        ]);
         setPlan(pl ?? null);
         setNoLeidas(notifs.filter((n) => !n.leida).length);
+        setFeedbacksPendientes(pendientesFb);
       });
     }, []),
   );
@@ -123,14 +133,20 @@ export default function MenuScreen() {
           <SectionHeader title={seccion.titulo} />
           <View style={styles.grid}>
             {seccion.items.map((item) => {
-              const badge = item.ruta === "/cuenta/notificaciones" ? noLeidas : 0;
+              let badge = 0;
+              if (item.ruta === "/cuenta/notificaciones") {
+                badge = noLeidas;
+              } else if (item.ruta === "/cuenta/feedback") {
+                badge = feedbacksPendientes;
+              }
+
               return (
                 <View key={item.label} style={styles.gridCell}>
                   <Card
                     padded={false}
                     style={styles.gridItem}
                     onPress={() => router.push(item.ruta)}
-                    accessibilityLabel={badge > 0 ? `${item.label}, ${badge} sin leer` : item.label}
+                    accessibilityLabel={badge > 0 ? `${item.label}, ${badge} pendientes` : item.label}
                   >
                     <View style={[styles.gridIcon, { backgroundColor: theme.colors.accent }]}>
                       <item.icon size={20} color={theme.colors.accentForeground} />
@@ -172,7 +188,6 @@ const styles = StyleSheet.create({
   seccion: { marginBottom: 24 },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 12 },
   gridCell: { width: "48%" },
-  // Alto fijo: todas las tarjetas miden lo mismo aunque el texto ocupe una o dos líneas.
   gridItem: {
     height: 116,
     alignItems: "center",

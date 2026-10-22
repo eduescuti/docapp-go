@@ -1,7 +1,7 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays,format ,parseISO } from "date-fns";
 import {
   Archive,
   Calendar,
@@ -36,8 +36,10 @@ type Tab = "activas" | "pasadas";
 
 /** Cuánto queda para el último día de consumo: "Quedan 12 días", "Último día de consumo". */
 function textoVigencia(receta: Receta): string {
-  const dias = differenceInCalendarDays(parseISO(receta.vigenteHasta), new Date());
-  if (dias < 0) return `Venció el ${formatFechaCorta(receta.vigenteHasta)}`;
+  const fecha = parseISO(receta.vigenteHasta);
+  const dias = differenceInCalendarDays(fecha, new Date());
+
+  if (dias < 0) return `Venció ${format(fecha, "dd/MM/yy")}`;
   if (dias === 0) return "Hoy es el último día";
   return dias === 1 ? "Queda 1 día" : `Quedan ${dias} días`;
 }
@@ -151,21 +153,25 @@ export default function RecetasScreen() {
         </View>
         <View style={[styles.pie, { borderTopColor: theme.colors.border }]}>
           <View style={styles.dato}>
-            <Stethoscope size={14} color={theme.colors.primary} />
+            <Stethoscope size={13} color={theme.colors.primary} />
             <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
               {medico ? nombreConTitulo(medico) : "Profesional"}
             </Text>
           </View>
-          <View style={styles.flex} />
+
           <View style={styles.dato}>
-            <Clock size={14} color={vigente ? theme.colors.primary : theme.colors.mutedForeground} />
+            <Clock size={13} color={vigente ? theme.colors.primary : theme.colors.mutedForeground} />
             <Text
-              style={[styles.datoTexto, { color: vigente ? theme.colors.foreground : theme.colors.mutedForeground, fontWeight: vigente ? "600" : "400" }]}
+              style={[
+                styles.datoTexto,
+                { color: vigente ? theme.colors.foreground : theme.colors.mutedForeground, fontWeight: vigente ? "600" : "400" },
+              ]}
+              numberOfLines={1}
             >
               {textoVigencia(receta)}
             </Text>
+            <ChevronRight size={15} color={theme.colors.mutedForeground} />
           </View>
-          <ChevronRight size={18} color={theme.colors.mutedForeground} />
         </View>
       </Card>
     );
@@ -401,6 +407,7 @@ const styles = StyleSheet.create({
   pie: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
   dato: { flexDirection: "row", alignItems: "center", gap: 6 },
   datoTexto: { fontSize: 13 },
+  fechaTexto: {fontSize: 11},
   seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
   seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   valor: { fontSize: 15, fontWeight: "500" },

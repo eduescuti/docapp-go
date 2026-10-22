@@ -49,3 +49,9 @@ export async function crearFeedback(pacienteId: string, turnoId: string, datos: 
   feedbacks = [...feedbacks, feedback];
   return delay(feedback);
 }
+
+/** Cantidad de turnos completados que aún no fueron calificados. */
+export async function countFeedbacksPendientes(pacienteId: string): Promise<number> {
+  const pendientes = await listTurnosParaCalificar(pacienteId);
+  return pendientes.length;
+}
