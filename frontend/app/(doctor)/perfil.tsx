@@ -1,13 +1,13 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
-import { BadgeCheck, Clock, Fingerprint, MapPin, Star } from "lucide-react-native";
+import { BadgeCheck, Fingerprint, MapPin, Star } from "lucide-react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 
 import { Avatar, Card, LogoutButton, ScreenContainer, SectionHeader, Text } from "@/components";
-import { Especialidad, Medico, Sede } from "@/domain";
+import { Especialidad, Medico } from "@/domain";
 import { useAuth } from "@/hooks/useAuth";
-import { getEspecialidad, getMedicoActual, getSede } from "@/services";
+import { getEspecialidad, getMedicoActual, LugarDeAtencion, listLugaresDeAtencion } from "@/services";
 import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
@@ -17,16 +17,17 @@ import {
 import { useTheme } from "@/theme";
 import { iniciales } from "@/utils/format";
 
-const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-
-/** Perfil profesional: datos de matrícula, lugares, horarios de atención y ajustes de seguridad. */
+/**
+ * Perfil profesional: los datos del registro (padrón), los lugares de atención y los ajustes de seguridad.
+ * No muestra horarios de atención: la disponibilidad la resuelven los turnos (Sprint 2).
+ */
 export default function DoctorPerfilScreen() {
   const { theme } = useTheme();
   const { sesion } = useAuth();
 
   const [medico, setMedico] = useState<Medico | null>(null);
   const [especialidad, setEspecialidad] = useState<Especialidad | undefined>();
-  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [lugares, setLugares] = useState<LugarDeAtencion[]>([]);
   const [biometriaActiva, setBiometriaActiva] = useState(false);
   const [soportaBiometria, setSoportaBiometria] = useState(false);
 
@@ -41,12 +42,12 @@ export default function DoctorPerfilScreen() {
           estaBiometriaHabilitada(),
         ]);
 
-        const [esp, ...s] = await Promise.all([getEspecialidad(m.especialidadId), ...m.sedesIds.map(getSede)]);
+        const [esp, l] = await Promise.all([getEspecialidad(m.especialidadId), listLugaresDeAtencion(m.sedesIds)]);
 
         if (!activo) return;
         setMedico(m);
         setEspecialidad(esp);
-        setSedes(s.filter((x): x is Sede => x !== undefined));
+        setLugares(l);
         setSoportaBiometria(tieneHardware && tieneEnrolamiento);
         setBiometriaActiva(habilitada);
       })();
@@ -95,8 +96,6 @@ export default function DoctorPerfilScreen() {
     );
   }
 
-  const nombreSede = (id: string) => sedes.find((s) => s.id === id)?.nombre ?? "Sede";
-
   return (
     <ScreenContainer>
       <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
@@ -128,31 +127,15 @@ export default function DoctorPerfilScreen() {
       </Card>
 
       <SectionHeader title="Lugares de atención" />
-      {sedes.map((s) => (
-        <Card key={s.id} style={styles.item}>
+      {lugares.map(({ sede, institucion }) => (
+        <Card key={sede.id} style={styles.item}>
           <View style={styles.itemRow}>
             <MapPin size={16} color={theme.colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>{s.nombre}</Text>
+              <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>{institucion.nombre}</Text>
               <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-                {s.direccion}, {s.ciudad}
+                {sede.direccion}, {sede.ciudad}
               </Text>
-            </View>
-          </View>
-        </Card>
-      ))}
-
-      <View style={{ height: 16 }} />
-      <SectionHeader title="Horarios de atención" />
-      {medico.horarios.map((h) => (
-        <Card key={`${h.diaSemana}-${h.horaInicio}-${h.sedeId}`} style={styles.item}>
-          <View style={styles.itemRow}>
-            <Clock size={16} color={theme.colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>
-                {DIAS[h.diaSemana]} · {h.horaInicio} a {h.horaFin}
-              </Text>
-              <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>{nombreSede(h.sedeId)}</Text>
             </View>
           </View>
         </Card>

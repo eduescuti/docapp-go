@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 
 import { Especialidad, Medico, Receta } from "@/domain";
 import { especialidadesMock, medicosMock, recetasMock } from "@/mocks";
@@ -88,4 +88,46 @@ export async function desarchivarReceta(recetaId: string): Promise<Receta> {
 /** Recetas que un profesional le emitió a un paciente (regla #7: siempre asociadas a quien las emitió). */
 export async function listRecetasEmitidas(medicoId: string, pacienteId: string): Promise<Receta[]> {
   return delay(recetas.filter((r) => r.medicoId === medicoId && r.pacienteId === pacienteId));
+}
+
+export interface DatosNuevaReceta {
+  medicoId: string;
+  pacienteId: string;
+  /** Nombre del medicamento ("Amoxicilina 500mg"). */
+  medicacion: string;
+  dosis: string;
+  /** Cómo tomarla ("Cada 8 horas"). */
+  frecuencia: string;
+  /** Duración del tratamiento, en días. Define hasta cuándo la receta es activa. */
+  duracionDias: number;
+  indicaciones: string;
+}
+
+/**
+ * El profesional le asigna una receta al paciente, con la fecha de hoy. Es activa hasta la fecha de emisión
+ * más la duración del tratamiento (`vigenteHasta`); después pasa a Pasadas.
+ */
+export async function crearReceta(datos: DatosNuevaReceta): Promise<Receta> {
+  const medicacion = datos.medicacion.trim();
+  if (!medicacion) throw new Error("Indicá el medicamento.");
+  if (!datos.dosis.trim()) throw new Error("Indicá la dosis.");
+  if (!datos.frecuencia.trim()) throw new Error("Indicá cómo tomarla.");
+  if (!Number.isInteger(datos.duracionDias) || datos.duracionDias < 1 || datos.duracionDias > 365) {
+    throw new Error("La duración tiene que ser de 1 a 365 días.");
+  }
+  const hoy = new Date();
+  const receta: Receta = {
+    id: `receta-${hoy.getTime()}`,
+    medicoId: datos.medicoId,
+    pacienteId: datos.pacienteId,
+    fecha: format(hoy, "yyyy-MM-dd"),
+    medicacion,
+    dosis: datos.dosis.trim(),
+    frecuencia: datos.frecuencia.trim(),
+    duracion: `${datos.duracionDias} ${datos.duracionDias === 1 ? "día" : "días"}`,
+    vigenteHasta: format(addDays(hoy, datos.duracionDias), "yyyy-MM-dd"),
+    indicaciones: datos.indicaciones.trim() || undefined,
+  };
+  recetas = [...recetas, receta];
+  return delay(receta);
 }

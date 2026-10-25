@@ -14,7 +14,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-50020012115367",
     fecha: iso(4),
     hora: "10:30",
-    tipoConsulta: "control",
     estado: "confirmado",
   },
   {
@@ -24,7 +23,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315240",
     fecha: iso(9),
     hora: "15:00",
-    tipoConsulta: "seguimiento",
     estado: "pendiente",
   },
   {
@@ -34,7 +32,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-50020012115367",
     fecha: format(subDays(new Date(), 25), "yyyy-MM-dd"),
     hora: "11:00",
-    tipoConsulta: "primera_consulta",
     estado: "completado",
   },
   {
@@ -44,7 +41,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-50020012115367",
     fecha: format(subDays(new Date(), 60), "yyyy-MM-dd"),
     hora: "09:30",
-    tipoConsulta: "control",
     estado: "completado",
   },
   // Solicitud que la institución no aceptó: se ve en Turnos con estado "Rechazado".
@@ -55,7 +51,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012215220",
     fecha: iso(7),
     hora: "09:30",
-    tipoConsulta: "primera_consulta",
     estado: "rechazado",
   },
   // Agenda de la profesional de ejemplo (med-sosa).
@@ -66,7 +61,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: iso(0),
     hora: "16:30",
-    tipoConsulta: "control",
     estado: "confirmado",
   },
   {
@@ -76,7 +70,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: iso(1),
     hora: "09:00",
-    tipoConsulta: "primera_consulta",
     estado: "confirmado",
   },
   {
@@ -86,7 +79,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-50020012115367",
     fecha: iso(2),
     hora: "14:00",
-    tipoConsulta: "seguimiento",
     estado: "pendiente",
   },
   {
@@ -96,7 +88,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: iso(5),
     hora: "10:30",
-    tipoConsulta: "control",
     estado: "confirmado",
   },
   {
@@ -106,7 +97,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: iso(3),
     hora: "11:00",
-    tipoConsulta: "control",
     estado: "cancelado",
   },
   {
@@ -116,7 +106,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: format(subDays(new Date(), 20), "yyyy-MM-dd"),
     hora: "08:30",
-    tipoConsulta: "primera_consulta",
     estado: "completado",
   },
   {
@@ -126,7 +115,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: format(subDays(new Date(), 6), "yyyy-MM-dd"),
     hora: "09:00",
-    tipoConsulta: "seguimiento",
     estado: "completado",
   },
   {
@@ -136,7 +124,6 @@ export const turnosMock: Turno[] = [
     sedeId: "sede-10020012315256",
     fecha: format(subDays(new Date(), 15), "yyyy-MM-dd"),
     hora: "12:00",
-    tipoConsulta: "control",
     estado: "completado",
   },
 ];

@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
-import type { Medico, TipoConsulta } from "@/domain";
+import type { Medico } from "@/domain";
 
 /** "2026-08-24" -> "Lun 24 Ago" */
 export function formatFechaCorta(fechaIso: string): string {
@@ -16,18 +16,6 @@ export function formatFechaLarga(fechaIso: string): string {
 
 export function iniciales(nombre: string, apellido: string): string {
   return `${nombre.charAt(0)}${apellido.charAt(0)}`.toUpperCase();
-}
-
-const ETIQUETAS_TIPO_CONSULTA: Record<TipoConsulta, string> = {
-  presencial: "Presencial",
-  control: "Control",
-  primera_consulta: "Primera consulta",
-  seguimiento: "Seguimiento",
-  estudio_especifico: "Estudio específico",
-};
-
-export function etiquetaTipoConsulta(tipo: TipoConsulta): string {
-  return ETIQUETAS_TIPO_CONSULTA[tipo];
 }
 
 /** "2026-10-03T14:30" -> "03/10/2026 14:30" */

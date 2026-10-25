@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from "expo-router";
-import { Building2, CreditCard, LayoutDashboard } from "lucide-react-native";
+import { Building2, ChartColumn, CreditCard, LayoutDashboard } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +36,14 @@ export default function AdminLayout() {
           title: "Panel",
           tabBarAccessibilityLabel: "Panel de administración",
           tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="metricas"
+        options={{
+          title: "Métricas",
+          tabBarAccessibilityLabel: "Métricas de uso y valoraciones",
+          tabBarIcon: ({ color, size }) => <ChartColumn color={color} size={size} />,
         }}
       />
       <Tabs.Screen

@@ -6,7 +6,7 @@ import { BackHeader, Card, PrimaryButton, ScreenContainer, StarRating, Text, Tex
 import { Feedback, Medico, Turno } from "@/domain";
 import { crearFeedback, getMedico, getPacienteActual, getTurnoParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
-import { etiquetaTipoConsulta, formatFechaLarga, nombreConTitulo } from "@/utils/format";
+import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 type Criterio = keyof Feedback["criterios"];
 type Puntaje = 1 | 2 | 3 | 4 | 5;
@@ -98,7 +98,7 @@ export default function CalificarScreen() {
           <Card style={{ marginBottom: 20 }}>
             <Text style={[styles.nombre, { color: theme.colors.foreground }]}>{medico ? nombreConTitulo(medico) : "Profesional"}</Text>
             <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-              {etiquetaTipoConsulta(turno.tipoConsulta)} · {formatFechaLarga(turno.fecha)}
+              {formatFechaLarga(turno.fecha)} · {turno.hora} h
             </Text>
           </Card>
         )}

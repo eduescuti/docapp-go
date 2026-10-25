@@ -284,7 +284,6 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
         sedeId: elegida.sedeId,
         fecha,
         hora,
-        tipoConsulta: "primera_consulta",
       });
       setReservado({ turno, medico, lugar: sedes[elegida.sedeId] });
       // El horario reservado ya no está libre: se actualizan los horarios.
@@ -555,16 +554,17 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
       ) : null}
 
       <PrimaryButton
-        label="Confirmar turno"
+        label="Solicitar turno"
         onPress={confirmar}
         disabled={!puedeReservar}
         loading={reservando}
-        accessibilityLabel="Confirmar turno"
+        accessibilityLabel="Solicitar turno"
       />
 
+      {/* El turno nace pendiente: lo confirma (o lo rechaza) el profesional. */}
       <BottomSheet
         visible={!!reservado}
-        titulo="Turno confirmado"
+        titulo="Turno solicitado"
         onClose={cerrarAviso}
         pie={<PrimaryButton label="Ver mis turnos" onPress={cerrarAviso} />}
       >
@@ -583,6 +583,9 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
                 {reservado.lugar.institucion.nombre} · {reservado.lugar.sede.direccion}
               </Text>
             ) : null}
+            <Text style={[styles.pendiente, { color: theme.colors.foreground, backgroundColor: theme.colors.accent }]}>
+              Queda pendiente hasta que el profesional lo confirme. Lo ves en Próximos.
+            </Text>
           </View>
         ) : null}
       </BottomSheet>
@@ -614,4 +617,5 @@ const styles = StyleSheet.create({
   resumenLinea: { fontSize: 16, fontWeight: "700" },
   error: { padding: 12, marginBottom: 12 },
   exito: { alignItems: "center", gap: 6, paddingVertical: 8 },
+  pendiente: { fontSize: 13, lineHeight: 19, textAlign: "center", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 8 },
 });

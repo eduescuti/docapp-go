@@ -3,7 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, CheckCircle2, ChevronRight, Clock, History, MapPin, Stethoscope, Trash2 } from "lucide-react-native";
+import { Calendar, CheckCircle2, ChevronRight, Clock, History, MapPin, Trash2 } from "lucide-react-native";
 
 import {
   Avatar,
@@ -31,10 +31,13 @@ import {
 } from "@/services";
 import { useTheme } from "@/theme";
 import { conservarSiIgual } from "@/utils/estable";
-import { etiquetaTipoConsulta, formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
+import { formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
 import { etiquetaEstado } from "@/components/StatusBadge";
 
 type Filtro = "reservar" | "proximos";
+
+/** El turno nace pendiente: el profesional lo tiene que confirmar. */
+const AVISO_SOLICITADO = "Solicitaste tu turno. Queda pendiente hasta que el profesional lo confirme.";
 type Confirmando = "cancelar" | "ocultar" | null;
 
 /** Sin tildes ni mayúsculas, para que "cardiologia" encuentre "Cardiología". */
@@ -130,7 +133,7 @@ export default function TurnosScreen() {
     if (ver?.startsWith("proximos")) {
       setVerHistorial(false);
       setFiltro("proximos");
-      setAviso("Reservaste tu turno. Lo ves en Próximos.");
+      setAviso(AVISO_SOLICITADO);
     }
   }, [ver]);
 
@@ -253,7 +256,7 @@ export default function TurnosScreen() {
             sedeDelMapa={sedeDelMapa}
             onReservado={async () => {
               setFiltro("proximos");
-              setAviso("Reservaste tu turno. Lo ves en Próximos.");
+              setAviso(AVISO_SOLICITADO);
               await cargar();
             }}
           />
@@ -412,7 +415,7 @@ export default function TurnosScreen() {
 
             {abierto.turno.estado === "rechazado" ? (
               <Text style={[styles.meta, { color: theme.colors.danger, marginTop: 12 }]}>
-                La institución no aceptó esta solicitud. Podés pedir otro turno desde Reservar.
+                El profesional no aceptó esta solicitud o no la confirmó a tiempo. Podés pedir otro turno desde Reservar.
               </Text>
             ) : null}
 
@@ -420,10 +423,6 @@ export default function TurnosScreen() {
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>
                 {formatFechaLarga(abierto.turno.fecha)} · {abierto.turno.hora} h
               </Text>
-            </Seccion>
-
-            <Seccion icono={Stethoscope} titulo="Tipo de consulta">
-              <Text style={[styles.valor, { color: theme.colors.foreground }]}>{etiquetaTipoConsulta(abierto.turno.tipoConsulta)}</Text>
             </Seccion>
 
             <Seccion icono={MapPin} titulo="Sede">

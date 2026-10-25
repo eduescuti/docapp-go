@@ -7,6 +7,7 @@ export * from "./medicoService";
 export * from "./turnoService";
 export * from "./carpetas";
 export * from "./estudioService";
+export * from "./resultadosVistos";
 export * from "./recetaService";
 export * from "./notificacionService";
 export * from "./authService";

@@ -21,6 +21,10 @@ export interface Medico {
   institucionesIds: string[];
   sedesIds: string[];
   planesAceptadosIds: string[];
+  /**
+   * Bloques de atención con los que el service arma los turnos libres. No se muestran en el perfil: con
+   * backend, la disponibilidad la resuelven los turnos (Sprint 2).
+   */
   horarios: HorarioAtencion[];
   valoracion: number;
   cantidadValoraciones: number;

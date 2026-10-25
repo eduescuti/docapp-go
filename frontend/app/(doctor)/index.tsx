@@ -1,36 +1,24 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { CalendarCheck, CalendarDays, Clock, MapPin, Users } from "lucide-react-native";
+import { CalendarCheck, CalendarDays, Clock, Hourglass, MapPin, Users } from "lucide-react-native";
 import { addDays, format } from "date-fns";
 
 import { Card, ScreenContainer, SectionHeader, StatCard, StatusBadge, Text } from "@/components";
-import { Especialidad, Medico, Paciente, Sede, Turno } from "@/domain";
-import {
-  getEspecialidad,
-  getMedicoActual,
-  getSede,
-  listPacientes,
-  listPacientesAsignados,
-  listTurnosMedico,
-} from "@/services";
+import { Especialidad, Medico } from "@/domain";
+import { getEspecialidad, getMedicoActual, listAgendaMedico, listPacientesAsignados, TurnoDeAgenda } from "@/services";
 import { useTheme } from "@/theme";
-import { etiquetaTipoConsulta, formatFechaCorta, hoyIso } from "@/utils/format";
+import { conservarSiIgual } from "@/utils/estable";
+import { formatFechaCorta, hoyIso } from "@/utils/format";
 
-interface TurnoAgenda {
-  turno: Turno;
-  paciente?: Paciente;
-  sede?: Sede;
-}
-
-/** Agenda del profesional: resumen del día y próximos turnos agrupados por fecha. */
-export default function DoctorAgendaScreen() {
+/** Inicio del profesional: resumen del día y próximos turnos agrupados por fecha. El calendario está en Agenda. */
+export default function DoctorInicioScreen() {
   const { theme } = useTheme();
   const router = useRouter();
 
   const [medico, setMedico] = useState<Medico | null>(null);
   const [especialidad, setEspecialidad] = useState<Especialidad | undefined>();
-  const [proximos, setProximos] = useState<TurnoAgenda[]>([]);
+  const [proximos, setProximos] = useState<TurnoDeAgenda[]>([]);
   const [cantidadAsignados, setCantidadAsignados] = useState(0);
 
   useFocusEffect(
@@ -39,26 +27,20 @@ export default function DoctorAgendaScreen() {
       (async () => {
         const m = await getMedicoActual();
         const hoy = hoyIso();
-        const [esp, turnos, pacientes, asignados] = await Promise.all([
+        // Un solo pedido por dato: la agenda ya viene con paciente y lugar.
+        const [esp, agenda, asignados] = await Promise.all([
           getEspecialidad(m.especialidadId),
-          listTurnosMedico(m.id),
-          listPacientes(),
+          listAgendaMedico(m.id),
           listPacientesAsignados(m.id),
         ]);
-        const futuros = turnos.filter(
-          (t) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado" && t.estado !== "rechazado",
-        );
-        const conDatos = await Promise.all(
-          futuros.map(async (turno) => ({
-            turno,
-            paciente: pacientes.find((p) => p.id === turno.pacienteId),
-            sede: await getSede(turno.sedeId),
-          })),
+        const futuros = agenda.filter(
+          ({ turno }) =>
+            turno.fecha >= hoy && turno.estado !== "cancelado" && turno.estado !== "completado" && turno.estado !== "rechazado",
         );
         if (!activo) return;
         setMedico(m);
         setEspecialidad(esp);
-        setProximos(conDatos);
+        setProximos((anterior) => conservarSiIgual(anterior, futuros));
         setCantidadAsignados(asignados.length);
       })();
       return () => {
@@ -71,8 +53,9 @@ export default function DoctorAgendaScreen() {
   const enUnaSemana = format(addDays(new Date(), 7), "yyyy-MM-dd");
   const turnosHoy = proximos.filter(({ turno }) => turno.fecha === hoy).length;
   const turnosSemana = proximos.filter(({ turno }) => turno.fecha <= enUnaSemana).length;
+  const pendientes = proximos.filter(({ turno }) => turno.estado === "pendiente").length;
 
-  const porFecha = proximos.reduce<Record<string, TurnoAgenda[]>>((acc, item) => {
+  const porFecha = proximos.reduce<Record<string, TurnoDeAgenda[]>>((acc, item) => {
     (acc[item.turno.fecha] ??= []).push(item);
     return acc;
   }, {});
@@ -96,6 +79,20 @@ export default function DoctorAgendaScreen() {
         <StatCard icon={Users} valor={cantidadAsignados} etiqueta="Pacientes" />
       </View>
 
+      {pendientes > 0 ? (
+        <View
+          style={[styles.pendientes, { backgroundColor: theme.colors.accent, borderRadius: theme.radii.md }]}
+          accessible
+          accessibilityLabel={`${pendientes} ${pendientes === 1 ? "turno pendiente" : "turnos pendientes"} de confirmar`}
+        >
+          <Hourglass size={18} color={theme.colors.accentForeground} />
+          <Text style={[styles.pendientesTexto, { color: theme.colors.accentForeground }]}>
+            {pendientes === 1 ? "Tenés 1 turno pendiente" : `Tenés ${pendientes} turnos pendientes`} de confirmar. Tocalo para
+            confirmarlo o rechazarlo desde la ficha del paciente.
+          </Text>
+        </View>
+      ) : null}
+
       <SectionHeader title="Próximos turnos" />
       {proximos.length === 0 && (
         <Text style={{ color: theme.colors.mutedForeground }}>No tenés turnos próximos.</Text>
@@ -105,7 +102,7 @@ export default function DoctorAgendaScreen() {
           <Text style={[styles.fecha, { color: theme.colors.primary }]}>
             {fecha === hoy ? "Hoy" : formatFechaCorta(fecha)}
           </Text>
-          {items.map(({ turno, paciente, sede }) => (
+          {items.map(({ turno, paciente, sede, institucion }) => (
             <Card
               key={turno.id}
               style={styles.turnoCard}
@@ -121,9 +118,9 @@ export default function DoctorAgendaScreen() {
                   <Text style={[styles.paciente, { color: theme.colors.foreground }]} numberOfLines={1}>
                     {paciente ? `${paciente.nombre} ${paciente.apellido}` : "Paciente"}
                   </Text>
-                  <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-                    {etiquetaTipoConsulta(turno.tipoConsulta)}
-                  </Text>
+                  {paciente ? (
+                    <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>DNI {paciente.dni}</Text>
+                  ) : null}
                 </View>
                 <StatusBadge estado={turno.estado} />
               </View>
@@ -131,7 +128,7 @@ export default function DoctorAgendaScreen() {
                 <View style={styles.sedeRow}>
                   <MapPin size={12} color={theme.colors.mutedForeground} />
                   <Text style={[styles.meta, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
-                    {sede.nombre}
+                    {institucion?.nombre ?? sede.nombre}
                   </Text>
                 </View>
               )}
@@ -147,7 +144,9 @@ const styles = StyleSheet.create({
   saludo: { fontSize: 14 },
   nombre: { fontSize: 24, fontWeight: "700", marginTop: 2 },
   sub: { fontSize: 13, marginTop: 4 },
-  stats: { flexDirection: "row", gap: 10, marginTop: 24, marginBottom: 28 },
+  stats: { flexDirection: "row", gap: 10, marginTop: 24, marginBottom: 20 },
+  pendientes: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, marginBottom: 24 },
+  pendientesTexto: { flex: 1, fontSize: 13, lineHeight: 19, fontWeight: "500" },
   fecha: { fontSize: 13, fontWeight: "700", marginBottom: 10, textTransform: "capitalize" },
   turnoCard: { marginBottom: 10 },
   turnoRow: { flexDirection: "row", alignItems: "center", gap: 12 },

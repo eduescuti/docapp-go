@@ -1,7 +1,8 @@
-import { EstadoEstudio, EstadoTurno } from "@/domain";
-import { etiquetaTipoConsulta, hoyIso, nombreConTitulo } from "@/utils/format";
+import { EstadoTurno } from "@/domain";
+import { hoyIso, nombreConTitulo } from "@/utils/format";
 
 import { delay } from "./apiClient";
+import { getEspecialidad } from "./especialidadService";
 import { listEstudiosPaciente } from "./estudioService";
 import { getInstitucion } from "./institucionService";
 import { getMedico } from "./medicoService";
@@ -16,7 +17,7 @@ export interface EventoHistorial {
   fecha: string; // ISO "yyyy-MM-dd"
   titulo: string;
   detalle: string;
-  estado?: EstadoTurno | EstadoEstudio;
+  estado?: EstadoTurno;
 }
 
 /** Línea de tiempo del paciente: consultas cumplidas, estudios y recetas, del más reciente al más viejo. */
@@ -33,11 +34,12 @@ export async function getHistorialPaciente(pacienteId: string): Promise<EventoHi
       .filter((t) => t.estado === "completado" && t.fecha <= hoy)
       .map(async (t): Promise<EventoHistorial> => {
         const medico = await getMedico(t.medicoId);
+        const especialidad = medico ? await getEspecialidad(medico.especialidadId) : undefined;
         return {
           id: t.id,
           tipo: "consulta",
           fecha: t.fecha,
-          titulo: etiquetaTipoConsulta(t.tipoConsulta),
+          titulo: especialidad ? `Consulta de ${especialidad.nombre}` : "Consulta",
           detalle: medico ? nombreConTitulo(medico) : "Profesional",
           estado: t.estado,
         };
@@ -47,7 +49,7 @@ export async function getHistorialPaciente(pacienteId: string): Promise<EventoHi
   const eventosEstudios = await Promise.all(
     estudios.map(async (e): Promise<EventoHistorial> => {
       const institucion = await getInstitucion(e.institucionId);
-      return { id: e.id, tipo: "estudio", fecha: e.fecha, titulo: e.tipo, detalle: institucion?.nombre ?? "", estado: e.estado };
+      return { id: e.id, tipo: "estudio", fecha: e.fecha, titulo: e.tipo, detalle: institucion?.nombre ?? "" };
     }),
   );
 

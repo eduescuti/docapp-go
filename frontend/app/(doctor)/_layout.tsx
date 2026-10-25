@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from "expo-router";
-import { CalendarDays, UserRound, Users } from "lucide-react-native";
+import { CalendarDays, House, UserRound, Users } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -34,8 +34,16 @@ export default function DoctorLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: "Inicio",
+          tabBarAccessibilityLabel: "Inicio",
+          tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="agenda"
+        options={{
           title: "Agenda",
-          tabBarAccessibilityLabel: "Agenda",
+          tabBarAccessibilityLabel: "Agenda: calendario de turnos",
           tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} />,
         }}
       />
@@ -56,6 +64,8 @@ export default function DoctorLayout() {
         }}
       />
       <Tabs.Screen name="paciente/[id]" options={{ href: null }} />
+      <Tabs.Screen name="nueva-orden/[pacienteId]" options={{ href: null }} />
+      <Tabs.Screen name="nueva-receta/[pacienteId]" options={{ href: null }} />
     </Tabs>
   );
 }

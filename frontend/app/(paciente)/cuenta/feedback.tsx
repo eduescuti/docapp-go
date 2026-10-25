@@ -7,7 +7,7 @@ import { BackHeader, Card, EmptyState, PrimaryButton, ScreenContainer, SectionHe
 import { Feedback, Medico, Turno } from "@/domain";
 import { getMedico, getPacienteActual, listFeedbackPaciente, listTurnosParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
-import { etiquetaTipoConsulta, formatFechaLarga, nombreConTitulo } from "@/utils/format";
+import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 /**
  * Feedback: turnos cumplidos para calificar y opiniones ya enviadas. Solo se puede
@@ -48,7 +48,7 @@ export default function FeedbackScreen() {
         <Card key={turno.id} style={styles.card}>
           <Text style={[styles.nombre, { color: theme.colors.foreground }]}>{medico ? nombreConTitulo(medico) : "Profesional"}</Text>
           <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-            {etiquetaTipoConsulta(turno.tipoConsulta)} · {formatFechaLarga(turno.fecha)}
+            {formatFechaLarga(turno.fecha)} · {turno.hora} h
           </Text>
           <View style={{ marginTop: 12 }}>
             <PrimaryButton

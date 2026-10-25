@@ -42,6 +42,8 @@ import {
   listOrdenesArchivadasPaciente,
   listOrdenesPaciente,
   listResultadosPaciente,
+  listResultadosVistos,
+  marcarResultadoVisto,
 } from "@/services";
 import { useTheme } from "@/theme";
 import { conservarSiIgual } from "@/utils/estable";
@@ -72,7 +74,7 @@ async function estudioConDetalle(estudio: Estudio): Promise<EstudioDetalle> {
   const [medico, institucion, orden] = await Promise.all([
     getMedico(estudio.medicoSolicitanteId),
     getInstitucion(estudio.institucionId),
-    estudio.ordenId ? getOrden(estudio.ordenId) : undefined,
+    getOrden(estudio.ordenId),
   ]);
   const especialidad = medico ? await getEspecialidad(medico.especialidadId) : undefined;
   return { estudio, medico, especialidad, institucion, orden };
@@ -113,15 +115,21 @@ export default function EstudiosScreen() {
   const [procesando, setProcesando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const [visor, setVisor] = useState<{ titulo: string; datos: string | null } | null>(null);
+  const [pacienteId, setPacienteId] = useState<string | null>(null);
+  // Resultados que el paciente ya abrió: los demás muestran el aviso de "Nuevo" (solo frontend, no es un estado).
+  const [vistos, setVistos] = useState<string[]>([]);
 
   const cargar = useCallback(async () => {
     const paciente = await getPacienteActual();
-    const [listaOrdenes, listaResultados, archOrdenes, archResultados] = await Promise.all([
+    setPacienteId(paciente.id);
+    const [listaOrdenes, listaResultados, archOrdenes, archResultados, idsVistos] = await Promise.all([
       listOrdenesPaciente(paciente.id),
       listResultadosPaciente(paciente.id),
       listOrdenesArchivadasPaciente(paciente.id),
       listArchivadosPaciente(paciente.id),
+      listResultadosVistos(paciente.id),
     ]);
+    setVistos((anterior) => conservarSiIgual(anterior, idsVistos));
     const ordenesArchivadas = archOrdenes.flatMap((a) => a.meses.flatMap((m) => m.items));
     const estudiosArchivados = archResultados.flatMap((a) => a.meses.flatMap((m) => m.items));
     const [todasOrdenes, todosEstudios] = await Promise.all([
@@ -219,11 +227,21 @@ export default function EstudiosScreen() {
     setVisor(datos ? { titulo: detalle.estudio.tipo, datos } : null);
   };
 
+  const esNuevo = (estudio: Estudio) => !vistos.includes(estudio.id);
+
+  /** Abrir un resultado es "verlo": el aviso de Nuevo se va. */
+  const abrirEstudio = (item: EstudioDetalle) => {
+    setEstudioAbierto(item);
+    if (!pacienteId || !esNuevo(item.estudio)) return;
+    setVistos((anterior) => [...anterior, item.estudio.id]);
+    marcarResultadoVisto(pacienteId, item.estudio.id);
+  };
+
   const tarjetaEstudio = (item: EstudioDetalle) => (
     <Card
       style={styles.tarjeta}
-      onPress={() => setEstudioAbierto(item)}
-      accessibilityLabel={`${item.estudio.tipo}, ${formatFechaCorta(item.estudio.fecha)}. Ver detalle`}
+      onPress={() => abrirEstudio(item)}
+      accessibilityLabel={`${item.estudio.tipo}, ${formatFechaCorta(item.estudio.fecha)}${esNuevo(item.estudio) ? ", resultado nuevo" : ""}. Ver detalle`}
     >
       <View style={styles.fila}>
         <View style={[styles.icono, { backgroundColor: theme.colors.accent }]}>
@@ -232,7 +250,12 @@ export default function EstudiosScreen() {
         <Text style={[styles.nombre, styles.flex, { color: theme.colors.foreground }]} numberOfLines={2}>
           {item.estudio.tipo}
         </Text>
-        <StatusBadge estado={item.estudio.estado} />
+        {esNuevo(item.estudio) ? (
+          <View style={[styles.nuevo, { backgroundColor: theme.colors.accent }]}>
+            <View style={[styles.nuevoPunto, { backgroundColor: theme.colors.primary }]} />
+            <Text style={[styles.nuevoTexto, { color: theme.colors.accentForeground }]}>Nuevo</Text>
+          </View>
+        ) : null}
       </View>
       <View style={[styles.pieTarjeta, { borderTopColor: theme.colors.border }]}>
         <View style={styles.dato}>
@@ -391,7 +414,7 @@ export default function EstudiosScreen() {
         <TabSwitch
           opciones={[
             { valor: "ordenes", etiqueta: "Órdenes" },
-            { valor: "resultados", etiqueta: "Resultados" },
+            { valor: "resultados", etiqueta: "Resultados", avisos: resultados.filter((r) => esNuevo(r.estudio)).length },
           ]}
           valor={tab}
           onChange={setTab}
@@ -438,16 +461,11 @@ export default function EstudiosScreen() {
       <BottomSheet
         visible={!!estudioAbierto}
         titulo={estudioAbierto?.estudio.tipo ?? ""}
-        extraTitulo={estudioAbierto ? <StatusBadge estado={estudioAbierto.estudio.estado} /> : undefined}
         onClose={() => !procesando && setEstudioAbierto(null)}
         pie={
           estudioAbierto ? (
             <>
-              <PrimaryButton
-                label="Ver estudio"
-                onPress={() => verEstudio(estudioAbierto)}
-                disabled={estudioAbierto.estudio.estado !== "resultado_disponible"}
-              />
+              <PrimaryButton label="Ver estudio" onPress={() => verEstudio(estudioAbierto)} />
               <PrimaryButton
                 label={estudioAbierto.estudio.archivadoEl ? "Desarchivar" : "Archivar"}
                 variant="outline"
@@ -460,9 +478,6 @@ export default function EstudiosScreen() {
       >
         {estudioAbierto ? (
           <View>
-            {estudioAbierto.estudio.estado !== "resultado_disponible" ? (
-              <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>El resultado todavía no está disponible.</Text>
-            ) : null}
             <Seccion icono={Stethoscope} titulo="Médico solicitante">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>
                 {estudioAbierto.medico ? nombreConTitulo(estudioAbierto.medico) : "-"}
@@ -597,4 +612,7 @@ const styles = StyleSheet.create({
   seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
   seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   valor: { fontSize: 15, fontWeight: "500" },
+  nuevo: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  nuevoPunto: { width: 7, height: 7, borderRadius: 4 },
+  nuevoTexto: { fontSize: 10, fontWeight: "700", textTransform: "uppercase" },
 });

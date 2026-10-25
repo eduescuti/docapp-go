@@ -175,3 +175,19 @@ export async function getFuenteInstituciones(): Promise<FuenteInstituciones> {
 export async function getSede(sedeId: string): Promise<Sede | undefined> {
   return delay(instituciones.flatMap((i) => i.sedes).find((s) => s.id === sedeId));
 }
+
+/** Un lugar de atención de un profesional: la sede con su institución (hospital) ya resuelta. */
+export interface LugarDeAtencion {
+  sede: Sede;
+  institucion: Institucion;
+}
+
+/** Lugares de atención (sedes) de un profesional, en un solo pedido. Los que no se encuentran se omiten. */
+export async function listLugaresDeAtencion(sedeIds: string[]): Promise<LugarDeAtencion[]> {
+  const lugares = sedeIds.flatMap((id) => {
+    const sede = getSedeEnMemoria(id);
+    const institucion = sede ? getInstitucionEnMemoria(sede.institucionId) : undefined;
+    return sede && institucion ? [{ sede, institucion }] : [];
+  });
+  return delay(lugares);
+}

@@ -25,14 +25,17 @@ interface CalendarioProps {
    */
   desde: string;
   hasta: string;
+  /** Días ("yyyy-MM-dd") que llevan un punto debajo del número (p. ej. los que tienen turnos en la agenda). */
+  diasMarcados?: string[];
 }
 
 const DIAS_SEMANA = ["L", "M", "X", "J", "V", "S", "D"];
 const ISO = "yyyy-MM-dd";
 
 /** Calendario mensual (semana desde el lunes). */
-export function Calendario({ valor, onChange, desde, hasta }: CalendarioProps) {
+export function Calendario({ valor, onChange, desde, hasta, diasMarcados }: CalendarioProps) {
   const { theme } = useTheme();
+  const marcados = useMemo(() => new Set(diasMarcados), [diasMarcados]);
   const primerDia = useMemo(() => parseISO(desde), [desde]);
   const ultimoDia = useMemo(() => parseISO(hasta), [hasta]);
   const [mes, setMes] = useState(() => startOfMonth(valor ? parseISO(valor) : primerDia));
@@ -111,6 +114,7 @@ export function Calendario({ valor, onChange, desde, hasta }: CalendarioProps) {
               habilitado={celda.iso >= desde && celda.iso <= hasta}
               elegido={celda.iso === valor}
               esHoy={celda.iso === hoy}
+              marcado={marcados.has(celda.iso)}
               onChange={onChange}
             />
           ) : (
@@ -129,11 +133,12 @@ interface CeldaDiaProps {
   habilitado: boolean;
   elegido: boolean;
   esHoy: boolean;
+  marcado: boolean;
   onChange: (fechaIso: string) => void;
 }
 
 /** Un día del calendario. Solo se vuelve a dibujar si cambia algo de ese día (no los 30 de golpe al elegir uno). */
-const CeldaDia = React.memo(function CeldaDia({ iso, numero, etiqueta, habilitado, elegido, esHoy, onChange }: CeldaDiaProps) {
+const CeldaDia = React.memo(function CeldaDia({ iso, numero, etiqueta, habilitado, elegido, esHoy, marcado, onChange }: CeldaDiaProps) {
   const { theme } = useTheme();
   return (
     <View style={styles.celda}>
@@ -141,7 +146,7 @@ const CeldaDia = React.memo(function CeldaDia({ iso, numero, etiqueta, habilitad
         onPress={() => onChange(iso)}
         disabled={!habilitado}
         accessibilityRole="button"
-        accessibilityLabel={etiqueta}
+        accessibilityLabel={marcado ? `${etiqueta}, con turnos` : etiqueta}
         accessibilityState={{ selected: elegido, disabled: !habilitado }}
         style={[
           styles.dia,
@@ -163,6 +168,9 @@ const CeldaDia = React.memo(function CeldaDia({ iso, numero, etiqueta, habilitad
         >
           {numero}
         </Text>
+        {marcado ? (
+          <View style={[styles.marca, { backgroundColor: elegido ? theme.colors.primaryForeground : theme.colors.primary }]} />
+        ) : null}
       </Pressable>
     </View>
   );
@@ -180,4 +188,5 @@ const styles = StyleSheet.create({
   diaSemana: { fontSize: 12, fontWeight: "600", paddingVertical: 6 },
   dia: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   numero: { fontSize: 14 },
+  marca: { position: "absolute", bottom: 4, width: 5, height: 5, borderRadius: 3 },
 });

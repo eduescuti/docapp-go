@@ -15,7 +15,7 @@ export const ordenesLaboratorioMock: OrdenLaboratorio[] = [
     estudiosSolicitados: ["Análisis de Sangre Completo"],
     indicaciones: "Ayuno de 8 horas.",
     institucionId: "refes-51020062319036",
-    estado: "resultado_disponible",
+    estado: "listo",
   },
   {
     id: "orden-2",
@@ -25,7 +25,7 @@ export const ordenesLaboratorioMock: OrdenLaboratorio[] = [
     estudiosSolicitados: ["Electrocardiograma", "Radiografía de Tórax"],
     indicaciones: "Sin preparación previa. Llevar la orden impresa o en el celular.",
     institucionId: "refes-50020012115367",
-    estado: "resultado_disponible",
+    estado: "listo",
   },
   {
     id: "orden-3",
@@ -48,8 +48,6 @@ export const estudiosMock: Estudio[] = [
     institucionId: "refes-51020062319036",
     medicoSolicitanteId: "med-mendez",
     fecha: iso(6),
-    preparacionPrevia: "Ayuno de 8 horas.",
-    estado: "resultado_disponible",
   },
   {
     id: "est-2",
@@ -59,7 +57,6 @@ export const estudiosMock: Estudio[] = [
     institucionId: "refes-50020012115367",
     medicoSolicitanteId: "med-mendez",
     fecha: iso(49),
-    estado: "resultado_disponible",
   },
   {
     id: "est-3",
@@ -69,6 +66,5 @@ export const estudiosMock: Estudio[] = [
     institucionId: "refes-10020012315256",
     medicoSolicitanteId: "med-mendez",
     fecha: iso(49),
-    estado: "resultado_disponible",
   },
 ];
