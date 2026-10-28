@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Keyboard, Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Heart, List, LocateFixed, Map as MapaIcono, MapPinOff, X } from "lucide-react-native";
+import { ArrowLeft, Heart, List, LocateFixed, Map as MapaIcono, MapPinOff, Search, X } from "lucide-react-native";
 
 import { Card, Chip, MapaCentros, PedidoVuelo, PrimaryButton, PuntoMapa, Text } from "@/components";
-import { Medico, PlanMedico, TipoInstitucion } from "@/domain";
+import { Medico, PlanConObraSocial, TipoInstitucion } from "@/domain";
 import { CENTRO_CABA, useUbicacion } from "@/hooks/useUbicacion";
 import {
   alternarInstitucionFavorita,
@@ -17,10 +17,20 @@ import {
   searchMedicos,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { nombrePlan, textoFuente } from "@/utils/cobertura";
 import { formatDistancia, nombreConTitulo } from "@/utils/format";
 import { colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL } from "@/utils/institucion";
 
 const TIPOS: TipoInstitucion[] = ["hospital", "clinica", "centro_medico", "laboratorio"];
+
+/** Sin tildes ni mayúsculas, para que "britanico" encuentre "Británico". */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Lo que se busca de un centro: nombre, dirección y tipo ("hospital", "laboratorios"...). */
+const textoBuscable = (c: CentroCercano) =>
+  normalizar(
+    `${c.institucion.nombre} ${c.sede.nombre ?? ""} ${c.sede.direccion} ${c.sede.ciudad} ${ETIQUETA_TIPO[c.institucion.tipo]} ${ETIQUETA_TIPO_PLURAL[c.institucion.tipo]}`,
+  );
 
 /**
  * Centros de salud que acepta la cobertura del paciente, en mapa y en lista (CLAUDE.md §9).
@@ -48,10 +58,11 @@ export default function MapaScreen() {
   const [favoritas, setFavoritas] = useState<string[]>([]);
   const [soloFavoritas, setSoloFavoritas] = useState(false);
   const [planMedicoId, setPlanMedicoId] = useState<string>();
-  const [plan, setPlan] = useState<PlanMedico>();
+  const [plan, setPlan] = useState<PlanConObraSocial>();
   const [centrosCargados, setCentrosCargados] = useState<CentroCercano[]>([]);
   const [tipo, setTipo] = useState<TipoInstitucion | null>(null);
   const [modo, setModo] = useState<"mapa" | "lista">("mapa");
+  const [busqueda, setBusqueda] = useState("");
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [volarA, setVolarA] = useState<PedidoVuelo | null>(null);
   const [errorMapa, setErrorMapa] = useState(false);
@@ -93,10 +104,15 @@ export default function MapaScreen() {
     }
   }, [coordenada]);
 
-  const centros = useMemo(
-    () => (soloFavoritas ? centrosCargados.filter((c) => favoritas.includes(c.institucion.id)) : centrosCargados),
-    [centrosCargados, soloFavoritas, favoritas],
-  );
+  // Con el buscador, cada palabra escrita tiene que aparecer en el nombre, la dirección o el tipo del centro.
+  const centros = useMemo(() => {
+    const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+    return centrosCargados.filter(
+      (c) =>
+        (!soloFavoritas || favoritas.includes(c.institucion.id)) &&
+        (palabras.length === 0 || palabras.every((p) => textoBuscable(c).includes(p))),
+    );
+  }, [centrosCargados, soloFavoritas, favoritas, busqueda]);
 
   const alternarFavorita = async (institucionId: string) => {
     if (!pacienteId) return;
@@ -137,7 +153,9 @@ export default function MapaScreen() {
     setSeleccionadoId(cercano.institucion.id);
   };
 
+  // Al tocar un centro de la lista se vuelve al mapa con la cámara sobre él.
   const elegirDeLista = (id: string) => {
+    Keyboard.dismiss();
     setSeleccionadoId(id);
     setModo("mapa");
   };
@@ -148,11 +166,11 @@ export default function MapaScreen() {
   };
 
   const motivo = (c: CentroCercano) =>
-    c.motivo === "publica" ? "Público · atiende a todas las coberturas" : `Acepta ${plan?.nombre ?? "tu cobertura"}`;
+    c.motivo === "publica" ? "Público · atiende a todas las coberturas" : `Acepta ${plan ? nombrePlan(plan) : "tu cobertura"}`;
 
   const cantidad = eligiendo
     ? `Elegí dónde atenderte · ${centros.length} ${centros.length === 1 ? "opción" : "opciones"}`
-    : `${centros.length} ${centros.length === 1 ? "centro" : "centros"}${plan ? ` para ${plan.nombre}` : ""}`;
+    : `${centros.length} ${centros.length === 1 ? "centro" : "centros"}${plan ? ` para ${nombrePlan(plan)}` : ""}`;
 
   // Vuelve a Turnos con el hospital elegido; "n" cambia siempre para que se aplique aunque sea el mismo.
   const elegirHospital = (sedeId: string) => {
@@ -184,9 +202,22 @@ export default function MapaScreen() {
           data={centros}
           keyExtractor={(c) => c.institucion.id}
           initialNumToRender={15}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          ListHeaderComponent={
+            <Text style={[styles.cantidadLista, { color: theme.colors.mutedForeground }]}>
+              {busqueda.trim()
+                ? `${centros.length} ${centros.length === 1 ? "resultado" : "resultados"} de ${centrosCargados.length}${plan && !eligiendo ? ` centros para ${nombrePlan(plan)}` : ""}`
+                : cantidad}
+            </Text>
+          }
           ListEmptyComponent={
             <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
-              {soloFavoritas ? "Todavía no marcaste favoritos entre estos centros." : "No hay centros de este tipo para tu cobertura."}
+              {busqueda.trim()
+                ? "No encontramos centros con esa búsqueda. Probá con otro nombre, una calle o el tipo (hospital, clínica, laboratorio)."
+                : soloFavoritas
+                  ? "Todavía no marcaste favoritos entre estos centros."
+                  : "No hay centros de este tipo para tu cobertura."}
             </Text>
           }
           renderItem={({ item }) => (
@@ -231,13 +262,31 @@ export default function MapaScreen() {
           >
             <ArrowLeft size={20} color={theme.colors.foreground} />
           </Pressable>
+          {/* Buscador de centros: al tocarlo se pasa a la lista; al elegir un resultado, el mapa va hasta él. */}
           <View style={[styles.pastilla, fondoFlotante]}>
-            <Text style={[styles.pastillaTexto, { color: theme.colors.foreground }]} numberOfLines={1}>
-              {cantidad}
-            </Text>
+            <Search size={16} color={theme.colors.mutedForeground} />
+            <TextInput
+              value={busqueda}
+              onChangeText={setBusqueda}
+              onFocus={() => setModo("lista")}
+              placeholder="Buscar"
+              placeholderTextColor={theme.colors.mutedForeground}
+              accessibilityLabel="Buscar centros por nombre, dirección o tipo"
+              autoCorrect={false}
+              returnKeyType="search"
+              style={[styles.pastillaCampo, { color: theme.colors.foreground }]}
+            />
+            {busqueda.length > 0 ? (
+              <Pressable onPress={() => setBusqueda("")} accessibilityRole="button" accessibilityLabel="Borrar búsqueda" hitSlop={10}>
+                <X size={16} color={theme.colors.mutedForeground} />
+              </Pressable>
+            ) : null}
           </View>
           <Pressable
-            onPress={() => setModo(modo === "mapa" ? "lista" : "mapa")}
+            onPress={() => {
+              Keyboard.dismiss();
+              setModo(modo === "mapa" ? "lista" : "mapa");
+            }}
             accessibilityRole="button"
             accessibilityLabel={modo === "mapa" ? "Ver como lista" : "Ver en el mapa"}
             style={[styles.botonModo, fondoFlotante]}
@@ -336,6 +385,12 @@ export default function MapaScreen() {
                 {seleccionado.sede.direccion}, {seleccionado.sede.ciudad}
                 {seleccionado.distanciaKm !== undefined ? ` · ${formatDistancia(seleccionado.distanciaKm)}` : ""}
               </Text>
+              {/* De dónde sale que acepta la cobertura: no hay fuente pública, la carga el admin (regla 17). */}
+              {seleccionado.motivo === "cobertura" && seleccionado.institucion.fuenteCoberturas ? (
+                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
+                  Coberturas: {textoFuente(seleccionado.institucion.fuenteCoberturas).toLowerCase()}
+                </Text>
+              ) : null}
 
               {!eligiendo && profesionales.length > 0 && (
                 <View style={styles.profesionales}>
@@ -396,7 +451,9 @@ export default function MapaScreen() {
               {TIPOS.map((t) => (
                 <View key={t} style={styles.leyendaItem}>
                   <View style={[styles.puntoChico, { backgroundColor: colorTipo(theme.mapa, t) }]} />
-                  <Text style={[styles.leyendaTexto, { color: theme.colors.foreground }]}>{ETIQUETA_TIPO[t]}</Text>
+                  <Text style={[styles.leyendaTexto, { color: theme.colors.foreground }]} numberOfLines={1}>
+                    {ETIQUETA_TIPO[t]}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -420,8 +477,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pastilla: { flex: 1, height: 44, borderRadius: 22, borderWidth: 1, justifyContent: "center", paddingHorizontal: 16 },
-  pastillaTexto: { fontSize: 13, fontWeight: "600" },
+  pastilla: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+  },
+  pastillaCampo: { flex: 1, height: 44, fontSize: 13, fontWeight: "600", minWidth: 0 },
+  cantidadLista: { fontSize: 12, fontWeight: "600", marginBottom: 10 },
   botonModo: {
     height: 44,
     borderRadius: 22,
@@ -461,16 +528,17 @@ const styles = StyleSheet.create({
   profesional: { minHeight: 32, justifyContent: "center", paddingHorizontal: 4 },
   profesionalTexto: { fontSize: 13, fontWeight: "600" },
   acciones: { flexDirection: "row", gap: 10, marginTop: 14 },
+  // Las cuatro referencias en una sola fila: si no entran, el texto se achica antes que pasar a otra fila.
   leyenda: {
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 6,
+    alignItems: "center",
+    gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 40,
   },
-  leyendaItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  leyendaTexto: { fontSize: 12, fontWeight: "500" },
+  leyendaItem: { flexDirection: "row", alignItems: "center", gap: 5, flexShrink: 1 },
+  leyendaTexto: { fontSize: 11, fontWeight: "600", flexShrink: 1 },
 });

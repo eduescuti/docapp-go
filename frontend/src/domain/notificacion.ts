@@ -1,6 +1,7 @@
 export type TipoNotificacion =
   | "recordatorio_turno"
   | "turno_confirmado"
+  | "turno_rechazado"
   | "turno_cancelado"
   | "turno_reprogramado"
   | "resultado_disponible"

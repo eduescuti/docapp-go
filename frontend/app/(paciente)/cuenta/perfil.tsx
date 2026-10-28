@@ -1,21 +1,21 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Lock } from "lucide-react-native";
 
 import {
-  Avatar,
   BackHeader,
   Card,
+  FotoPerfilEditable,
   PasswordField,
   PrimaryButton,
   ScreenContainer,
   SectionHeader,
-  SelectField,
+  SelectorPlan,
   Text,
 } from "@/components";
-import { Paciente, PlanMedico } from "@/domain";
-import { cambiarCobertura, cambiarPassword, getPacienteActual, listPlanesMedicos } from "@/services";
+import { ObraSocialConPlanes, Paciente } from "@/domain";
+import { cambiarCobertura, cambiarPassword, getPacienteActual, listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
 import { iniciales } from "@/utils/format";
 import { esPasswordValida } from "@/utils/validation";
@@ -24,12 +24,12 @@ type Mensaje = { tipo: "ok" | "error"; texto: string } | null;
 
 /**
  * Mi perfil: muestra solo los datos que se cargan en el registro. Nombre, apellido y
- * DNI son de solo lectura; obra social y contraseña se pueden cambiar.
+ * DNI son de solo lectura; foto, obra social y contraseña se pueden cambiar.
  */
 export default function PerfilScreen() {
   const { theme } = useTheme();
   const [paciente, setPaciente] = useState<Paciente | null>(null);
-  const [planes, setPlanes] = useState<PlanMedico[]>([]);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
 
   const [planId, setPlanId] = useState<string | null>(null);
   const [msgCobertura, setMsgCobertura] = useState<Mensaje>(null);
@@ -44,10 +44,10 @@ export default function PerfilScreen() {
   // Al entrar a la pantalla se descartan los cambios sin guardar de una visita anterior.
   useFocusEffect(
     useCallback(() => {
-      Promise.all([getPacienteActual(), listPlanesMedicos()]).then(([p, pl]) => {
+      Promise.all([getPacienteActual(), listObrasSociales()]).then(([p, os]) => {
         setPaciente(p);
         setPlanId(p.planMedicoId);
-        setPlanes(pl);
+        setObrasSociales(os);
       });
       setPassActual("");
       setPassNueva("");
@@ -57,12 +57,7 @@ export default function PerfilScreen() {
     }, []),
   );
 
-  const opcionesPlan = useMemo(
-    () => planes.map((p) => ({ value: p.id, label: p.nombre, description: p.aseguradora })),
-    [planes],
-  );
-
-  const coberturaCambio = !!paciente && planId !== paciente.planMedicoId;
+  const coberturaCambio = !!paciente && !!planId && planId !== paciente.planMedicoId;
   const passwordsCoinciden = passNueva === passRepetida;
   const puedeCambiarPassword = !!passActual && esPasswordValida(passNueva) && passwordsCoinciden;
 
@@ -104,7 +99,13 @@ export default function PerfilScreen() {
         <BackHeader titulo="Mi perfil" />
 
         <View style={styles.avatar}>
-          <Avatar iniciales={paciente ? iniciales(paciente.nombre, paciente.apellido) : "--"} size={72} />
+          <FotoPerfilEditable
+            avatarUrl={paciente?.avatarUrl}
+            iniciales={paciente ? iniciales(paciente.nombre, paciente.apellido) : "--"}
+            quienLaVe="Tu foto la ven solo vos y los profesionales con los que tenés un turno."
+            deshabilitado={!paciente}
+            onCambio={(avatarUrl) => setPaciente((p) => (p ? { ...p, avatarUrl } : p))}
+          />
         </View>
 
         <SectionHeader title="Datos personales" />
@@ -122,9 +123,9 @@ export default function PerfilScreen() {
 
         <SectionHeader title="Obra social" />
         <Card style={styles.bloque}>
-          <SelectField label="Obra social / prepaga" options={opcionesPlan} value={planId} onChange={setPlanId} />
+          <SelectorPlan obrasSociales={obrasSociales} planId={planId} onChange={setPlanId} />
           <Text style={[styles.nota, { color: theme.colors.mutedForeground }]}>
-            Tu obra social define qué profesionales e instituciones ves en la app.
+            Tu obra social y tu plan definen qué profesionales e instituciones ves en la app. Tus turnos ya pedidos no cambian.
           </Text>
           <Aviso mensaje={msgCobertura} />
           <PrimaryButton

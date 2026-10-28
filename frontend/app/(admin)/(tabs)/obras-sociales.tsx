@@ -4,22 +4,26 @@ import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { CreditCard } from "lucide-react-native";
 
 import { Card, IconBadge, PrimaryButton, ScreenContainer, SectionHeader, Text, TextField } from "@/components";
-import { PlanMedico } from "@/domain";
-import { crearPlanMedico, listPlanesMedicos } from "@/services";
+import { ObraSocialConPlanes, PLAN_GENERAL } from "@/domain";
+import { crearPlanMedico, listObrasSociales } from "@/services";
+import { nombrePlan } from "@/utils/cobertura";
 import { useTheme } from "@/theme";
 
-/** ABM (alta y listado) de obras sociales / prepagas y sus planes. */
+/**
+ * ABM (alta y listado) de obras sociales / prepagas y sus planes. Una obra social sin planes conocidos arranca
+ * con el plan "General".
+ */
 export default function AdminObrasSocialesScreen() {
   const { theme } = useTheme();
-  const [planes, setPlanes] = useState<PlanMedico[]>([]);
-  const [aseguradora, setAseguradora] = useState("");
+  const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
+  const [obraSocial, setObraSocial] = useState("");
   const [nombre, setNombre] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(() => {
-    listPlanesMedicos().then(setPlanes);
+    listObrasSociales().then(setObrasSociales);
   }, []);
 
   useFocusEffect(cargar);
@@ -29,10 +33,10 @@ export default function AdminObrasSocialesScreen() {
     setExito(null);
     setGuardando(true);
     try {
-      const plan = await crearPlanMedico({ aseguradora, nombre });
-      setAseguradora("");
+      const plan = await crearPlanMedico({ obraSocial, plan: nombre });
+      setObraSocial("");
       setNombre("");
-      setExito(`Se agregó "${plan.nombre}".`);
+      setExito(`Se agregó "${nombrePlan(plan)}".`);
       cargar();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo agregar.");
@@ -40,11 +44,6 @@ export default function AdminObrasSocialesScreen() {
       setGuardando(false);
     }
   };
-
-  const porAseguradora = planes.reduce<Record<string, PlanMedico[]>>((acc, p) => {
-    (acc[p.aseguradora] ??= []).push(p);
-    return acc;
-  }, {});
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -57,31 +56,42 @@ export default function AdminObrasSocialesScreen() {
           </Text>
           <TextField
             label="Obra social / prepaga"
-            value={aseguradora}
-            onChangeText={setAseguradora}
+            value={obraSocial}
+            onChangeText={setObraSocial}
             placeholder="Ej. IOMA"
             hint="Si ya existe, el plan se agrega a esa obra social."
           />
-          <TextField label="Nombre del plan" value={nombre} onChangeText={setNombre} placeholder="Ej. IOMA Plan Integral" />
+          <TextField
+            label="Plan (opcional)"
+            value={nombre}
+            onChangeText={setNombre}
+            placeholder="Ej. Plan Integral"
+            hint={`Si lo dejás vacío, la obra social nueva queda con un único plan "${PLAN_GENERAL}".`}
+          />
           {error ? <Text style={[styles.msg, { color: theme.colors.danger }]}>{error}</Text> : null}
           {exito ? <Text style={[styles.msg, { color: theme.colors.success }]}>{exito}</Text> : null}
           <PrimaryButton
             label="Agregar"
             onPress={handleAgregar}
-            disabled={!aseguradora.trim() || !nombre.trim()}
+            disabled={!obraSocial.trim()}
             loading={guardando}
           />
         </Card>
 
-        <SectionHeader title={`Cargadas (${Object.keys(porAseguradora).length})`} />
-        {Object.entries(porAseguradora).map(([nombreAseguradora, lista]) => (
-          <Card key={nombreAseguradora} style={styles.item}>
+        <SectionHeader title={`Cargadas (${obrasSociales.length})`} />
+        {obrasSociales.map((os) => (
+          <Card key={os.id} style={styles.item}>
             <View style={styles.row}>
               <IconBadge icon={CreditCard} size={36} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>{nombreAseguradora}</Text>
-                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-                  {lista.map((p) => p.nombre).join(" · ")}
+                <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>{os.nombre}</Text>
+                {os.descripcion ? (
+                  <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>{os.descripcion}</Text>
+                ) : null}
+                <Text style={[styles.meta, { color: theme.colors.foreground }]}>
+                  {os.planes.length === 1 && os.planes[0].nombre === PLAN_GENERAL
+                    ? "Plan único"
+                    : `${os.planes.length} planes: ${os.planes.map((p) => p.nombre).join(" · ")}`}
                 </Text>
               </View>
             </View>

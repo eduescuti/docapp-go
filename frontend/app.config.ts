@@ -21,7 +21,7 @@ const config: ExpoConfig = {
   android: {
     package: "com.docappgo.app",
     adaptiveIcon: {
-      backgroundColor: "#E6F4FE",
+      backgroundColor: "#0284C7",
       foregroundImage: "./assets/android-icon-foreground.png",
       backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
@@ -38,6 +38,36 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      // Pantalla de carga: el logo de DocApp Go (el mismo del login) sobre el fondo del tema claro.
+      "expo-splash-screen",
+      {
+        image: "./assets/splash-icon.png",
+        imageWidth: 160,
+        resizeMode: "contain",
+        backgroundColor: "#FFFFFF",
+      },
+    ],
+    // Guarda el token de sesión cifrado (Keychain / Keystore).
+    "expo-secure-store",
+    [
+      // Foto de perfil: cámara o galería. Solo fotos, así que el micrófono queda bloqueado.
+      "expo-image-picker",
+      {
+        photosPermission: "DocApp Go usa tus fotos para que elijas tu foto de perfil.",
+        cameraPermission: "DocApp Go usa la cámara para que saques tu foto de perfil.",
+        microphonePermission: false,
+      },
+    ],
+    [
+      // Verificación de identidad del registro: lee el código PDF417 del DNI. No graba video ni audio.
+      "expo-camera",
+      {
+        cameraPermission: "DocApp Go usa la cámara para leer el código de barras de tu DNI y verificar tu identidad.",
+        microphonePermission: false,
+        recordAudioAndroid: false,
+      },
+    ],
     [
       "expo-location",
       {

@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { format, parseISO } from "date-fns";
@@ -25,6 +25,7 @@ import {
   cancelarTurno,
   getPacienteActual,
   listMisTurnos,
+  motivoSinCambios,
   ocultarTurnoDelHistorial,
   TurnoConDetalle,
   vaciarHistorialTurnos,
@@ -38,6 +39,7 @@ type Filtro = "reservar" | "proximos";
 
 /** El turno nace pendiente: el profesional lo tiene que confirmar. */
 const AVISO_SOLICITADO = "Solicitaste tu turno. Queda pendiente hasta que el profesional lo confirme.";
+const AVISO_REPROGRAMADO = "Reprogramaste tu turno. El nuevo queda pendiente hasta que el profesional lo confirme.";
 type Confirmando = "cancelar" | "ocultar" | null;
 
 /** Sin tildes ni mayúsculas, para que "cardiologia" encuentre "Cardiología". */
@@ -78,25 +80,29 @@ function coincide(item: TurnoConDetalle, consulta: string): boolean {
 
 const PLURAL_ESTADO: Partial<Record<EstadoTurno, string>> = {
   confirmado: "Confirmados",
-  reprogramado: "Reprogramados",
   pendiente: "Pendientes",
   rechazado: "Rechazados",
   completado: "Completados",
   cancelado: "Cancelados",
 };
 
-/** Estados que se pueden filtrar en cada lista (los reprogramados solo si hay alguno). */
-function estadosFiltrables(verHistorial: boolean, lista: TurnoConDetalle[]): EstadoTurno[] {
-  if (verHistorial) return ["completado", "cancelado"];
-  const base: EstadoTurno[] = ["confirmado", "pendiente", "rechazado"];
-  return lista.some((t) => t.turno.estado === "reprogramado") ? ["confirmado", "reprogramado", "pendiente", "rechazado"] : base;
+/** Estados que se pueden filtrar en cada lista. */
+function estadosFiltrables(verHistorial: boolean): EstadoTurno[] {
+  return verHistorial ? ["completado", "cancelado"] : ["confirmado", "pendiente", "rechazado"];
 }
 
 export default function TurnosScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  // Llega "proximos-<n>" después de reservar desde el perfil de un profesional.
-  const { ver, sedeElegida, n } = useLocalSearchParams<{ ver?: string; sedeElegida?: string; n?: string }>();
+  // Llega "proximos-<n>" después de reservar desde el perfil de un profesional. Con `abrirTurno` (+ `t`, que cambia
+  // en cada pedido) viene de "Ver turno" del Inicio: se va a Próximos y se abre el detalle de ese turno.
+  const { ver, sedeElegida, n, abrirTurno, t } = useLocalSearchParams<{
+    ver?: string;
+    sedeElegida?: string;
+    n?: string;
+    abrirTurno?: string;
+    t?: string;
+  }>();
   // Hospital que el paciente eligió en el mapa mientras reservaba.
   const sedeDelMapa = sedeElegida && n ? { sedeId: sedeElegida, n } : undefined;
 
@@ -113,6 +119,11 @@ export default function TurnosScreen() {
   const [busqueda, setBusqueda] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoTurno | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Turno que hay que mostrar y abrir (desde el Inicio), y el que queda resaltado un momento en la lista.
+  const [porAbrir, setPorAbrir] = useState<string | null>(null);
+  const [destacadoId, setDestacadoId] = useState<string | null>(null);
+  const ultimoPedidoAbrir = useRef<string | null>(null);
+  const listaRef = useRef<FlatList<TurnoConDetalle>>(null);
 
   const cargar = useCallback(async () => {
     const paciente = await getPacienteActual();
@@ -130,12 +141,22 @@ export default function TurnosScreen() {
   );
 
   useEffect(() => {
-    if (ver?.startsWith("proximos")) {
+    if (ver?.startsWith("proximos") || ver?.startsWith("reprogramado")) {
       setVerHistorial(false);
       setFiltro("proximos");
-      setAviso(AVISO_SOLICITADO);
+      setAviso(ver.startsWith("reprogramado") ? AVISO_REPROGRAMADO : AVISO_SOLICITADO);
     }
   }, [ver]);
+
+  // "Ver turno" del Inicio: Próximos, sin filtros, y se espera a que el turno esté en la lista.
+  useEffect(() => {
+    if (!abrirTurno || !t || ultimoPedidoAbrir.current === t) return;
+    ultimoPedidoAbrir.current = t;
+    setVerHistorial(false);
+    setFiltro("proximos");
+    setAbierto(null);
+    setPorAbrir(abrirTurno);
+  }, [abrirTurno, t]);
 
   // Al volver del mapa con un hospital elegido, se sigue con la reserva.
   useEffect(() => {
@@ -179,6 +200,12 @@ export default function TurnosScreen() {
       setAbierto(null);
       setConfirmando(null);
       await cargar();
+    } catch (e) {
+      // P. ej. pasó el plazo de 24 h mientras el detalle estaba abierto.
+      setAviso(e instanceof Error ? e.message : "No se pudo completar la acción.");
+      setAbierto(null);
+      setConfirmando(null);
+      await cargar();
     } finally {
       setProcesando(false);
     }
@@ -198,13 +225,45 @@ export default function TurnosScreen() {
   };
 
   const origen = verHistorial ? historial : proximos;
-  const estados = estadosFiltrables(verHistorial, origen);
+  const estados = estadosFiltrables(verHistorial);
   const lista = origen.filter((t) => (!estadoFiltro || t.turno.estado === estadoFiltro) && coincide(t, busqueda));
+
+  // Cuando el turno pedido ya está en la lista: se desplaza hasta él, se resalta y se abre su detalle, en ese
+  // orden y con pausas cortas para que se vea el recorrido (pestaña → lista → turno → detalle).
+  const indicePorAbrir = porAbrir && !verHistorial && filtro === "proximos" ? lista.findIndex((x) => x.turno.id === porAbrir) : -1;
+  // Los temporizadores no se cancelan cuando `porAbrir` vuelve a null (eso cortaría el recorrido): solo al salir.
+  const temporizadores = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => temporizadores.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (indicePorAbrir < 0) return;
+    const item = lista[indicePorAbrir];
+    const indice = indicePorAbrir;
+    setPorAbrir(null);
+    temporizadores.current.forEach(clearTimeout);
+    temporizadores.current = [
+      setTimeout(() => {
+        listaRef.current?.scrollToIndex({ index: indice, animated: true, viewPosition: 0.2 });
+        setDestacadoId(item.turno.id);
+      }, 250),
+      setTimeout(() => abrir(item), 750),
+      setTimeout(() => setDestacadoId(null), 2200),
+    ];
+    // Solo cuando aparece el índice: `lista` se rearma en cada render.
+  }, [indicePorAbrir]);
   const hayFiltros = busqueda.trim().length > 0 || estadoFiltro !== null;
   /** El tipo de turno (la especialidad pedida) es lo principal; el profesional va debajo. */
   const tipoTurno = (item: TurnoConDetalle) => item.especialidad?.nombre ?? item.medico?.profesion ?? "Turno";
   const nombreMedico = (item: TurnoConDetalle) => (item.medico ? nombreConTitulo(item.medico) : "Profesional");
   const esProximo = abierto ? proximos.some((p) => p.turno.id === abierto.turno.id) : false;
+  // Regla 5: cancelar o reprogramar, hasta 24 h antes. Fuera de plazo los botones se ven deshabilitados con el motivo.
+  const sinCambios = abierto ? motivoSinCambios(abierto.turno) : null;
+
+  const reprogramar = () => {
+    if (!abierto) return;
+    const { medicoId, id } = abierto.turno;
+    cerrar();
+    router.push({ pathname: "/reservar/[medicoId]", params: { medicoId, reprogramar: id } });
+  };
 
   return (
     <ScreenContainer scroll={false}>
@@ -285,7 +344,13 @@ export default function TurnosScreen() {
         </View>
       ) : null}
       <FlatList
+        ref={listaRef}
         data={lista}
+        // Si la fila todavía no se midió, se baja aproximado y se reintenta.
+        onScrollToIndexFailed={({ index, averageItemLength }) => {
+          listaRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+          setTimeout(() => listaRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.2 }), 300);
+        }}
         keyExtractor={({ turno }) => turno.id}
         contentContainerStyle={styles.lista}
         showsVerticalScrollIndicator={false}
@@ -319,7 +384,10 @@ export default function TurnosScreen() {
         }
         renderItem={({ item }) => (
           <Card
-            style={styles.tarjeta}
+            style={[
+              styles.tarjeta,
+              item.turno.id === destacadoId && { borderColor: theme.colors.primary, backgroundColor: theme.colors.highlight },
+            ]}
             onPress={() => abrir(item)}
             accessibilityLabel={`${tipoTurno(item)} con ${nombreMedico(item)}, ${etiquetaEstado(item.turno.estado)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
           >
@@ -366,7 +434,18 @@ export default function TurnosScreen() {
         pie={
           abierto && !confirmando && abierto.turno.estado !== "rechazado" ? (
             esProximo ? (
-              <PrimaryButton label="Cancelar turno" variant="outline" onPress={() => setConfirmando("cancelar")} />
+              <>
+                {sinCambios ? (
+                  <Text style={[styles.meta, styles.plazo, { color: theme.colors.mutedForeground }]}>{sinCambios}</Text>
+                ) : null}
+                <PrimaryButton label="Reprogramar" variant="outline" disabled={!!sinCambios} onPress={reprogramar} />
+                <PrimaryButton
+                  label="Cancelar turno"
+                  variant="outline"
+                  disabled={!!sinCambios}
+                  onPress={() => setConfirmando("cancelar")}
+                />
+              </>
             ) : (
               <PrimaryButton label="Eliminar del historial" variant="outline" onPress={() => setConfirmando("ocultar")} />
             )
@@ -486,6 +565,7 @@ const styles = StyleSheet.create({
   tipoTurno: { fontSize: 17, fontWeight: "700" },
   aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
   avisoTexto: { flex: 1, fontSize: 13 },
+  plazo: { textAlign: "center", marginTop: 0 },
   lista: { paddingBottom: 32 },
   encabezadoHistorial: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   cantidad: { fontSize: 13 },

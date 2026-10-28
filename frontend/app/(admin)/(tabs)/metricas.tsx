@@ -35,14 +35,18 @@ export default function AdminMetricasScreen() {
     }, []),
   );
 
-  const grafico = (datos: Conteo[] | undefined, unidad: string) => (
-    <Card style={styles.card}>
+  const grafico = (titulo: string, datos: Conteo[] | undefined, unidad: string, color: string) => (
+    <Card style={[styles.card, { borderTopWidth: 4, borderTopColor: color }]}>
+      <View style={styles.encabezado}>
+        <View style={[styles.punto, { backgroundColor: color }]} />
+        <Text style={[styles.tituloGrafico, { color: theme.colors.foreground }]}>{titulo}</Text>
+      </View>
       {!datos ? (
         <Text style={{ color: theme.colors.mutedForeground }}>Cargando...</Text>
       ) : datos.length === 0 ? (
         <Text style={{ color: theme.colors.mutedForeground }}>Todavía no hay datos.</Text>
       ) : (
-        <HorizontalBarChart data={datos.map((d) => ({ label: d.etiqueta, value: d.cantidad }))} unidad={unidad} />
+        <HorizontalBarChart data={datos.map((d) => ({ label: d.etiqueta, value: d.cantidad }))} unidad={unidad} color={color} />
       )}
     </Card>
   );
@@ -64,19 +68,17 @@ export default function AdminMetricasScreen() {
         />
       </View>
 
-      <SectionHeader title="Turnos por estado" />
-      {grafico(metricas?.turnosPorEstado, "turnos")}
-
-      <SectionHeader title="Turnos por especialidad" />
-      {grafico(metricas?.turnosPorEspecialidad, "turnos")}
-
-      <SectionHeader title="Instituciones con más turnos" />
-      {grafico(metricas?.turnosPorInstitucion, "turnos")}
+      {/* Cada gráfico con su color (theme.graficos) para distinguirlos de un vistazo. */}
+      {grafico("Instituciones con más turnos", metricas?.turnosPorInstitucion, "turnos", theme.graficos[0])}
+      {grafico("Turnos por especialidad", metricas?.turnosPorEspecialidad, "turnos", theme.graficos[1])}
+      {grafico("Turnos por estado", metricas?.turnosPorEstado, "turnos", theme.graficos[2])}
 
       <SectionHeader title="Profesionales mejor valorados" />
       <Card style={styles.card}>
         {!metricas ? (
           <Text style={{ color: theme.colors.mutedForeground }}>Cargando...</Text>
+        ) : metricas.mejorValorados.length === 0 ? (
+          <Text style={{ color: theme.colors.mutedForeground }}>Todavía no hay opiniones de pacientes.</Text>
         ) : (
           metricas.mejorValorados.map(({ medico, especialidad }, i) => (
             <View
@@ -115,7 +117,10 @@ const styles = StyleSheet.create({
   overline: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   title: { fontSize: 24, fontWeight: "700", marginTop: 2, marginBottom: 24 },
   stats: { flexDirection: "row", gap: 10, marginBottom: 28 },
-  card: { marginBottom: 28 },
+  card: { marginBottom: 20 },
+  encabezado: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
+  punto: { width: 10, height: 10, borderRadius: 5 },
+  tituloGrafico: { fontSize: 15, fontWeight: "700" },
   ranking: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   puesto: { width: 18, fontSize: 16, fontWeight: "700", textAlign: "center" },
   nombre: { fontSize: 14, fontWeight: "600" },

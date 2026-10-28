@@ -17,7 +17,7 @@ export const preguntasFrecuentesMock: PreguntaFrecuente[] = [
     id: "faq-cancelar",
     pregunta: "¿Cómo cancelo o reprogramo un turno?",
     respuesta:
-      "En Turnos, dentro de Próximos, tocá Cancelar turno. Cada institución puede tener sus propias reglas de cancelación.",
+      "En Turnos, dentro de Próximos, tocá el turno y elegí Reprogramar (otra fecha con el mismo profesional) o Cancelar turno. Se puede hasta 24 horas antes del turno.",
   },
   {
     id: "faq-resultados",

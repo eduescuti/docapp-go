@@ -180,7 +180,8 @@ export function crearHtmlMapa({ colores, centro, interactivo }: OpcionesHtml): s
       map.setFilter("centros-seleccion", ["==", ["get", "id"], m.id || ""]);
       var p = m.id ? puntosPorId[m.id] : null;
       // Se corre hacia arriba para que la tarjeta de abajo no tape el marcador.
-      if (p) map.easeTo({ center: [p.longitud, p.latitud], offset: [0, -90], duration: 500 });
+      // Si el mapa está lejos (p. ej. se eligió desde el buscador), además se acerca para que se vea dónde queda.
+      if (p) map.easeTo({ center: [p.longitud, p.latitud], zoom: Math.max(map.getZoom(), 15), offset: [0, -90], duration: 600 });
     } else if (m.tipo === "ubicacion") {
       map.getSource("yo").setData(m.coordenada ? aGeojson([{ id: "yo", tipo: "yo", latitud: m.coordenada.latitud, longitud: m.coordenada.longitud }]) : vacio());
     } else if (m.tipo === "margenes") {

@@ -48,7 +48,7 @@ export default function AdminPanelScreen() {
           <Text style={{ color: theme.colors.mutedForeground }}>Cargando...</Text>
         ) : (
           <HorizontalBarChart
-            data={porObraSocial.map((c) => ({ label: c.aseguradora, value: c.cantidad }))}
+            data={porObraSocial.map((c) => ({ label: c.obraSocial, value: c.cantidad }))}
             unidad="pacientes"
           />
         )}

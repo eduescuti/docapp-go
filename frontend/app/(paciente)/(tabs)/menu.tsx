@@ -16,7 +16,7 @@ import {
 import { StyleSheet, View } from "react-native";
 
 import { Avatar, Card, EncabezadoTab, ScreenContainer, SectionHeader, Text } from "@/components";
-import { Paciente, PlanMedico } from "@/domain";
+import { Paciente, PlanConObraSocial } from "@/domain";
 import {
   countFeedbacksPendientes,
   getPacienteActual,
@@ -25,6 +25,7 @@ import {
 } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
+import { nombrePlan } from "@/utils/cobertura";
 import { iniciales } from "@/utils/format";
 
 type RutaCuenta =
@@ -84,7 +85,7 @@ export default function MenuScreen() {
   const router = useRouter();
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
-  const [plan, setPlan] = useState<PlanMedico | null>(null);
+  const [plan, setPlan] = useState<PlanConObraSocial | null>(null);
   const [noLeidas, setNoLeidas] = useState(0);
   const [feedbacksPendientes, setFeedbacksPendientes] = useState(0);
 
@@ -115,13 +116,13 @@ export default function MenuScreen() {
 
       <Card style={styles.profileCard} onPress={() => router.push("/cuenta/perfil")} accessibilityLabel="Ver mi perfil">
         <View style={styles.profileRow}>
-          <Avatar iniciales={paciente ? iniciales(paciente.nombre, paciente.apellido) : "--"} size={56} />
+          <Avatar uri={paciente?.avatarUrl} iniciales={paciente ? iniciales(paciente.nombre, paciente.apellido) : "--"} size={56} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.profileNombre, { color: theme.colors.foreground }]}>
               {paciente ? `${paciente.nombre} ${paciente.apellido}` : "Cargando..."}
             </Text>
             <Text style={[styles.profileSub, { color: theme.colors.mutedForeground }]}>
-              {plan?.nombre} · DNI {paciente?.dni}
+              {plan ? nombrePlan(plan) : ""} · DNI {paciente?.dni}
             </Text>
           </View>
           <ChevronRight size={18} color={theme.colors.mutedForeground} />

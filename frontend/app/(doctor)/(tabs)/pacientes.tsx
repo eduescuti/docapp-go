@@ -4,15 +4,16 @@ import { StyleSheet, TextInput, View } from "react-native";
 import { CalendarClock, ChevronRight, Search } from "lucide-react-native";
 
 import { Avatar, Card, ScreenContainer, Text } from "@/components";
-import { Paciente, PlanMedico, Turno } from "@/domain";
+import { Paciente, PlanConObraSocial, Turno } from "@/domain";
 import { getMedicoActual, listPacientesAsignados, listPlanesMedicos, listTurnosMedico } from "@/services";
 import { useTheme } from "@/theme";
+import { nombrePlan } from "@/utils/cobertura";
 import { formatFechaCorta, hoyIso, iniciales } from "@/utils/format";
 import { normalizarDni } from "@/utils/validation";
 
 interface PacienteAsignado {
   paciente: Paciente;
-  plan?: PlanMedico;
+  plan?: PlanConObraSocial;
   proximoTurno?: Turno;
 }
 
@@ -104,14 +105,14 @@ export default function DoctorPacientesScreen() {
           accessibilityLabel={`Ver ficha de ${paciente.nombre} ${paciente.apellido}`}
         >
           <View style={styles.row}>
-            <Avatar iniciales={iniciales(paciente.nombre, paciente.apellido)} size={44} />
+            <Avatar uri={paciente.avatarUrl} iniciales={iniciales(paciente.nombre, paciente.apellido)} size={44} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.nombre, { color: theme.colors.foreground }]} numberOfLines={1}>
                 {paciente.nombre} {paciente.apellido}
               </Text>
               <Text style={[styles.meta, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
                 DNI {paciente.dni}
-                {plan ? ` · ${plan.nombre}` : ""}
+                {plan ? ` · ${nombrePlan(plan)}` : ""}
               </Text>
               {proximoTurno && (
                 <View style={styles.turnoRow}>

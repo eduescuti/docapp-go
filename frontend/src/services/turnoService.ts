@@ -1,45 +1,15 @@
-import { addDays, addMinutes, format, parseISO } from "date-fns";
+import { differenceInMinutes, parseISO } from "date-fns";
 
 import { Especialidad, Institucion, Medico, Paciente, Sede, Turno } from "@/domain";
-import { especialidadesMock, medicosMock, pacientesMock, turnosMock } from "@/mocks";
 
-import { delay } from "./apiClient";
-import { getInstitucionEnMemoria, getSedeEnMemoria } from "./institucionService";
+import { api } from "./apiClient";
 
-// Estado en memoria: simula la tabla de turnos hasta que exista backend real.
-let turnos: Turno[] = [...turnosMock];
+// Turnos contra el backend (`docs/04-api.md#turnos`). El backend cierra solos los que ya pasaron (confirmado →
+// completado, pendiente → rechazado) antes de devolverlos.
 
-/**
- * Cuando pasa la fecha y hora de un turno, se cierra solo: el confirmado (o reprogramado) pasa a `completado`
- * y el pendiente que nunca se confirmó, a `rechazado`. El backend hace lo mismo al leer los turnos.
- */
-function actuales(): Turno[] {
-  const ahora = format(new Date(), "yyyy-MM-dd HH:mm");
-  const vencido = (t: Turno) => `${t.fecha} ${t.hora}` < ahora;
-  if (turnos.some((t) => vencido(t) && (t.estado === "pendiente" || t.estado === "confirmado" || t.estado === "reprogramado"))) {
-    turnos = turnos.map((t) => {
-      if (!vencido(t)) return t;
-      if (t.estado === "pendiente") return { ...t, estado: "rechazado" };
-      if (t.estado === "confirmado" || t.estado === "reprogramado") return { ...t, estado: "completado" };
-      return t;
-    });
-  }
-  return turnos;
-}
-
-/** Acceso sincrónico para otros services (p. ej. pacientes asignados). Las pantallas usan las funciones async. */
-export function getTurnosEnMemoria(): Turno[] {
-  return actuales();
-}
-
-const porFechaYHora = (a: Turno, b: Turno) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`);
-
-export async function listTurnosMedico(medicoId: string): Promise<Turno[]> {
-  return delay(actuales().filter((t) => t.medicoId === medicoId).sort(porFechaYHora));
-}
-
-export async function listTurnosPaciente(pacienteId: string): Promise<Turno[]> {
-  return delay(actuales().filter((t) => t.pacienteId === pacienteId));
+/** Todos los turnos del paciente, también los que sacó de su historial (su historial médico no cambia). */
+export async function listTurnosPaciente(_pacienteId: string): Promise<Turno[]> {
+  return api<Turno[]>("/api/pacientes/yo/turnos/todos");
 }
 
 /** Un turno de la agenda del profesional con el paciente y el lugar ya resueltos (un solo pedido). */
@@ -50,25 +20,21 @@ export interface TurnoDeAgenda {
   institucion?: Institucion;
 }
 
-/** Todos los turnos del profesional (pasados y futuros), ordenados por fecha y hora. Para Inicio y Agenda. */
-export async function listAgendaMedico(medicoId: string): Promise<TurnoDeAgenda[]> {
-  return delay(
-    actuales()
-      .filter((t) => t.medicoId === medicoId)
-      .sort(porFechaYHora)
-      .map((turno) => {
-        const sede = getSedeEnMemoria(turno.sedeId);
-        return {
-          turno,
-          paciente: pacientesMock.find((p) => p.id === turno.pacienteId),
-          sede,
-          institucion: sede ? getInstitucionEnMemoria(sede.institucionId) : undefined,
-        };
-      }),
-  );
+/** Todos los turnos del profesional de la sesión (pasados y futuros), por fecha y hora. Para Inicio, Agenda y la ficha. */
+export async function listAgendaMedico(_medicoId: string): Promise<TurnoDeAgenda[]> {
+  return api<TurnoDeAgenda[]>("/api/medicos/yo/agenda");
 }
 
-/** Un turno con el profesional, la especialidad y el lugar ya resueltos, como lo devolvería un endpoint con joins. */
+export async function listTurnosMedico(medicoId: string): Promise<Turno[]> {
+  return (await listAgendaMedico(medicoId)).map(({ turno }) => turno);
+}
+
+/** Pacientes asignados: los que tienen un turno próximo (pendiente o confirmado) con el profesional de la sesión. */
+export async function listPacientesAsignados(_medicoId: string): Promise<Paciente[]> {
+  return api<Paciente[]>("/api/medicos/yo/pacientes");
+}
+
+/** Un turno con el profesional, la especialidad y el lugar ya resueltos, como lo devuelve el endpoint con joins. */
 export interface TurnoConDetalle {
   turno: Turno;
   medico?: Medico;
@@ -77,110 +43,32 @@ export interface TurnoConDetalle {
   institucion?: Institucion;
 }
 
-function conDetalle(turno: Turno): TurnoConDetalle {
-  const medico = medicosMock.find((m) => m.id === turno.medicoId);
-  const sede = getSedeEnMemoria(turno.sedeId);
-  return {
-    turno,
-    medico,
-    especialidad: medico ? especialidadesMock.find((e) => e.id === medico.especialidadId) : undefined,
-    sede,
-    institucion: sede ? getInstitucionEnMemoria(sede.institucionId) : undefined,
-  };
-}
-
 export interface MisTurnos {
   proximos: TurnoConDetalle[];
   historial: TurnoConDetalle[];
 }
 
-/** Prioridad en "Próximos": los confirmados arriba de todo, después los reprogramados, los pendientes y al final los rechazados. */
-const PRIORIDAD_PROXIMOS: Record<Turno["estado"], number> = {
-  confirmado: 0,
-  reprogramado: 1,
-  pendiente: 2,
-  rechazado: 3,
-  cancelado: 4,
-  completado: 5,
-};
-
 /**
- * Turnos de la pantalla "Mis turnos". Próximos: los solicitados desde hoy, sin cancelar ni completar
- * (confirmados primero y, dentro de cada estado, del más cercano al más lejano). Historial: el resto,
- * sin los que el paciente sacó (del más reciente al más viejo).
+ * "Mis turnos". Próximos: desde hoy, sin cancelar ni completar (confirmados primero y, dentro de cada estado, del
+ * más cercano al más lejano). Historial: el resto, sin los que el paciente sacó (del más reciente al más viejo).
  */
-function clasificarMisTurnos(pacienteId: string): { proximos: Turno[]; historial: Turno[] } {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const propios = actuales().filter((t) => t.pacienteId === pacienteId);
-  const esProximo = (t: Turno) => t.fecha >= hoy && t.estado !== "cancelado" && t.estado !== "completado";
-  const orden = (a: Turno, b: Turno) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`);
-  const porPrioridad = (a: Turno, b: Turno) => PRIORIDAD_PROXIMOS[a.estado] - PRIORIDAD_PROXIMOS[b.estado] || orden(a, b);
-  return {
-    proximos: propios.filter(esProximo).sort(porPrioridad),
-    historial: propios.filter((t) => !esProximo(t) && !t.ocultoEnHistorial).sort((a, b) => orden(b, a)),
-  };
-}
-
-export async function listMisTurnos(pacienteId: string): Promise<MisTurnos> {
-  const { proximos, historial } = clasificarMisTurnos(pacienteId);
-  return delay({ proximos: proximos.map(conDetalle), historial: historial.map(conDetalle) });
+export async function listMisTurnos(_pacienteId: string): Promise<MisTurnos> {
+  return api<MisTurnos>("/api/pacientes/yo/turnos");
 }
 
 /** Saca un turno del historial del paciente. Solo se oculta: el registro médico no se borra. */
 export async function ocultarTurnoDelHistorial(turnoId: string): Promise<void> {
-  turnos = turnos.map((t) => (t.id === turnoId ? { ...t, ocultoEnHistorial: true } : t));
-  return delay(undefined);
+  await api<Turno>(`/api/turnos/${encodeURIComponent(turnoId)}`, { metodo: "PATCH", cuerpo: { ocultoEnHistorial: true } });
 }
 
 /** "Eliminar todo" del historial: oculta todos los turnos que hoy figuran en él. */
-export async function vaciarHistorialTurnos(pacienteId: string): Promise<void> {
-  const ids = new Set(clasificarMisTurnos(pacienteId).historial.map((t) => t.id));
-  turnos = turnos.map((t) => (ids.has(t.id) ? { ...t, ocultoEnHistorial: true } : t));
-  return delay(undefined);
+export async function vaciarHistorialTurnos(_pacienteId: string): Promise<void> {
+  await api<void>("/api/pacientes/yo/turnos/historial", { metodo: "DELETE" });
 }
 
 /** El próximo turno (confirmado o pendiente) de la fecha más cercana, con su detalle. */
-export async function getProximoTurno(pacienteId: string): Promise<TurnoConDetalle | undefined> {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const proximos = actuales()
-    .filter((t) => t.pacienteId === pacienteId)
-    .filter((t) => t.estado === "confirmado" || t.estado === "pendiente")
-    .filter((t) => t.fecha >= hoy)
-    .sort((a, b) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`));
-  return delay(proximos[0] ? conDetalle(proximos[0]) : undefined);
-}
-
-/** Duración de cada turno, en minutos. */
-const DURACION_TURNO_MIN = 30;
-
-/**
- * Regla #3 (CLAUDE.md §10): los horarios salen de lo que configuró el profesional en esa sede.
- *
- * Por ahora el mismo horario rige todos los días (se ignora `diaSemana`): qué días atiende cada
- * profesional lo va a definir el backend, no el frontend.
- */
-function horariosDelDia(medico: Medico, sedeId: string, fechaIso: string): string[] {
-  const horas: string[] = [];
-  for (const bloque of medico.horarios) {
-    if (bloque.sedeId !== sedeId) continue;
-    const fin = parseISO(`${fechaIso}T${bloque.horaFin}`);
-    for (let t = parseISO(`${fechaIso}T${bloque.horaInicio}`); t < fin; t = addMinutes(t, DURACION_TURNO_MIN)) {
-      horas.push(format(t, "HH:mm"));
-    }
-  }
-  return horas.sort();
-}
-
-/** Los turnos del profesional ocupan su horario sin importar la sede (regla #4). Uno cancelado o rechazado lo libera. */
-function estaOcupado(medicoId: string, fechaIso: string, hora: string): boolean {
-  return actuales().some(
-    (t) =>
-      t.medicoId === medicoId &&
-      t.fecha === fechaIso &&
-      t.hora === hora &&
-      t.estado !== "cancelado" &&
-      t.estado !== "rechazado",
-  );
+export async function getProximoTurno(_pacienteId: string): Promise<TurnoConDetalle | undefined> {
+  return (await api<TurnoConDetalle | null>("/api/pacientes/yo/turnos/proximo")) ?? undefined;
 }
 
 export interface HorarioLibre {
@@ -189,62 +77,34 @@ export interface HorarioLibre {
   hora: string; // "09:30"
 }
 
-/** Horarios libres de un profesional un día, en todas sus sedes. Los que ya pasaron hoy no cuentan. */
-function horariosLibresDelMedico(medico: Medico, fechaIso: string): HorarioLibre[] {
-  const ahora = format(new Date(), "yyyy-MM-dd HH:mm");
-  const libres: HorarioLibre[] = [];
-  // Un profesional no puede estar en dos sedes a la misma hora: si sus bloques se pisan, queda el primero.
-  const tomadas = new Set<string>();
-  for (const sedeId of new Set(medico.horarios.map((h) => h.sedeId))) {
-    for (const hora of horariosDelDia(medico, sedeId, fechaIso)) {
-      if (tomadas.has(hora)) continue;
-      if (!estaOcupado(medico.id, fechaIso, hora) && `${fechaIso} ${hora}` > ahora) {
-        tomadas.add(hora);
-        libres.push({ medicoId: medico.id, sedeId, hora });
-      }
-    }
-  }
-  return libres;
-}
-
 /**
- * A qué profesionales se refiere una consulta de disponibilidad: uno o varios puntuales (`medicoIds`) o todos
- * los que aceptan un plan (`planMedicoId`, regla 1). Así la pantalla no tiene que pedir primero la lista de
- * profesionales para después pedir sus horarios.
+ * A qué profesionales se refiere una consulta de disponibilidad: los que le aparecen al paciente por su plan
+ * (regla 18; el backend lo toma de la sesión) y, si se indica, solo algunos puntuales (`medicoIds`).
  */
 export interface FiltroDisponibilidad {
+  planMedicoId: string;
   medicoIds?: string[];
-  planMedicoId?: string;
 }
 
-function medicosDelFiltro({ medicoIds, planMedicoId }: FiltroDisponibilidad): Medico[] {
-  return medicosMock.filter(
-    (m) => (!medicoIds || medicoIds.includes(m.id)) && (!planMedicoId || m.planesAceptadosIds.includes(planMedicoId)),
-  );
-}
+const conMedicos = (filtro: FiltroDisponibilidad) => (filtro.medicoIds ? `&medicos=${filtro.medicoIds.map(encodeURIComponent).join(",")}` : "");
 
 /**
- * Horarios libres de un día entre varios profesionales (la reserva empieza por la fecha y el horario,
- * y después se elige dónde y con quién). Con backend sería `GET /turnos/disponibles?fecha=&plan=&medicos=`.
+ * Horarios libres de un día (turnos de 30 min dentro de las franjas de cada profesional, sin los tomados ni los que
+ * ya pasaron), solo donde la sede y el profesional le aparecen al paciente. `GET /api/turnos/disponibles`.
  */
 export async function listHorariosLibres(filtro: FiltroDisponibilidad, fechaIso: string): Promise<HorarioLibre[]> {
-  return delay(medicosDelFiltro(filtro).flatMap((m) => horariosLibresDelMedico(m, fechaIso)));
+  return api<HorarioLibre[]>(`/api/turnos/disponibles?fecha=${fechaIso}${conMedicos(filtro)}`);
 }
 
 /** Días (ISO) del rango `[desde, hasta]` en que alguno de los profesionales tiene un horario libre. */
 export async function listDiasConTurnos(filtro: FiltroDisponibilidad, desdeIso: string, hastaIso: string): Promise<string[]> {
-  const medicos = medicosDelFiltro(filtro);
-  const dias: string[] = [];
-  const hasta = parseISO(hastaIso);
-  for (let dia = parseISO(desdeIso); dia <= hasta; dia = addDays(dia, 1)) {
-    const iso = format(dia, "yyyy-MM-dd");
-    if (medicos.some((m) => horariosLibresDelMedico(m, iso).length > 0)) dias.push(iso);
-  }
-  return delay(dias);
+  return api<string[]>(`/api/turnos/dias-con-turnos?desde=${desdeIso}&hasta=${hastaIso}${conMedicos(filtro)}`);
 }
 
 export interface DatosNuevoTurno {
   pacienteId: string;
+  /** Paso 4 de la reserva: el backend revisa que sea la del profesional. */
+  especialidadId: string;
   medicoId: string;
   sedeId: string;
   fecha: string;
@@ -253,53 +113,53 @@ export interface DatosNuevoTurno {
 
 /**
  * Regla de negocio #4 (CLAUDE.md §10): una reserva bloquea el horario, no puede haber doble reserva. El turno
- * nace `pendiente`: queda así hasta que el profesional lo confirme o lo rechace.
+ * nace `pendiente`: queda así hasta que el profesional lo confirme o lo rechace. El paciente sale de la sesión.
  */
-export async function crearTurno(datos: DatosNuevoTurno): Promise<Turno> {
-  const medico = medicosMock.find((m) => m.id === datos.medicoId);
-  const enHorario = medico ? horariosDelDia(medico, datos.sedeId, datos.fecha).includes(datos.hora) : false;
-  if (!enHorario || estaOcupado(datos.medicoId, datos.fecha, datos.hora)) {
-    throw new Error("Ese horario ya no está disponible.");
-  }
-
-  const nuevoTurno: Turno = {
-    id: `turno-${Date.now()}`,
-    estado: "pendiente",
-    ...datos,
-  };
-  turnos = [...turnos, nuevoTurno];
-  return delay(nuevoTurno);
+export async function crearTurno({ pacienteId: _pacienteId, ...datos }: DatosNuevoTurno): Promise<Turno> {
+  return api<Turno>("/api/turnos", { metodo: "POST", cuerpo: datos });
 }
+
+const cambiarEstado = (turnoId: string, estado: Turno["estado"]) =>
+  api<Turno>(`/api/turnos/${encodeURIComponent(turnoId)}`, { metodo: "PATCH", cuerpo: { estado } });
 
 /** El profesional responde una solicitud: solo se confirma o rechaza un turno pendiente. Rechazarlo libera el horario. */
-async function responderSolicitud(turnoId: string, estado: "confirmado" | "rechazado"): Promise<Turno> {
-  const turno = actuales().find((t) => t.id === turnoId);
-  if (!turno) throw new Error("Turno no encontrado");
-  if (turno.estado !== "pendiente") throw new Error("Este turno ya no está pendiente de confirmación.");
-  const actualizado: Turno = { ...turno, estado };
-  turnos = turnos.map((t) => (t.id === turnoId ? actualizado : t));
-  return delay(actualizado);
-}
-
 export async function confirmarTurno(turnoId: string): Promise<Turno> {
-  return responderSolicitud(turnoId, "confirmado");
+  return cambiarEstado(turnoId, "confirmado");
 }
 
 export async function rechazarTurno(turnoId: string): Promise<Turno> {
-  return responderSolicitud(turnoId, "rechazado");
+  return cambiarEstado(turnoId, "rechazado");
+}
+
+/** Hasta cuántas horas antes del turno se puede cancelar o reprogramar (regla 5, igual para toda la app). */
+export const HORAS_MINIMAS_CANCELACION = 24;
+
+/**
+ * Por qué el paciente ya no puede cancelar ni reprogramar el turno, o `null` si puede: solo los activos (pendientes y
+ * confirmados) y hasta 24 h antes (regla 5). La app lo usa para deshabilitar los botones; el backend lo vuelve a
+ * controlar.
+ */
+export function motivoSinCambios(turno: Turno): string | null {
+  if (turno.estado !== "pendiente" && turno.estado !== "confirmado") return "Este turno ya no está activo.";
+  const minutos = differenceInMinutes(parseISO(`${turno.fecha}T${turno.hora}`), new Date());
+  if (minutos < HORAS_MINIMAS_CANCELACION * 60) {
+    return `Faltan menos de ${HORAS_MINIMAS_CANCELACION} h para el turno: ya no se puede cancelar ni reprogramar desde la app.`;
+  }
+  return null;
 }
 
 /** El paciente cancela su turno: el horario queda libre para otra persona. */
 export async function cancelarTurno(turnoId: string): Promise<Turno> {
-  turnos = turnos.map((t) => (t.id === turnoId ? { ...t, estado: "cancelado" } : t));
-  const actualizado = turnos.find((t) => t.id === turnoId);
-  if (!actualizado) throw new Error("Turno no encontrado");
-  return delay(actualizado);
+  return cambiarEstado(turnoId, "cancelado");
 }
 
-export async function reprogramarTurno(turnoId: string, fecha: string, hora: string): Promise<Turno> {
-  turnos = turnos.map((t) => (t.id === turnoId ? { ...t, fecha, hora, estado: "reprogramado" } : t));
-  const actualizado = turnos.find((t) => t.id === turnoId);
-  if (!actualizado) throw new Error("Turno no encontrado");
-  return delay(actualizado);
+export type DatosReprogramacion = Pick<DatosNuevoTurno, "sedeId" | "fecha" | "hora">;
+
+/**
+ * Reprogramar = cancelar el turno y reservar otro con el mismo profesional, en una sola operación (si el nuevo
+ * horario no se puede reservar, el viejo queda como estaba). El nuevo nace `pendiente` y guarda de qué turno viene.
+ */
+export async function reprogramarTurno(turnoId: string, datos: DatosReprogramacion): Promise<Turno> {
+  return api<Turno>(`/api/turnos/${encodeURIComponent(turnoId)}/reprogramar`, { metodo: "POST", cuerpo: datos });
 }
+

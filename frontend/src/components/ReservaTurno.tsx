@@ -17,6 +17,7 @@ import {
   listDiasConTurnos,
   listEspecialidades,
   listHorariosLibres,
+  reprogramarTurno,
   searchMedicos,
 } from "@/services";
 import { useTheme } from "@/theme";
@@ -34,8 +35,13 @@ import { SelectField, SelectOption } from "./SelectField";
 import { Text } from "./Text";
 
 interface ReservaTurnoProps {
-  /** Entra con este profesional ya elegido (desde su perfil). */
+  /** Entra con este profesional ya elegido (desde su perfil, o al reprogramar). */
   medicoIdInicial?: string;
+  /**
+   * Reprogramar este turno: con el mismo profesional (`medicoIdInicial`), en cualquiera de sus lugares que le
+   * aparezcan al paciente. Al confirmar se cancela este y se reserva el nuevo en una sola operación.
+   */
+  turnoAReprogramarId?: string;
   /** Hospital elegido en el mapa. `n` cambia en cada elección para que se aplique aunque sea el mismo. */
   sedeDelMapa?: { sedeId: string; n: string };
   /** El turno quedó reservado y el paciente cerró el aviso. */
@@ -44,8 +50,6 @@ interface ReservaTurnoProps {
 
 /** Cuántos días hacia adelante se puede reservar. */
 const DIAS_RESERVABLES = 90;
-/** Valor de la opción "Cualquiera" del selector de hospitales. */
-const CUALQUIERA = "__cualquiera__";
 
 /** Qué son los favoritos y cómo repercuten en los turnos: se muestra con el "?" de "Tus favoritos". */
 const AYUDA_FAVORITOS = {
@@ -78,8 +82,13 @@ const sinRepetidos = <T,>(lista: T[]): T[] => [...new Set(lista)];
  * Reserva de un turno en pasos: fecha → horario → hospital → especialidad → profesional.
  * Se empieza por cuándo y las opciones siguientes se arman con quién atiende en ese horario: cada paso
  * muestra solo lo que está libre (reglas 3 y 4) y de profesionales que aceptan el plan del paciente (regla 1).
+ *
+ * Los pasos se hacen en orden y ninguno se saltea (decidido el 28/10/2026): cada uno se habilita recién cuando
+ * el anterior está elegido, no hay "Cualquiera" ni "Todas", y nada se elige solo salvo el hospital favorito, que se
+ * propone (cuenta como elegido y se puede cambiar). Cambiar un paso suelta lo elegido en los siguientes. Si se
+ * entra desde el perfil de un profesional, la especialidad y el profesional ya vienen elegidos por el paciente.
  */
-export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: ReservaTurnoProps) {
+export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa, onReservado }: ReservaTurnoProps) {
   const { theme } = useTheme();
   const router = useRouter();
 
@@ -93,7 +102,7 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
   const [fecha, setFecha] = useState<string | null>(() => format(new Date(), "yyyy-MM-dd"));
   const fechaElegidaPorElPaciente = useRef(false);
   const [hora, setHora] = useState<string | null>(null);
-  // null: todavía no eligió (rige el favorito); CUALQUIERA: eligió ver todos los lugares.
+  // null: todavía no eligió (rige el favorito, si hay).
   const [sedeId, setSedeId] = useState<string | null>(null);
   const [favoritas, setFavoritas] = useState<string[]>([]);
   const [especialidadId, setEspecialidadId] = useState<string | null>(null);
@@ -122,9 +131,10 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
     [],
   );
 
-  // A quiénes se les piden los horarios: solo al profesional del perfil o a todos los que aceptan el plan.
+  // A quiénes se les piden los horarios: a los que le aparecen al paciente por su plan (regla 18) y, si viene
+  // del perfil de un profesional, solo a él.
   const filtro = useMemo<FiltroDisponibilidad | null>(
-    () => (medicoIdInicial ? { medicoIds: [medicoIdInicial] } : planMedicoId ? { planMedicoId } : null),
+    () => (planMedicoId ? { planMedicoId, medicoIds: medicoIdInicial ? [medicoIdInicial] : undefined } : null),
     [medicoIdInicial, planMedicoId],
   );
 
@@ -205,30 +215,28 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
   const horas = useMemo(() => sinRepetidos((libres ?? []).map((l) => l.hora)).sort(), [libres]);
   const delHorario = useMemo(() => (libres ?? []).filter((l) => l.hora === hora), [libres, hora]);
   const sedesOpcionIds = useMemo(() => sinRepetidos(delHorario.map((l) => l.sedeId)), [delHorario]);
-  // Hospital favorito: si hay exactamente uno entre las opciones, queda elegido de entrada.
+  // Hospitales favoritos entre las opciones: el primero se propone de entrada.
   const favoritasOpcionIds = useMemo(
     () => sedesOpcionIds.filter((id) => favoritas.includes(sedes[id]?.institucion.id ?? "")),
     [sedesOpcionIds, favoritas, sedes],
   );
 
-  //Si hay uno o más favoritos disponibles, propone el primero de la lista
   const favoritaPorDefectoId = favoritasOpcionIds.length > 0 ? favoritasOpcionIds[0] : null;
-  // Lo que rige sin que el paciente haya elegido (favorito o única opción) no se guarda: si cambia el horario se recalcula.
-  const sedeEfectivaId =
-    sedeId === CUALQUIERA ? null : (sedeId ?? favoritaPorDefectoId ?? (sedesOpcionIds.length === 1 ? sedesOpcionIds[0] : null));
+  // El favorito propuesto no se guarda: si cambia el horario se recalcula. Sin favorito, el paciente elige.
+  const sedeEfectivaId = hora ? (sedeId ?? favoritaPorDefectoId) : null;
   const delSitio = useMemo(
-    () => delHorario.filter((l) => !sedeEfectivaId || l.sedeId === sedeEfectivaId),
+    () => (sedeEfectivaId ? delHorario.filter((l) => l.sedeId === sedeEfectivaId) : []),
     [delHorario, sedeEfectivaId],
   );
   const especialidadesOpcionIds = useMemo(
     () => sinRepetidos(delSitio.map((l) => medicoPorId[l.medicoId]?.especialidadId).filter((id): id is string => !!id)),
     [delSitio, medicoPorId],
   );
-  const especialidadEfectivaId = especialidadId ?? (especialidadesOpcionIds.length === 1 ? especialidadesOpcionIds[0] : null);
+  const especialidadEfectivaId = sedeEfectivaId ? especialidadId : null;
   const opcionesMedico = useMemo(
     () =>
       delSitio
-        .filter((l) => !especialidadEfectivaId || medicoPorId[l.medicoId]?.especialidadId === especialidadEfectivaId)
+        .filter((l) => !!especialidadEfectivaId && medicoPorId[l.medicoId]?.especialidadId === especialidadEfectivaId)
         .sort((a, b) => (medicoPorId[b.medicoId]?.valoracion ?? 0) - (medicoPorId[a.medicoId]?.valoracion ?? 0)),
     [delSitio, especialidadEfectivaId, medicoPorId],
   );
@@ -238,14 +246,15 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
     if (libres && hora && !horas.includes(hora)) setHora(null);
   }, [libres, hora, horas]);
   useEffect(() => {
-    if (hora && sedeId && sedeId !== CUALQUIERA && !sedesOpcionIds.includes(sedeId)) setSedeId(null);
+    if (hora && sedeId && !sedesOpcionIds.includes(sedeId)) setSedeId(null);
   }, [hora, sedeId, sedesOpcionIds]);
+  // Solo se revisa con el paso anterior hecho: antes, la lista vacía soltaría lo que viene del perfil del profesional.
   useEffect(() => {
-    if (hora && especialidadId && !especialidadesOpcionIds.includes(especialidadId)) setEspecialidadId(null);
-  }, [hora, especialidadId, especialidadesOpcionIds]);
+    if (sedeEfectivaId && especialidadId && !especialidadesOpcionIds.includes(especialidadId)) setEspecialidadId(null);
+  }, [sedeEfectivaId, especialidadId, especialidadesOpcionIds]);
   useEffect(() => {
-    if (hora && libres && medicoId && !opcionesMedico.some((l) => l.medicoId === medicoId)) setMedicoId(null);
-  }, [hora, libres, medicoId, opcionesMedico]);
+    if (especialidadEfectivaId && libres && medicoId && !opcionesMedico.some((l) => l.medicoId === medicoId)) setMedicoId(null);
+  }, [especialidadEfectivaId, libres, medicoId, opcionesMedico]);
 
   // Hospital elegido en el mapa.
   const ultimoDelMapa = useRef<string | null>(null);
@@ -261,30 +270,60 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
     tiraHoras.current?.scrollTo({ x: 0, animated: false });
   }, [fecha]);
 
-  const elegirFecha = useCallback((iso: string) => {
-    fechaElegidaPorElPaciente.current = true;
-    setFecha(iso);
-    setHora(null);
+  // Lo que viene elegido de antes (desde el perfil de un profesional) no se suelta.
+  const especialidadInicialId = medicoIdInicial ? (medicoPorId[medicoIdInicial]?.especialidadId ?? null) : null;
+  const soltarDesdeEspecialidad = useCallback(() => {
+    setEspecialidadId(especialidadInicialId);
+    setMedicoId(medicoIdInicial ?? null);
+  }, [especialidadInicialId, medicoIdInicial]);
+
+  // Cada paso suelta lo elegido en los siguientes: hay que volver a elegirlos, en orden.
+  const elegirFecha = useCallback(
+    (iso: string) => {
+      fechaElegidaPorElPaciente.current = true;
+      setFecha(iso);
+      setHora(null);
+      setSedeId(null);
+      soltarDesdeEspecialidad();
+      setError(null);
+    },
+    [soltarDesdeEspecialidad],
+  );
+  const elegirHora = (h: string) => {
+    setHora(h);
+    setSedeId(null);
+    soltarDesdeEspecialidad();
     setError(null);
-  }, []);
+  };
+  const elegirSede = (id: string) => {
+    setSedeId(id);
+    soltarDesdeEspecialidad();
+  };
+  const elegirEspecialidad = (id: string) => {
+    setEspecialidadId(id);
+    setMedicoId(medicoIdInicial ?? null);
+  };
 
   const elegida = opcionesMedico.find((l) => l.medicoId === medicoId);
   const medico = medicoId ? medicoPorId[medicoId] : undefined;
   const sedeElegida = elegida ? sedes[elegida.sedeId] : undefined;
-  const puedeReservar = !!(pacienteId && fecha && hora && medico && elegida);
+  const puedeReservar = !!(pacienteId && fecha && hora && sedeEfectivaId && especialidadEfectivaId && medico && elegida);
 
   const confirmar = async () => {
-    if (!pacienteId || !fecha || !hora || !medico || !elegida) return;
+    if (!pacienteId || !fecha || !hora || !especialidadEfectivaId || !medico || !elegida) return;
     setReservando(true);
     setError(null);
     try {
-      const turno = await crearTurno({
-        pacienteId,
-        medicoId: medico.id,
-        sedeId: elegida.sedeId,
-        fecha,
-        hora,
-      });
+      const turno = turnoAReprogramarId
+        ? await reprogramarTurno(turnoAReprogramarId, { sedeId: elegida.sedeId, fecha, hora })
+        : await crearTurno({
+            pacienteId,
+            especialidadId: especialidadEfectivaId,
+            medicoId: medico.id,
+            sedeId: elegida.sedeId,
+            fecha,
+            hora,
+          });
       setReservado({ turno, medico, lugar: sedes[elegida.sedeId] });
       // El horario reservado ya no está libre: se actualizan los horarios.
       if (filtro) listHorariosLibres(filtro, fecha).then(setLibres);
@@ -304,8 +343,7 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
     // Queda la pantalla lista para otra reserva.
     setHora(null);
     setSedeId(null);
-    setMedicoId(medicoIdInicial ?? null);
-    setEspecialidadId(medicoIdInicial ? (medicoPorId[medicoIdInicial]?.especialidadId ?? null) : null);
+    soltarDesdeEspecialidad();
     if (turno) onReservado(turno);
   };
 
@@ -316,7 +354,6 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
   const hayFavoritas = favoritasOpcionIds.length > 0;
 
   const opcionesSede: SelectOption[] = [
-    { value: CUALQUIERA, label: "Cualquiera", description: "Ver profesionales de todos los lugares" },
     ...sedesOpcionIds
       .map((id) => sedes[id])
       .filter((x): x is SedeConInstitucion => !!x)
@@ -375,10 +412,7 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
               return (
                 <Pressable
                   key={h}
-                  onPress={() => {
-                    setHora(h);
-                    setError(null);
-                  }}
+                  onPress={() => elegirHora(h)}
                   accessibilityRole="button"
                   accessibilityLabel={`Elegir horario ${h}`}
                   accessibilityState={{ selected: seleccionado }}
@@ -415,10 +449,10 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
         ) : (
           <SelectField
             label="¿Dónde querés atenderte?"
-            placeholder="Cualquiera"
+            placeholder="Elegí un hospital o centro"
             options={opcionesSede}
-            value={sedeEfectivaId ?? CUALQUIERA}
-            onChange={setSedeId}
+            value={sedeEfectivaId}
+            onChange={elegirSede}
             accion={
               <Pressable
                 onPress={irAlMapa}
@@ -463,27 +497,26 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
 
       <Paso numero={4} titulo="Especialidad" completo={!!especialidadEfectivaId}>
         {!hora ? (
-          <Aviso texto="Elegí un horario para ver las especialidades." />
+          <Aviso texto="Elegí un horario para seguir." />
+        ) : !sedeEfectivaId ? (
+          <Aviso texto="Elegí un hospital o centro para ver las especialidades." />
         ) : especialidadesOpcionIds.length === 0 ? (
-          <Aviso texto="No hay especialidades disponibles con esos filtros." />
+          <Aviso texto="No hay especialidades disponibles en ese lugar a esa hora." />
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {especialidadesOpcionIds.length > 1 ? (
-              <Chip label="Todas" selected={!especialidadEfectivaId} onPress={() => setEspecialidadId(null)} />
-            ) : null}
             {especialidadesOpcionIds.map((id) => {
               const nombre = especialidades.find((e) => e.id === id)?.nombre ?? id;
-              return <Chip key={id} label={nombre} selected={especialidadEfectivaId === id} onPress={() => setEspecialidadId(id)} />;
+              return <Chip key={id} label={nombre} selected={especialidadEfectivaId === id} onPress={() => elegirEspecialidad(id)} />;
             })}
           </ScrollView>
         )}
       </Paso>
 
-      <Paso numero={5} titulo="Profesional" completo={!!medico}>
-        {!hora ? (
-          <Aviso texto="Elegí un horario para ver los profesionales." />
+      <Paso numero={5} titulo="Profesional" completo={!!medico && !!elegida}>
+        {!especialidadEfectivaId ? (
+          <Aviso texto={!sedeEfectivaId ? "Completá los pasos anteriores para ver los profesionales." : "Elegí una especialidad para ver los profesionales."} />
         ) : opcionesMedico.length === 0 ? (
-          <Aviso texto="No hay profesionales con esos filtros. Probá con otro hospital o especialidad." />
+          <Aviso texto="No hay profesionales de esa especialidad en ese lugar a esa hora. Probá con otro horario." />
         ) : (
           opcionesMedico.map((l) => {
             const m = medicoPorId[l.medicoId];
@@ -500,7 +533,7 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
                 style={[
                   styles.medico,
                   {
-                    backgroundColor: seleccionado ? theme.colors.accent : theme.colors.card,
+                    backgroundColor: seleccionado ? theme.colors.highlight : theme.colors.card,
                     borderColor: seleccionado ? theme.colors.primary : theme.colors.border,
                     borderRadius: theme.radii.lg,
                   },
@@ -532,8 +565,8 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
       </Paso>
 
       {puedeReservar && medico && sedeElegida && fecha && hora ? (
-        <Card style={[styles.resumen, { backgroundColor: theme.colors.accent, borderColor: theme.colors.accent }]}>
-          <Text style={[styles.resumenTitulo, { color: theme.colors.accentForeground }]}>Tu turno</Text>
+        <Card style={[styles.resumen, { backgroundColor: theme.colors.highlight, borderColor: theme.colors.highlight }]}>
+          <Text style={[styles.resumenTitulo, { color: theme.colors.primary }]}>Tu turno</Text>
           <Text style={[styles.resumenLinea, { color: theme.colors.foreground }]}>
             {especialidades.find((e) => e.id === medico.especialidadId)?.nombre ?? medico.profesion}
           </Text>
@@ -554,17 +587,16 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
       ) : null}
 
       <PrimaryButton
-        label="Solicitar turno"
+        label={turnoAReprogramarId ? "Reprogramar turno" : "Solicitar turno"}
         onPress={confirmar}
         disabled={!puedeReservar}
         loading={reservando}
-        accessibilityLabel="Solicitar turno"
       />
 
       {/* El turno nace pendiente: lo confirma (o lo rechaza) el profesional. */}
       <BottomSheet
         visible={!!reservado}
-        titulo="Turno solicitado"
+        titulo={turnoAReprogramarId ? "Turno reprogramado" : "Turno solicitado"}
         onClose={cerrarAviso}
         pie={<PrimaryButton label="Ver mis turnos" onPress={cerrarAviso} />}
       >
@@ -583,8 +615,10 @@ export function ReservaTurno({ medicoIdInicial, sedeDelMapa, onReservado }: Rese
                 {reservado.lugar.institucion.nombre} · {reservado.lugar.sede.direccion}
               </Text>
             ) : null}
-            <Text style={[styles.pendiente, { color: theme.colors.foreground, backgroundColor: theme.colors.accent }]}>
-              Queda pendiente hasta que el profesional lo confirme. Lo ves en Próximos.
+            <Text style={[styles.pendiente, { color: theme.colors.foreground, backgroundColor: theme.colors.highlight }]}>
+              {turnoAReprogramarId
+                ? "Tu turno anterior quedó cancelado. El nuevo queda pendiente hasta que el profesional lo confirme. Lo ves en Próximos."
+                : "Queda pendiente hasta que el profesional lo confirme. Lo ves en Próximos."}
             </Text>
           </View>
         ) : null}

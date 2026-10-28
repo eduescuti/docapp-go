@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import { CalendarX2, Clock, MapPin } from "lucide-react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { CalendarClock, CalendarX2, Clock, MapPin } from "lucide-react-native";
 import { addMonths, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 
 import { Calendario, Card, EmptyState, EncabezadoTab, ScreenContainer, StatusBadge, Text } from "@/components";
@@ -13,7 +13,10 @@ import { formatFechaLarga, hoyIso } from "@/utils/format";
 /** Meses hacia atrás y hacia adelante que se pueden recorrer en el calendario. */
 const MESES_RANGO = 6;
 
-/** Agenda del profesional: calendario del mes con los días que tienen turnos y, debajo, los turnos del día elegido. */
+/**
+ * Agenda del profesional: calendario del mes con los días que tienen turnos y, debajo, los turnos del día elegido.
+ * Arriba, "Mis horarios" abre sus franjas de atención.
+ */
 export default function DoctorAgendaScreen() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -61,7 +64,20 @@ export default function DoctorAgendaScreen() {
 
   return (
     <ScreenContainer>
-      <EncabezadoTab titulo="Agenda" />
+      <EncabezadoTab
+        titulo="Agenda"
+        accion={
+          <Pressable
+            onPress={() => router.push("/(doctor)/horarios")}
+            accessibilityRole="button"
+            accessibilityLabel="Mis horarios de atención"
+            style={[styles.botonHorarios, { borderColor: theme.colors.border, backgroundColor: theme.colors.card, borderRadius: theme.radii.full }]}
+          >
+            <CalendarClock size={18} color={theme.colors.primary} />
+            <Text style={[styles.botonHorariosTexto, { color: theme.colors.primary }]}>Mis horarios</Text>
+          </Pressable>
+        }
+      />
 
       <Calendario valor={fecha} onChange={setFecha} desde={desde} hasta={hasta} diasMarcados={diasConTurnos} />
 
@@ -110,6 +126,8 @@ export default function DoctorAgendaScreen() {
 }
 
 const styles = StyleSheet.create({
+  botonHorarios: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 14, borderWidth: 1 },
+  botonHorariosTexto: { fontSize: 13, fontWeight: "700" },
   encabezadoDia: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 24, marginBottom: 12 },
   tituloDia: { flex: 1, fontSize: 17, fontWeight: "700", textTransform: "capitalize" },
   cantidad: { fontSize: 13 },

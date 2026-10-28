@@ -1,33 +1,24 @@
-import { addDays, format } from "date-fns";
-
 import { Especialidad, Medico, Receta } from "@/domain";
-import { especialidadesMock, medicosMock, recetasMock } from "@/mocks";
 import { hoyIso } from "@/utils/format";
 
-import { delay } from "./apiClient";
+import { api } from "./apiClient";
 import { agruparEnCarpetas, CarpetaAnio } from "./carpetas";
 
-// Estado en memoria: archivar cambia la receta hasta que exista backend real.
-let recetas: Receta[] = [...recetasMock];
+// Recetas contra el backend (`docs/04-api.md#recetas`). El estado (activa / pasada) se calcula con `vigenteHasta`.
 
 /** Todas las recetas del paciente, archivadas o no (historial médico). */
-export async function listRecetasPaciente(pacienteId: string): Promise<Receta[]> {
-  return delay(recetas.filter((r) => r.pacienteId === pacienteId));
+export async function listRecetasPaciente(_pacienteId: string): Promise<Receta[]> {
+  return api<Receta[]>("/api/pacientes/yo/recetas/todas");
 }
 
 /** Una receta es activa hasta su último día de consumo inclusive; después pasa a pasadas. */
 export const esRecetaActiva = (receta: Receta): boolean => receta.vigenteHasta >= hoyIso();
 
-/** Una receta con el profesional y su especialidad ya resueltos, como lo devolvería un endpoint con joins. */
+/** Una receta con el profesional y su especialidad ya resueltos, como la devuelve el endpoint con joins. */
 export interface RecetaConDetalle {
   receta: Receta;
   medico?: Medico;
   especialidad?: Especialidad;
-}
-
-function conDetalle(receta: Receta): RecetaConDetalle {
-  const medico = medicosMock.find((m) => m.id === receta.medicoId);
-  return { receta, medico, especialidad: medico ? especialidadesMock.find((e) => e.id === medico.especialidadId) : undefined };
 }
 
 export interface MisRecetas {
@@ -40,57 +31,37 @@ export interface MisRecetas {
 }
 
 /** Pestaña Recetas (Activas | Pasadas) y su Archivados, en un solo pedido. */
-export async function listMisRecetas(pacienteId: string): Promise<MisRecetas> {
-  const propias = recetas.filter((r) => r.pacienteId === pacienteId);
-  return delay({
-    activas: propias
-      .filter((r) => esRecetaActiva(r) && !r.archivadoEl)
-      .sort((a, b) => a.vigenteHasta.localeCompare(b.vigenteHasta))
-      .map(conDetalle),
-    pasadas: propias
-      .filter((r) => !esRecetaActiva(r) && !r.archivadoEl)
-      .sort((a, b) => b.vigenteHasta.localeCompare(a.vigenteHasta))
-      .map(conDetalle),
-    archivadas: agruparEnCarpetas(
-      propias.filter((r) => r.archivadoEl).map(conDetalle),
-      ({ receta }) => ({ fecha: receta.fecha, archivadoEl: receta.archivadoEl! }),
-    ),
-  });
+export async function listMisRecetas(_pacienteId: string): Promise<MisRecetas> {
+  const { activas, pasadas, archivadas } = await api<{ activas: RecetaConDetalle[]; pasadas: RecetaConDetalle[]; archivadas: RecetaConDetalle[] }>(
+    "/api/pacientes/yo/recetas",
+  );
+  return {
+    activas,
+    pasadas,
+    archivadas: agruparEnCarpetas(archivadas, ({ receta }) => ({ fecha: receta.fecha, archivadoEl: receta.archivadoEl ?? receta.fecha })),
+  };
 }
+
+const archivar = (recetaId: string, archivada: boolean) =>
+  api<Receta>(`/api/recetas/${encodeURIComponent(recetaId)}`, { metodo: "PATCH", cuerpo: { archivada } });
 
 /** Pasa la receta a Archivados, en la carpeta del día de hoy (año → mes). Solo se pueden archivar las pasadas. */
 export async function archivarReceta(recetaId: string): Promise<Receta> {
-  const receta = recetas.find((r) => r.id === recetaId);
-  if (!receta) throw new Error("Receta no encontrada");
-
-  // ✅ Usar la fecha de vigencia/emisión de la receta para que coincida con su mes real
-  const fechaCarpeta = receta.vigenteHasta ?? receta.fecha;
-
-  const actualizada = {
-    ...receta,
-    archivadoEl: fechaCarpeta, // o new Date().toISOString() si guardás cuándo se archivó, pero agrupando por receta.vigenteHasta
-  };
-
-  // Guardar en el array de recetas en memoria
-  recetas = recetas.map((r) => (r.id === recetaId ? actualizada : r));
-  return delay(actualizada);
+  return archivar(recetaId, true);
 }
 
 /** La devuelve a Pasadas. */
 export async function desarchivarReceta(recetaId: string): Promise<Receta> {
-  const receta = recetas.find((r) => r.id === recetaId);
-  if (!receta) throw new Error("Receta no encontrada");
-  const desarchivada = { ...receta, archivadoEl: undefined };
-  recetas = recetas.map((r) => (r.id === recetaId ? desarchivada : r));
-  return delay(desarchivada);
+  return archivar(recetaId, false);
 }
 
-/** Recetas que un profesional le emitió a un paciente (regla #7: siempre asociadas a quien las emitió). */
-export async function listRecetasEmitidas(medicoId: string, pacienteId: string): Promise<Receta[]> {
-  return delay(recetas.filter((r) => r.medicoId === medicoId && r.pacienteId === pacienteId));
+/** Recetas que el profesional de la sesión le emitió a un paciente (regla #7: siempre asociadas a quien las emitió). */
+export async function listRecetasEmitidas(_medicoId: string, pacienteId: string): Promise<Receta[]> {
+  return api<Receta[]>(`/api/medicos/yo/pacientes/${encodeURIComponent(pacienteId)}/recetas`);
 }
 
 export interface DatosNuevaReceta {
+  /** Lo pone el backend con el profesional de la sesión; se mantiene por compatibilidad. */
   medicoId: string;
   pacienteId: string;
   /** Nombre del medicamento ("Amoxicilina 500mg"). */
@@ -105,29 +76,23 @@ export interface DatosNuevaReceta {
 
 /**
  * El profesional le asigna una receta al paciente, con la fecha de hoy. Es activa hasta la fecha de emisión
- * más la duración del tratamiento (`vigenteHasta`); después pasa a Pasadas.
+ * más la duración del tratamiento (`vigenteHasta`); después pasa a Pasadas. El paciente recibe un aviso.
  */
-export async function crearReceta(datos: DatosNuevaReceta): Promise<Receta> {
-  const medicacion = datos.medicacion.trim();
-  if (!medicacion) throw new Error("Indicá el medicamento.");
+export async function crearReceta({ medicoId: _medicoId, ...datos }: DatosNuevaReceta): Promise<Receta> {
+  if (!datos.medicacion.trim()) throw new Error("Indicá el medicamento.");
   if (!datos.dosis.trim()) throw new Error("Indicá la dosis.");
   if (!datos.frecuencia.trim()) throw new Error("Indicá cómo tomarla.");
   if (!Number.isInteger(datos.duracionDias) || datos.duracionDias < 1 || datos.duracionDias > 365) {
     throw new Error("La duración tiene que ser de 1 a 365 días.");
   }
-  const hoy = new Date();
-  const receta: Receta = {
-    id: `receta-${hoy.getTime()}`,
-    medicoId: datos.medicoId,
-    pacienteId: datos.pacienteId,
-    fecha: format(hoy, "yyyy-MM-dd"),
-    medicacion,
-    dosis: datos.dosis.trim(),
-    frecuencia: datos.frecuencia.trim(),
-    duracion: `${datos.duracionDias} ${datos.duracionDias === 1 ? "día" : "días"}`,
-    vigenteHasta: format(addDays(hoy, datos.duracionDias), "yyyy-MM-dd"),
-    indicaciones: datos.indicaciones.trim() || undefined,
-  };
-  recetas = [...recetas, receta];
-  return delay(receta);
+  return api<Receta>("/api/recetas", {
+    metodo: "POST",
+    cuerpo: {
+      ...datos,
+      medicacion: datos.medicacion.trim(),
+      dosis: datos.dosis.trim(),
+      frecuencia: datos.frecuencia.trim(),
+      indicaciones: datos.indicaciones.trim() || undefined,
+    },
+  });
 }

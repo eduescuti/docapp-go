@@ -6,7 +6,9 @@ import * as LocalAuthentication from "expo-local-authentication";
 
 import { Card, PasswordField, PrimaryButton, ScreenContainer, Text, TextField } from "@/components";
 import { useAuth } from "@/hooks/useAuth";
+import { hayTokenGuardado } from "@/services";
 import { useTheme } from "@/theme";
+import { sinTeclado } from "@/utils/teclado";
 import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
@@ -33,7 +35,7 @@ export default function LoginScreen() {
   const coincideDni = dni.trim().length > 0 && dni.trim() === dniGuardado;
   const huellaValidaParaEsteUsuario = biometriaHabilitada && coincideDni;
 
-  // Revisa si el usuario activó la huella en Seguridad cada vez que la pantalla vuelve al foco
+  // Revisa si la huella está activa (y quedó una sesión guardada que desbloquear) cada vez que la pantalla vuelve al foco
   useFocusEffect(
     useCallback(() => {
       chequearBiometria();
@@ -42,9 +44,13 @@ export default function LoginScreen() {
 
   const chequearBiometria = async () => {
     try {
-      const habilitada = await estaBiometriaHabilitada();
-      const sesion = await obtenerDatosSesionBiometrica();
-      if (habilitada && sesion.dni) {
+      // La huella no reemplaza a la contraseña: desbloquea el token que quedó guardado en el teléfono.
+      const [habilitada, sesion, conToken] = await Promise.all([
+        estaBiometriaHabilitada(),
+        obtenerDatosSesionBiometrica(),
+        hayTokenGuardado(),
+      ]);
+      if (habilitada && sesion.dni && conToken) {
         setBiometriaHabilitada(true);
         setDniGuardado(sesion.dni);
         setDni(sesion.dni);
@@ -152,13 +158,15 @@ export default function LoginScreen() {
       return;
     }
 
-    // 5. Ingreso directo: el sensor ya certificó la identidad para el DNI ingresado
+    // 5. La huella desbloquea la sesión guardada; el backend confirma que el token sigue valiendo.
     try {
       setCargando(true);
-      await loginBiometrico(dniIngresado);
+      await loginBiometrico();
       router.replace("/");
     } catch (errLogin) {
+      // Si venció (90 días sin usar la app, o se cambió la contraseña), se entra con la contraseña.
       setError(errLogin instanceof Error ? errLogin.message : "Error al iniciar sesión.");
+      chequearBiometria();
     } finally {
       setCargando(false);
     }
@@ -255,7 +263,7 @@ export default function LoginScreen() {
         </Card>
 
         <Pressable
-          onPress={() => router.push("/(auth)/registro")}
+          onPress={() => sinTeclado(() => router.push("/(auth)/registro"))}
           accessibilityRole="button"
           accessibilityLabel="Crear una cuenta"
           style={styles.registroLink}

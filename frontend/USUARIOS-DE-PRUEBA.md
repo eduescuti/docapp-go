@@ -1,129 +1,133 @@
 # Usuarios de prueba
 
-Datos para probar el **inicio de sesión (SignIn)** y el **registro (SignUp)** mientras la app
-funciona con el "backend de ejemplo" en memoria (todavía no hay base de datos).
+Cuentas y datos para probar la app contra el backend (`DocApp Go (backend)/backend`). Las cuentas, el padrón y
+los datos de ejemplo los carga el **seed** del backend: `npm run db:seed` borra la base y la vuelve a dejar como
+está descripto acá (útil si una prueba la desordenó).
 
-Todas las rutas de este documento son **relativas a la carpeta `frontend/`**.
+Las rutas de este documento son **relativas a la carpeta `frontend/`**, salvo que digan `backend/`.
 
-> **Todo vive en memoria.** Lo que se cambia durante la prueba dura hasta que se recarga la
-> app: contraseñas, obra social del perfil, feedback, notificaciones leídas, favoritos
-> quitados, preferencia de tema, notas del profesional y las obras sociales o instituciones
-> que cargue el admin. Al recargar vuelven los valores de estos archivos.
+> **Todo se guarda en la base** (desde el 28/10/2026). Lo único que queda en el teléfono es el aviso "Nuevo" de
+> los resultados, el tema claro / oscuro y la huella. Para volver a los datos de este documento, corré el seed.
 
 ---
 
-## 1. Inicio de sesión (SignIn)
+## 1. Inicio de sesión
 
 Se ingresa con **DNI + contraseña**. El rol lo define la cuenta, no se elige en pantalla.
 
 | Rol | DNI | Contraseña | Entra como |
 |---|---|---|---|
-| Administrador | `admin` | `Admin123$` | Panel de administración |
+| Administrador | `admin` | `Admin123$` | Panel de administración (única cuenta admin) |
 | Paciente | `12345678` | `Paciente123$` | Sofía Martínez (OSDE 210) |
+| Paciente | `38456123` | `Paciente123$` | Lucas Gómez (Swiss Medical SMG20) |
+| Paciente | `41789654` | `Paciente123$` | Martina López (OSDE 210) |
+| Paciente | `29654987` | `Paciente123$` | Diego Herrera (Galeno Oro) |
+| Paciente | `33123456` | `Paciente123$` | Ana Benítez (Medifé Plan 3000) |
+| Paciente | `44987321` | `Paciente123$` | Tomás Romero (OSDE 210) |
 | Profesional | `42300300` | `Medico123$` | Valeria Sosa (Enfermero, Mat. 132043) |
+| Profesional | `30000001` … `30000009` | `Medico123$` | Méndez, Ruiz, Castro, Fernández, López, Giménez, Paz, Vega y Herrera, en ese orden (DNI ficticios) |
 
 - El DNI acepta puntos o espacios (`42.300.300` funciona igual).
-- Solo la cuenta `admin` / `Admin123$` abre el modo administrador.
-- Si el DNI o la contraseña no coinciden, el mensaje es siempre "DNI o contraseña incorrectos."
-  (no revela cuál de los dos falló).
+- Si el DNI o la contraseña no coinciden, el mensaje es siempre "DNI o contraseña incorrectos." (no revela cuál
+  de los dos falló). Con 5 fallos seguidos del mismo DNI en 15 minutos se bloquea un rato.
+- **La sesión queda iniciada** en el celular hasta que se cierra sesión o pasan 90 días sin usar la app. En web
+  (navegador) dura mientras no se recargue la página.
+- Las cuentas están en `backend/prisma/datos/demo.json` (contraseñas en `backend/src/seed.ts`); en la base solo
+  queda el hash de la contraseña.
 
-### Dónde se modifican
+### Qué ve cada uno según su cobertura (reglas 15 y 18)
 
-| Qué | Archivo |
-|---|---|
-| Cuentas (DNI, contraseña, rol) | [`src/mocks/usuarios.ts`](src/mocks/usuarios.ts) → `usuariosMock` |
-| Datos del paciente vinculado (`pacienteId`) | [`src/mocks/pacientes.ts`](src/mocks/pacientes.ts) → `pacientesMock` |
-| Datos del profesional vinculado (`medicoId`) | [`src/mocks/medicos.ts`](src/mocks/medicos.ts) → `medicosMock` |
-| Lógica de validación del login | [`src/services/authService.ts`](src/services/authService.ts) → `iniciarSesion()` |
+Un paciente ve los establecimientos **públicos** y los privados que aceptan **su obra social y plan**, y los
+turnos de profesionales que atienden su cobertura en esos lugares. Con el seed de coberturas, además de los
+públicos:
 
-**Para agregar una cuenta nueva:** sumá una entrada en `usuariosMock`.
-- Si es `rol: "paciente"`, su `pacienteId` tiene que existir en `pacientesMock`.
-- Si es `rol: "doctor"`, su `medicoId` tiene que existir en `medicosMock`.
-- Si el id no existe, el login la rechaza.
+| Plan | Ve | No ve |
+|---|---|---|
+| OSDE 210 (Sofía) | Británico, Güemes, Otamendi, Finochietto, Anchorena, Los Arcos, Suizo Argentina | Alemán (solo OSDE Binario), Italiano (OSDE 310 en adelante) |
+| Swiss Medical SMG20 | Alemán, Británico, Finochietto, Anchorena, Los Arcos, Suizo Argentina | Italiano y Otamendi (planes altos) |
+| Galeno Oro | Alemán, Británico, Güemes, Finochietto, Anchorena, Los Arcos, Suizo Argentina | Italiano, Otamendi |
+| Medifé Plan 3000 | Alemán | Italiano (Plata 460 en adelante) y el resto |
 
-Las contraseñas de estas cuentas no pasan por las reglas de seguridad del registro (el login
-solo compara). Igual conviene que las cumplan, como las de la tabla.
+Para ver el caso "sin hospitales privados", cambiá la obra social en Menú → Mi perfil por una sin coberturas
+cargadas (p. ej. OSECAC).
+
+Valeria Sosa atiende OSDE, Swiss Medical, Galeno y Medifé, en el Hospital Italiano (lunes y miércoles) y el
+CESAC Nº 33 (martes a viernes). Con Sofía (OSDE 210) sus turnos del Italiano no aparecen: el Italiano no acepta
+ese plan.
 
 ---
 
-## 2. Registro de profesional (SignUp)
+## 2. Verificación del DNI (los dos registros)
 
-El registro busca la combinación **DNI + matrícula + profesión** en el padrón mockeado (simula
-el Buscador Nacional de Profesionales de la Salud). Si existe, la matrícula está habilitada y
-el DNI todavía no tiene cuenta, el flujo pasa por los 3 pasos: datos → "¿Esta es tu
-información?" → "Crear cuenta".
+Desde el 28/10/2026 los dos registros empiezan escaneando con la cámara el **código de barras (PDF417) del frente
+del DNI**. Para probar sin un DNI real, abrí **[`dni-de-prueba.html`](dni-de-prueba.html)** en la computadora (doble
+clic, se abre en el navegador) y escaneá el código con la app en el celular. Son datos **ficticios** con el mismo
+formato que el DNI:
+
+| Código | DNI | Para |
+|---|---|---|
+| Lucía García | `40111222` | Registro de paciente |
+| Nicolás Romero | `40111333` | Registro de paciente |
+| Juan Fernández · Martín Acosta · Paula Ríos · Federico Luna | `40123456` · `30111222` · `35222333` · `36555777` | Registro de profesional (coinciden con las fichas de la tabla de abajo) |
+
+- Cada DNI abre **una sola cuenta**: para volver a usarlo, corré el seed.
+- En web también anda con la cámara de la computadora (el navegador pide permiso), aunque leer un PDF417 con una
+  webcam cuesta más: el celular es más cómodo.
+- Lo que se guarda y lo que no: `DocApp Go (backend)/docs/06-reglas-de-negocio.md#verificación-de-identidad-del-registro`.
+
+## 3. Registro de profesional
+
+El registro busca la terna **DNI + matrícula + profesión** primero en la copia del padrón que tiene la base y,
+si no está, en el buscador nacional REFEPS en línea. Si la matrícula está habilitada y el DNI no tiene cuenta, el
+flujo pasa por los 3 pasos: escanear el DNI + datos (más género y especialidad) → "¿Esta es tu información?" →
+"Crear cuenta". El DNI no se escribe: sale del código escaneado, y tiene que ser de la misma persona que la ficha. La
+especialidad se elige entre las de su profesión (médicas: Res. 1814/2015; enfermería: Res. 199/2011), con
+buscador. Al
+crearla entra directo; después carga en su Perfil **dónde atiende** y **qué coberturas acepta**, y en Agenda →
+Mis horarios **sus horarios**.
 
 Usá cualquier contraseña que cumpla los requisitos, por ejemplo `Segura#2026`.
 
 | DNI | Matrícula | Profesión | Profesional | Resultado esperado |
 |---|---|---|---|---|
-| **`40123456`** | **`154321`** | **Kinesiólogo** | Juan Fernández | **Ficha de demo** (son los placeholders del formulario): llega al último paso |
-| `30111222` | `145872` | Médico | Martín Acosta | Llega al último paso |
-| `35222333` | `128904` | Enfermero | Paula Ríos | Llega al último paso |
-| `36555777` | `117650` | Kinesiólogo | Federico Luna | Llega al último paso |
+| **`40123456`** | **`154321`** | **Kinesiólogo** | Juan Fernández | **Ficha de demo** (son los placeholders del formulario): crea la cuenta |
+| `30111222` | `145872` | Médico | Martín Acosta | Crea la cuenta |
+| `35222333` | `128904` | Enfermero | Paula Ríos | Crea la cuenta |
+| `36555777` | `117650` | Kinesiólogo | Federico Luna | Crea la cuenta |
 | `28444555` | `109331` | Médico | Jorge Pereyra | ❌ Rechazado: matrícula suspendida |
 | `42300300` | `132043` | Enfermero | Valeria Sosa | ❌ Rechazado: ya tiene cuenta |
 
-Otros casos de error para probar:
-- Una profesión que no coincide con la del padrón (ej. `30111222` + `145872` + Enfermero).
-- Una contraseña débil (ej. `kine123`): no deja avanzar.
+> Las matrículas de las fichas de prueba son ficticias, pero en el REFES real pertenecen a otras personas: por
+> eso el backend mira primero su copia del padrón. Un profesional real que no esté en la copia se verifica en
+> línea.
 
-En el último paso, el botón **"Crear cuenta" está deshabilitado** hasta que exista la base de
-datos.
+Para repetir una prueba con la misma ficha, volvé a correr el seed (la cuenta creada se borra).
 
-### Dónde se modifican
-
-| Qué | Archivo |
-|---|---|
-| Fichas del padrón | [`src/mocks/padronProfesionales.ts`](src/mocks/padronProfesionales.ts) → `padronProfesionalesMock` |
-| Ficha de demo (placeholders del formulario) | [`src/mocks/padronProfesionales.ts`](src/mocks/padronProfesionales.ts) → `DNI_DEMO_REGISTRO` |
-| Habilitar el botón "Crear cuenta" | [`src/services/authService.ts`](src/services/authService.ts) → `REGISTRO_HABILITADO` |
-| Lógica de verificación contra el padrón | [`src/services/authService.ts`](src/services/authService.ts) → `verificarProfesional()` |
-
-- Las profesiones del selector salen solas de las fichas del padrón. Si agregás una ficha con
-  una profesión nueva, aparece en la lista.
-- Para que una ficha **llegue al último paso** necesita `activo: true`, un `estadoMatricula`
-  que empiece con "Habilitada" y un DNI que no esté en `usuariosMock`.
-- Para cambiar la ficha de demo, cambiá `DNI_DEMO_REGISTRO` por el DNI de otra ficha del padrón.
-
-> El padrón (`padronProfesionales.ts`) y el catálogo de profesionales (`medicos.ts`) son cosas
-> distintas. El padrón es contra lo que se **verifica** el registro. `medicos.ts` son los
-> profesionales **ya activos** en la app (los que ven los pacientes). El registro nunca lee
-> `medicos.ts`.
+Las fichas del padrón están en `backend/prisma/datos/demo.json` (`padron`).
 
 ---
 
-## 3. Registro de paciente (SignUp)
+## 4. Registro de paciente
 
-Pide nombre, apellido, DNI, obra social y contraseña. Valida todo y muestra "¡Cuenta creada!",
-pero **no guarda la cuenta** (no hay base de datos).
+Primero escanea el DNI (sección 2): nombre, apellido y DNI salen de ahí y no se escriben. Después pide obra social,
+plan (solo si la obra social tiene más de uno) y contraseña. Crea la cuenta y entra directo.
 
 | Campo | Ejemplo válido |
 |---|---|
-| Nombre / Apellido | cualquiera |
-| DNI | 7 u 8 dígitos que no estén en uso, ej. `40111222` |
-| Obra social | cualquiera de la lista |
+| DNI | Lucía García o Nicolás Romero de `dni-de-prueba.html` |
+| Obra social y plan | cualquiera de la lista (26 obras sociales) |
 | Contraseña | ej. `Segura#2026` |
 
-DNI que se **rechazan** por estar en uso: los de `usuariosMock` y los de los pacientes ya
-cargados (`12345678`, `38456123`, `41789654`, `29654987`, `33123456`, `44987321`).
-
-### Dónde se modifican
-
-| Qué | Archivo |
-|---|---|
-| Obras sociales del selector | [`src/mocks/planesMedicos.ts`](src/mocks/planesMedicos.ts) → `planesMedicosMock` |
-| Pacientes existentes (DNI en uso) | [`src/mocks/pacientes.ts`](src/mocks/pacientes.ts) → `pacientesMock` |
-| Lógica del registro | [`src/services/authService.ts`](src/services/authService.ts) → `registrarPaciente()` |
+Los DNI de la tabla de la sección 1 ya están en uso.
 
 ---
 
-## 4. Reglas de contraseña (registro y cambio de contraseña)
+## 5. Reglas de contraseña (registro y cambio de contraseña)
 
 - Al menos **8 caracteres**
 - Al menos **una mayúscula**
 - Al menos **un número**
 - Al menos **un carácter especial** (`!@#$%...`)
 
-Se definen en [`src/utils/validation.ts`](src/utils/validation.ts) (`PASSWORD_MIN_LENGTH` y
-`evaluarPassword()`).
+Las valida la app al escribir ([`src/utils/validation.ts`](src/utils/validation.ts)) y **también el backend**
+(`backend/src/validacion.ts`): lo que valida la app se puede saltear llamando a la API directo.

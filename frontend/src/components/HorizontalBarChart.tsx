@@ -11,14 +11,17 @@ export interface BarDatum {
 interface HorizontalBarChartProps {
   data: BarDatum[];
   unidad?: string;
+  /** Color de las barras (por defecto `primary`). Cada gráfico de una pantalla lleva el suyo. */
+  color?: string;
 }
 
 /**
  * Gráfico de barras horizontal hecho con `View` (sin librería extra, para no sumar
  * dependencias con versiones congeladas — CLAUDE.md §2).
  */
-export function HorizontalBarChart({ data, unidad = "" }: HorizontalBarChartProps) {
+export function HorizontalBarChart({ data, unidad = "", color }: HorizontalBarChartProps) {
   const { theme } = useTheme();
+  const tono = color ?? theme.colors.primary;
   const max = Math.max(1, ...data.map((d) => d.value));
 
   return (
@@ -34,15 +37,16 @@ export function HorizontalBarChart({ data, unidad = "" }: HorizontalBarChartProp
             <Text style={[styles.label, { color: theme.colors.foreground }]} numberOfLines={1}>
               {d.label}
             </Text>
-            <Text style={[styles.value, { color: theme.colors.mutedForeground }]}>{d.value}</Text>
+            <Text style={[styles.value, { color: tono }]}>{d.value}</Text>
           </View>
-          <View style={[styles.track, { backgroundColor: theme.colors.muted, borderRadius: theme.radii.sm }]}>
+          {/* La pista es el mismo color, muy suave (alfa 1F), para que cada gráfico se lea de un solo tono. */}
+          <View style={[styles.track, { backgroundColor: `${tono}1F`, borderRadius: theme.radii.sm }]}>
             <View
               style={[
                 styles.bar,
                 {
                   width: `${(d.value / max) * 100}%`,
-                  backgroundColor: theme.colors.primary,
+                  backgroundColor: tono,
                   borderRadius: theme.radii.sm,
                 },
               ]}
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
   row: { gap: 6 },
   labelRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
   label: { fontSize: 13, fontWeight: "500", flex: 1 },
-  value: { fontSize: 13, fontWeight: "600" },
+  value: { fontSize: 13, fontWeight: "700" },
   track: { height: 12, overflow: "hidden" },
   bar: { height: "100%", minWidth: 2 },
 });

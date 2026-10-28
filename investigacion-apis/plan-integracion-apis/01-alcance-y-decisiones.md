@@ -64,6 +64,10 @@ tocar código.
 | D5 | ✅ 09/10/2026 | **No se agrupa nada:** cada establecimiento del REFES es una institución con una sede, es decir, una dirección. Así el paciente ve en el mapa a dónde tiene que ir exactamente |
 | D6 | ✅ 09/10/2026 | La atribución del REFES va **solo en Menú → Ayuda**, no en el mapa |
 
+> **27/10/2026:** D2 y la Fase 3 se redefinieron. La cobertura pasa a ser obra social + planes opcionales,
+> el catálogo crece a 29 obras sociales y el seed son 9 instituciones verificadas contra sus webs (no 10–15
+> por cobertura). Ver `DocApp Go (backend)/docs/08-coberturas.md`.
+
 ## 5. Riesgos
 
 | Riesgo | Mitigación |

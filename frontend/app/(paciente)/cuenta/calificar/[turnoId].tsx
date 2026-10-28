@@ -1,14 +1,15 @@
 import { useCallback, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { BackHeader, Card, PrimaryButton, ScreenContainer, StarRating, Text, TextField } from "@/components";
 import { Feedback, Medico, Turno } from "@/domain";
 import { crearFeedback, getMedico, getPacienteActual, getTurnoParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
+import { dejarAviso } from "@/utils/avisoAlVolver";
 import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
-type Criterio = keyof Feedback["criterios"];
+type Criterio = keyof Required<Feedback["criterios"]>;
 type Puntaje = 1 | 2 | 3 | 4 | 5;
 
 const CRITERIOS: { key: Criterio; label: string }[] = [
@@ -27,7 +28,10 @@ const SIN_PUNTAJE: Record<Criterio, number> = {
   experienciaGeneral: 0,
 };
 
-/** Formulario de calificación de un turno cumplido: estrellas generales, criterios y comentario opcional. */
+/**
+ * Formulario de calificación de un turno cumplido. Alcanza con "¿Cómo fue tu consulta?" para enviar; los
+ * criterios y el comentario son opcionales (decidido el 28/10/2026).
+ */
 export default function CalificarScreen() {
   const { turnoId } = useLocalSearchParams<{ turnoId: string }>();
   const { theme } = useTheme();
@@ -58,7 +62,7 @@ export default function CalificarScreen() {
     }, [turnoId]),
   );
 
-  const completo = estrellas > 0 && Object.values(criterios).every((v) => v > 0);
+  const completo = estrellas > 0;
 
   const enviar = async () => {
     if (!pacienteId || !completo) return;
@@ -70,7 +74,8 @@ export default function CalificarScreen() {
         criterios,
         comentario,
       });
-      Alert.alert("¡Gracias!", "Tu opinión fue enviada.", [{ text: "Listo", onPress: () => router.back() }]);
+      dejarAviso("¡Gracias! Tu opinión fue enviada.");
+      router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo enviar tu opinión.");
     } finally {
@@ -108,7 +113,8 @@ export default function CalificarScreen() {
           <StarRating value={estrellas} onChange={setEstrellas} size={32} label="Calificación general" />
         </View>
 
-        <Card style={{ marginVertical: 20 }}>
+        <Text style={[styles.opcional, { color: theme.colors.mutedForeground }]}>Si querés, contanos más (opcional)</Text>
+        <Card style={{ marginBottom: 20 }}>
           {CRITERIOS.map((c, i) => (
             <View key={c.key} style={[styles.criterio, i > 0 && { borderTopWidth: 1, borderTopColor: theme.colors.border }]}>
               <Text style={[styles.criterioLabel, { color: theme.colors.foreground }]}>{c.label}</Text>
@@ -133,7 +139,7 @@ export default function CalificarScreen() {
         {error ? <Text style={{ color: theme.colors.danger, marginBottom: 12 }}>{error}</Text> : null}
         <PrimaryButton label="Enviar opinión" onPress={enviar} disabled={!completo} loading={enviando} />
         {!completo && (
-          <Text style={[styles.ayuda, { color: theme.colors.mutedForeground }]}>Calificá la consulta y cada criterio para enviar.</Text>
+          <Text style={[styles.ayuda, { color: theme.colors.mutedForeground }]}>Tocá las estrellas de “¿Cómo fue tu consulta?” para enviar.</Text>
         )}
       </ScreenContainer>
     </KeyboardAvoidingView>
@@ -145,6 +151,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, marginTop: 2 },
   pregunta: { fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 8 },
   centrado: { alignItems: "center" },
+  opcional: { fontSize: 13, fontWeight: "600", marginTop: 24, marginBottom: 8 },
   criterio: { paddingVertical: 4 },
   criterioLabel: { fontSize: 13, fontWeight: "600", marginTop: 6 },
   ayuda: { fontSize: 12, textAlign: "center", marginTop: 10 },

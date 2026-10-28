@@ -1,25 +1,18 @@
 import { Notificacion } from "@/domain";
-import { notificacionesMock } from "@/mocks";
 
-import { delay } from "./apiClient";
+import { api } from "./apiClient";
 
-// Estado en memoria: permite marcar notificaciones como leídas durante la sesión.
-let notificaciones: Notificacion[] = notificacionesMock.map((n) => ({ ...n }));
+// Las genera el backend cuando pasa algo (turno confirmado o rechazado, nueva orden o receta, resultado listo).
 
-export async function listNotificacionesPaciente(pacienteId: string): Promise<Notificacion[]> {
-  return delay(
-    notificaciones
-      .filter((n) => n.pacienteId === pacienteId)
-      .sort((a, b) => b.fecha.localeCompare(a.fecha)),
-  );
+/** Las del paciente de la sesión, de la más nueva a la más vieja. */
+export async function listNotificacionesPaciente(_pacienteId: string): Promise<Notificacion[]> {
+  return api<Notificacion[]>("/api/notificaciones");
 }
 
 export async function marcarNotificacionLeida(notificacionId: string): Promise<void> {
-  notificaciones = notificaciones.map((n) => (n.id === notificacionId ? { ...n, leida: true } : n));
-  return delay(undefined, 100);
+  await api<void>(`/api/notificaciones/${encodeURIComponent(notificacionId)}`, { metodo: "PATCH", cuerpo: { leida: true } });
 }
 
-export async function marcarTodasLeidas(pacienteId: string): Promise<void> {
-  notificaciones = notificaciones.map((n) => (n.pacienteId === pacienteId ? { ...n, leida: true } : n));
-  return delay(undefined, 100);
+export async function marcarTodasLeidas(_pacienteId: string): Promise<void> {
+  await api<void>("/api/notificaciones", { metodo: "PATCH", cuerpo: { leida: true } });
 }

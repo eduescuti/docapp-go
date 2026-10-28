@@ -169,6 +169,10 @@ cobertura correcto) y todas las pantallas que muestran una sede siguen funcionan
 
 ## Fase 3 — Coberturas y relación cobertura ↔ sede
 
+> ⚠️ **Redefinida el 27/10/2026** (no se había hecho). El relevamiento ya está hecho y verificado, pero con
+> otro modelo: obra social + planes opcionales en lugar de `planesAceptadosIds`. La tabla de abajo queda
+> como historia; lo vigente está en `DocApp Go (backend)/docs/08-coberturas.md`.
+
 **Objetivo:** que cambiar de obra social cambie el mapa.
 
 | Tarea | Detalle |

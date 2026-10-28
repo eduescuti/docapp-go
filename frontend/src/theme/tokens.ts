@@ -12,6 +12,11 @@ export interface ThemeColors {
   border: string;
   accent: string;
   accentForeground: string;
+  /**
+   * Fondo suave de lo elegido o destacado, con texto común encima (`foreground`, `mutedForeground`, `primary`).
+   * No es `accent`: en el modo oscuro `accent` es verde lleno y encima solo va `accentForeground`.
+   */
+  highlight: string;
   success: string;
   successForeground: string;
   danger: string;
@@ -64,12 +69,16 @@ export interface ThemeMapa {
   laboratorio: string;
 }
 
+/** Un color por gráfico (Métricas del admin), para distinguir un gráfico de otro. */
+export type ThemeGraficos = [string, string, string];
+
 export interface Theme {
   id: ThemeId;
   name: string;
   isDark: boolean;
   colors: ThemeColors;
   mapa: ThemeMapa;
+  graficos: ThemeGraficos;
   radii: ThemeRadii;
   fonts: ThemeFonts;
   shadow: ThemeShadow;
@@ -92,6 +101,7 @@ const themeA: Theme = {
     border: "#E2E8F0",
     accent: "#E0F2FE",
     accentForeground: "#0284C7",
+    highlight: "#E0F2FE",
     success: "#22C55E",
     successForeground: "#FFFFFF",
     danger: "#EF4444",
@@ -116,6 +126,7 @@ const themeA: Theme = {
     centroMedico: "#0D9488",
     laboratorio: "#9333EA",
   },
+  graficos: ["#0284C7", "#0D9488", "#D97706"],
   radii: { sm: 8, md: 12, lg: 16, full: 9999 },
   fonts: { heading: "Inter_600SemiBold", body: "Inter_400Regular" },
   shadow: {
@@ -144,6 +155,7 @@ const themeB: Theme = {
     border: "#FED7AA",
     accent: "#FFEDD5",
     accentForeground: "#EA580C",
+    highlight: "#FFEDD5",
     success: "#10B981",
     successForeground: "#FFFFFF",
     danger: "#DC2626",
@@ -168,6 +180,7 @@ const themeB: Theme = {
     centroMedico: "#0D9488",
     laboratorio: "#9333EA",
   },
+  graficos: ["#EA580C", "#0D9488", "#7C3AED"],
   radii: { sm: 8, md: 16, lg: 24, full: 9999 },
   fonts: { heading: "Nunito_700Bold", body: "Nunito_400Regular" },
   shadow: {
@@ -196,6 +209,7 @@ const themeC: Theme = {
     border: "#334155",
     accent: "#10B981",
     accentForeground: "#020617",
+    highlight: "#022C22",
     success: "#10B981",
     successForeground: "#020617",
     danger: "#F87171",
@@ -220,6 +234,7 @@ const themeC: Theme = {
     centroMedico: "#10B981",
     laboratorio: "#C084FC",
   },
+  graficos: ["#38BDF8", "#10B981", "#FBBF24"],
   radii: { sm: 8, md: 12, lg: 16, full: 9999 },
   fonts: { heading: "PlayfairDisplay_600SemiBold", body: "PlusJakartaSans_400Regular" },
   shadow: {

@@ -5,14 +5,15 @@ import { Calendar } from "lucide-react-native";
 
 import { BackHeader, Card, PrimaryButton, ScreenContainer, SelectField, SelectOption, Text, TextField } from "@/components";
 import { Medico, Paciente } from "@/domain";
-import { crearOrden, getMedicoActual, getPaciente, LugarDeAtencion, listLugaresDeAtencion } from "@/services";
+import { aceptaCobertura, crearOrden, getMedicoActual, getPaciente, getPlanMedico, LugarDeAtencion, listLugaresDeAtencion } from "@/services";
 import { useTheme } from "@/theme";
 import { dejarAviso } from "@/utils/avisoAlVolver";
 import { formatFechaLarga, hoyIso } from "@/utils/format";
 
 /**
  * El profesional le asigna una orden médica al paciente: qué estudios, con qué indicaciones y dónde hacerlos
- * (uno de sus lugares de atención). La fecha es la de hoy. El paciente la ve en Estudios › Órdenes.
+ * (uno de sus lugares de atención que le aparezca al paciente: público o que acepte su cobertura, regla 18). La
+ * fecha es la de hoy. El paciente la ve en Estudios › Órdenes.
  */
 export default function NuevaOrdenScreen() {
   const { pacienteId } = useLocalSearchParams<{ pacienteId: string }>();
@@ -37,12 +38,14 @@ export default function NuevaOrdenScreen() {
       (async () => {
         const m = await getMedicoActual();
         const [p, l] = await Promise.all([getPaciente(pacienteId), listLugaresDeAtencion(m.sedesIds)]);
+        const plan = p ? await getPlanMedico(p.planMedicoId) : undefined;
+        const delPaciente = plan ? l.filter((x) => aceptaCobertura(x.institucion, plan)) : [];
         setMedico(m);
         setPaciente(p ?? null);
-        setLugares(l);
-        // Si atiende en un solo lugar, queda elegido.
-        const instituciones = new Set(l.map((x) => x.institucion.id));
-        setInstitucionId(instituciones.size === 1 ? l[0].institucion.id : null);
+        setLugares(delPaciente);
+        // Si queda un solo lugar, queda elegido.
+        const instituciones = new Set(delPaciente.map((x) => x.institucion.id));
+        setInstitucionId(instituciones.size === 1 ? delPaciente[0].institucion.id : null);
       })();
     }, [pacienteId]),
   );
@@ -109,7 +112,7 @@ export default function NuevaOrdenScreen() {
         />
         <SelectField
           label="Dónde hacerlos"
-          placeholder={opciones.length === 0 ? "No tenés lugares de atención" : "Elegí el hospital"}
+          placeholder={opciones.length === 0 ? "Ninguno de tus lugares atiende su cobertura" : "Elegí el hospital"}
           options={opciones}
           value={institucionId}
           onChange={setInstitucionId}

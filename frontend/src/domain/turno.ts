@@ -5,11 +5,13 @@
  * - `rechazado`: el profesional no lo aceptó, o llegó la fecha sin que lo confirmara. No ocupa el horario.
  * - `cancelado`: lo canceló el paciente. No ocupa el horario.
  * - `completado`: pasó la fecha de un turno confirmado (el paciente asistió).
- * - `reprogramado`: se movió a otra fecha (todavía sin flujo que lo genere).
+ *
+ * No hay estado "reprogramado": reprogramar cancela el turno y reserva uno nuevo, que nace `pendiente` y
+ * guarda de cuál viene (`reprogramadoDesdeId`).
  *
  * Al pasar la fecha, un turno confirmado pasa solo a `completado` y uno pendiente a `rechazado`.
  */
-export type EstadoTurno = "confirmado" | "pendiente" | "cancelado" | "reprogramado" | "completado" | "rechazado";
+export type EstadoTurno = "confirmado" | "pendiente" | "cancelado" | "completado" | "rechazado";
 
 /**
  * Turno reservado. Lo identifica la combinación fecha + hora + sede (hospital) + profesional (que define la
@@ -28,4 +30,6 @@ export interface Turno {
    * médico, lo que ve el profesional y el feedback no cambian.
    */
   ocultoEnHistorial?: boolean;
+  /** Turno cancelado al reprogramar, del que sale este. */
+  reprogramadoDesdeId?: string;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ShieldCheck } from "lucide-react-native";
@@ -10,24 +10,28 @@ import {
   IconBadge,
   PasswordField,
   PrimaryButton,
-  SelectField,
+  SelectorPlan,
   Text,
-  TextField,
+  VerificarDni,
 } from "@/components";
-import { PlanMedico } from "@/domain";
-import { listPlanesMedicos, registrarPaciente } from "@/services";
+import { DniLeido, ObraSocialConPlanes } from "@/domain";
+import { useAuth } from "@/hooks/useAuth";
+import { listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
-import { esDniValido, esPasswordValida } from "@/utils/validation";
+import { esPasswordValida } from "@/utils/validation";
 
-/** Registro de paciente. Sprint 1: valida los datos y muestra confirmación con botón al Login. */
+/**
+ * Registro de paciente: primero verifica su identidad escaneando el DNI (de ahí salen DNI, nombre y apellido;
+ * decidido el 28/10/2026), después elige obra social y plan y una contraseña. Crea la cuenta y entra directo (la
+ * confirmación lleva al Inicio).
+ */
 export default function RegistroPacienteScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const { registrarPaciente } = useAuth();
 
-  const [planes, setPlanes] = useState<PlanMedico[]>([]);
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [dni, setDni] = useState("");
+  const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
+  const [documento, setDocumento] = useState<{ codigo: string; datos: DniLeido } | null>(null);
   const [password, setPassword] = useState("");
   const [planId, setPlanId] = useState<string | null>(null);
   const [intentoEnviar, setIntentoEnviar] = useState(false);
@@ -36,18 +40,11 @@ export default function RegistroPacienteScreen() {
   const [cuentaCreada, setCuentaCreada] = useState(false);
 
   useEffect(() => {
-    listPlanesMedicos().then(setPlanes);
+    listObrasSociales().then(setObrasSociales);
   }, []);
 
-  const opcionesPlan = useMemo(
-    () => planes.map((p) => ({ value: p.id, label: p.nombre, description: p.aseguradora })),
-    [planes],
-  );
-
   const errores = {
-    nombre: !nombre.trim() ? "Ingresá tu nombre." : undefined,
-    apellido: !apellido.trim() ? "Ingresá tu apellido." : undefined,
-    dni: !esDniValido(dni) ? "Ingresá un DNI válido (7 u 8 dígitos)." : undefined,
+    dni: !documento ? "Escaneá tu DNI para verificar tu identidad." : undefined,
     password: !esPasswordValida(password) ? "La contraseña no cumple los requisitos." : undefined,
     plan: !planId ? "Elegí tu obra social o prepaga." : undefined,
   };
@@ -57,10 +54,10 @@ export default function RegistroPacienteScreen() {
   const handleCrear = async () => {
     setIntentoEnviar(true);
     setError(null);
-    if (!valido || !planId) return;
+    if (!valido || !planId || !documento) return;
     setCargando(true);
     try {
-      await registrarPaciente({ nombre, apellido, dni, password, planMedicoId: planId });
+      await registrarPaciente({ codigoDni: documento.codigo, password, planMedicoId: planId });
       setCuentaCreada(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");
@@ -69,29 +66,22 @@ export default function RegistroPacienteScreen() {
     }
   };
 
-  // Si la cuenta ya fue creada, mostramos la pantalla de éxito con el botón directo al Login
+  // La cuenta ya fue creada y la sesión quedó iniciada: el botón lleva directo al Inicio.
   if (cuentaCreada) {
     return (
       <FormLayout
-        header={<BackHeader titulo="Registro completado" onBack={() => router.replace("/(auth)/login")} />}
-        footer={
-          <PrimaryButton
-            label="Ir al inicio de sesión"
-            onPress={() => router.replace("/(auth)/login")}
-          />
-        }
+        header={<BackHeader titulo="Registro completado" onBack={() => router.replace("/")} />}
+        footer={<PrimaryButton label="Ir al inicio" onPress={() => router.replace("/")} />}
       >
         <View style={styles.finalWrapper}>
           <Card style={styles.finalCard}>
             <IconBadge icon={ShieldCheck} size={56} />
             <Text variant="heading" style={[styles.tituloExito, { color: theme.colors.foreground }]}>
-              ¡Todo listo, {nombre}!
+              ¡Todo listo, {documento?.datos.nombre}!
             </Text>
             <Text style={[styles.subtituloExito, { color: theme.colors.mutedForeground }]}>
-              Tu cuenta fue registrada. Vas a ingresar con tu DNI {dni} y la contraseña que elegiste.
-            </Text>
-            <Text style={[styles.nota, { color: theme.colors.mutedForeground }]}>
-              (Para ingresar durante el sprint podés usar los usuarios de prueba habilitados).
+              Tu cuenta fue creada y ya iniciaste sesión. La próxima vez entrás con tu DNI {documento?.datos.dni} y la
+              contraseña que elegiste.
             </Text>
           </Card>
         </View>
@@ -101,7 +91,7 @@ export default function RegistroPacienteScreen() {
 
   return (
     <FormLayout
-      header={<BackHeader titulo="Registro de paciente" subtitulo="Completá tus datos y tu cobertura" />}
+      header={<BackHeader titulo="Registro de paciente" subtitulo="Verificá tu DNI y elegí tu cobertura" />}
       footer={
         <>
           <PrimaryButton label="Crear cuenta" onPress={handleCrear} loading={cargando} />
@@ -117,42 +107,17 @@ export default function RegistroPacienteScreen() {
         </>
       }
     >
-      <TextField
-        label="Nombre"
-        value={nombre}
-        onChangeText={setNombre}
-        placeholder="Ej. Sofía"
-        autoComplete="given-name"
-        error={mostrar("nombre")}
+      <VerificarDni
+        verificado={documento?.datos ?? null}
+        onVerificado={(codigo, datos) => {
+          setDocumento({ codigo, datos });
+          setError(null);
+        }}
+        onReiniciar={() => setDocumento(null)}
       />
+      {mostrar("dni") ? <Text style={[styles.errorCampo, { color: theme.colors.danger }]}>{mostrar("dni")}</Text> : null}
 
-      <TextField
-        label="Apellido"
-        value={apellido}
-        onChangeText={setApellido}
-        placeholder="Ej. Martínez"
-        autoComplete="family-name"
-        error={mostrar("apellido")}
-      />
-
-      <TextField
-        label="DNI"
-        value={dni}
-        onChangeText={setDni}
-        placeholder="Ej. 12345678"
-        keyboardType="number-pad"
-        maxLength={10}
-        error={mostrar("dni")}
-      />
-
-      <SelectField
-        label="Obra social / prepaga"
-        placeholder="Elegí tu cobertura"
-        options={opcionesPlan}
-        value={planId}
-        onChange={setPlanId}
-        error={mostrar("plan")}
-      />
+      <SelectorPlan obrasSociales={obrasSociales} planId={planId} onChange={setPlanId} error={mostrar("plan")} />
 
       <PasswordField
         label="Contraseña"
@@ -170,6 +135,7 @@ export default function RegistroPacienteScreen() {
 }
 
 const styles = StyleSheet.create({
+  errorCampo: { fontSize: 12, marginTop: -8, marginBottom: 12 },
   finalWrapper: {
     flex: 1,
     justifyContent: "center",
@@ -189,11 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
-  },
-  nota: {
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 8,
   },
   linkWrapper: {
     paddingVertical: 12,

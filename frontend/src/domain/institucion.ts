@@ -1,8 +1,10 @@
+import type { CoberturaAceptada, FuenteCobertura } from "./cobertura";
+
 export type TipoInstitucion = "hospital" | "clinica" | "centro_medico" | "laboratorio";
 
 /**
  * Quién financia el establecimiento, según el REFES. Decide la regla 15 (CLAUDE.md §10):
- * los públicos se muestran a todos los pacientes; el resto, solo si acepta su plan.
+ * los públicos se muestran a todos los pacientes; el resto, solo si acepta su cobertura.
  */
 export type OrigenFinanciamiento = "publico" | "privado" | "seguridad_social";
 
@@ -27,7 +29,9 @@ export interface Institucion {
   origen: OrigenFinanciamiento;
   logoUrl?: string;
   sitioWeb?: string;
-  /** Planes que la aceptan. En los públicos queda vacío: la regla 15 se aplica en el service. */
-  planesAceptadosIds: string[];
+  /** Coberturas que acepta. En los públicos queda vacío: la regla 15 se aplica en el service. */
+  coberturas: CoberturaAceptada[];
+  /** De dónde salen sus coberturas (una por institución). La carga el admin junto con ellas. */
+  fuenteCoberturas?: FuenteCobertura;
   sedes: Sede[];
 }

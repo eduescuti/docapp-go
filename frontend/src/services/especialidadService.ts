@@ -1,12 +1,18 @@
 import { Especialidad } from "@/domain";
-import { especialidadesMock } from "@/mocks";
 
-import { delay } from "./apiClient";
+import { api } from "./apiClient";
+
+// Catálogo que casi no cambia: se pide una vez por apertura de la app.
+let catalogo: Promise<Especialidad[]> | null = null;
 
 export async function listEspecialidades(): Promise<Especialidad[]> {
-  return delay(especialidadesMock);
+  catalogo ??= api<Especialidad[]>("/api/especialidades", { conSesion: false }).catch((e: unknown) => {
+    catalogo = null;
+    throw e;
+  });
+  return catalogo;
 }
 
 export async function getEspecialidad(id: string): Promise<Especialidad | undefined> {
-  return delay(especialidadesMock.find((e) => e.id === id));
+  return (await listEspecialidades()).find((e) => e.id === id);
 }

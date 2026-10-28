@@ -14,34 +14,42 @@ import {
   StepIndicator,
   Text,
   TextField,
+  VerificarDni,
 } from "@/components";
-import { DatosRegistroMedico, ProfesionalPadron } from "@/domain";
-import {
-  getEjemploRegistroProfesional,
-  listProfesiones,
-  REGISTRO_HABILITADO,
-  registrarMedico,
-  verificarProfesional,
-} from "@/services";
+import { DatosRegistroMedico, DniLeido, Especialidad, Genero, ProfesionalPadron } from "@/domain";
+import { useAuth } from "@/hooks/useAuth";
+import { getEjemploRegistroProfesional, listEspecialidades, listProfesiones, verificarProfesional } from "@/services";
 import { useTheme } from "@/theme";
 import { esDniValido, esPasswordValida } from "@/utils/validation";
 
 const PASOS = ["Tus datos", "Confirmación", "Crear cuenta"];
 const EJEMPLO = getEjemploRegistroProfesional();
+const GENEROS: { value: Genero; label: string; description: string }[] = [
+  { value: "femenino", label: "Femenino", description: "Te mostramos como Dra." },
+  { value: "masculino", label: "Masculino", description: "Te mostramos como Dr." },
+];
+const esGenero = (v: string): v is Genero => GENEROS.some((g) => g.value === v);
 
 /**
  * Registro de profesional en 3 pasos:
- * 1. DNI + matrícula + profesión + contraseña → se busca la terna en el padrón.
+ * 1. Escanea su DNI (verificación de identidad, 28/10/2026: completa el DNI, que ya no se escribe) + matrícula +
+ *    profesión + contraseña → se busca la terna en el padrón. También género (Dr./Dra.) y especialidad, que el
+ *    padrón no trae (decidido el 27/10/2026). El backend revisa que el DNI escaneado sea de la persona del padrón.
  * 2. "¿Esta es tu información?" con los datos del padrón.
- * 3. Botón final "Crear cuenta".
+ * 3. Botón final "Crear cuenta": crea la cuenta y entra. Lugares, coberturas y horarios los carga después.
  */
 export default function RegistroMedicoScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const { registrarMedico } = useAuth();
 
   const [paso, setPaso] = useState(0);
   const [profesiones, setProfesiones] = useState<string[]>([]);
-  const [dni, setDni] = useState("");
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [genero, setGenero] = useState<Genero | null>(null);
+  const [especialidadId, setEspecialidadId] = useState<string | null>(null);
+  const [documento, setDocumento] = useState<{ codigo: string; datos: DniLeido } | null>(null);
+  const dni = documento?.datos.dni ?? "";
   const [matricula, setMatricula] = useState("");
   const [profesion, setProfesion] = useState<string | null>(null);
   const [password, setPassword] = useState("");
@@ -51,13 +59,24 @@ export default function RegistroMedicoScreen() {
   const [encontrado, setEncontrado] = useState<ProfesionalPadron | null>(null);
 
   useEffect(() => {
-    listProfesiones().then(setProfesiones);
+    Promise.all([listProfesiones(), listEspecialidades()])
+      .then(([p, e]) => {
+        setProfesiones(p);
+        setEspecialidades(e);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "No se pudieron cargar las profesiones."));
   }, []);
 
+  const especialidadesDeProfesion = especialidades
+    .filter((e) => e.profesion === profesion)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+
   const errores = {
-    dni: !esDniValido(dni) ? "Ingresá un DNI válido (7 u 8 dígitos)." : undefined,
+    dni: !documento ? "Escaneá tu DNI para verificar tu identidad." : !esDniValido(dni) ? "El DNI escaneado no es válido." : undefined,
     matricula: !matricula.trim() ? "Ingresá tu número de matrícula." : undefined,
     profesion: !profesion ? "Elegí tu profesión." : undefined,
+    genero: !genero ? "Elegí tu género." : undefined,
+    especialidad: !especialidadId ? "Elegí tu especialidad." : undefined,
     password: !esPasswordValida(password) ? "La contraseña no cumple los requisitos." : undefined,
   };
   const valido = Object.values(errores).every((e) => !e);
@@ -83,9 +102,10 @@ export default function RegistroMedicoScreen() {
   const handleCrear = async () => {
     setError(null);
     setCargando(true);
+    if (!genero || !especialidadId || !documento) return;
     try {
-      await registrarMedico(datos());
-      router.replace("/(auth)/login");
+      await registrarMedico({ ...datos(), codigoDni: documento.codigo, genero, especialidadId });
+      router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");
     } finally {
@@ -120,17 +140,7 @@ export default function RegistroMedicoScreen() {
       </>
     ) : (
       <>
-        <PrimaryButton
-          label="Crear cuenta"
-          onPress={handleCrear}
-          loading={cargando}
-          disabled={!REGISTRO_HABILITADO}
-        />
-        {!REGISTRO_HABILITADO && (
-          <Text style={[styles.nota, { color: theme.colors.mutedForeground }]}>
-            Tu matrícula fue verificada. La creación de cuentas se habilita cuando conectemos la base de datos.
-          </Text>
-        )}
+        <PrimaryButton label="Crear cuenta" onPress={handleCrear} loading={cargando} />
         <PrimaryButton
           label="Volver al inicio de sesión"
           variant="outline"
@@ -151,13 +161,20 @@ export default function RegistroMedicoScreen() {
     >
       {paso === 0 && (
         <View>
+          <VerificarDni
+            verificado={documento?.datos ?? null}
+            onVerificado={(codigo, datos) => {
+              setDocumento({ codigo, datos });
+              setError(null);
+            }}
+            onReiniciar={() => setDocumento(null)}
+          />
+          {/* El DNI sale del documento escaneado: no se puede escribir a mano. */}
           <TextField
             label="DNI"
             value={dni}
-            onChangeText={setDni}
-            placeholder={`Ej. ${EJEMPLO.dni}`}
-            keyboardType="number-pad"
-            maxLength={10}
+            editable={false}
+            placeholder="Se completa al escanear tu DNI"
             error={mostrar("dni")}
           />
           <TextField
@@ -173,8 +190,30 @@ export default function RegistroMedicoScreen() {
             placeholder={`Elegí tu profesión (ej. ${EJEMPLO.profesion})`}
             options={profesiones.map((p) => ({ value: p, label: p }))}
             value={profesion}
-            onChange={setProfesion}
+            onChange={(p) => {
+              setProfesion(p);
+              // La especialidad elegida puede no ser de la nueva profesión.
+              if (especialidades.find((e) => e.id === especialidadId)?.profesion !== p) setEspecialidadId(null);
+            }}
             error={mostrar("profesion")}
+          />
+          <SelectField
+            label="Género"
+            placeholder="Elegí cómo te mostramos"
+            options={GENEROS}
+            value={genero}
+            onChange={(v) => esGenero(v) && setGenero(v)}
+            error={mostrar("genero")}
+          />
+          {/* Solo las especialidades de su profesión, en orden alfabético y con buscador (son más de 70 médicas). */}
+          <SelectField
+            label="Especialidad"
+            placeholder={profesion ? "Elegí tu especialidad" : "Primero elegí tu profesión"}
+            options={especialidadesDeProfesion.map((e) => ({ value: e.id, label: e.nombre }))}
+            value={especialidadId}
+            onChange={setEspecialidadId}
+            error={mostrar("especialidad")}
+            buscador="Buscar especialidad"
           />
           <PasswordField
             label="Contraseña"
@@ -225,7 +264,8 @@ export default function RegistroMedicoScreen() {
               Todo listo, {encontrado.nombre}
             </Text>
             <Text style={{ color: theme.colors.mutedForeground, fontSize: 14, textAlign: "center" }}>
-              Vas a ingresar con tu DNI {encontrado.dni} y la contraseña que elegiste.
+              Vas a ingresar con tu DNI {encontrado.dni} y la contraseña que elegiste. Después cargá en tu Perfil
+              dónde atendés y qué coberturas aceptás.
             </Text>
           </Card>
           {error ? <Text style={[styles.error, { color: theme.colors.danger }]}>{error}</Text> : null}
@@ -253,7 +293,6 @@ const styles = StyleSheet.create({
   datoRow: { flexDirection: "row", justifyContent: "space-between", gap: 12, paddingVertical: 8, borderTopWidth: 1 },
   datoLabel: { fontSize: 13 },
   datoValor: { fontSize: 13, fontWeight: "600", flexShrink: 1, textAlign: "right" },
-  nota: { fontSize: 13, textAlign: "center" },
   finalWrapper: { flex: 1, justifyContent: "center" },
   finalCard: { alignItems: "center", gap: 12, paddingVertical: 28 },
   linkWrapper: {paddingVertical: 12,alignItems: "center",},

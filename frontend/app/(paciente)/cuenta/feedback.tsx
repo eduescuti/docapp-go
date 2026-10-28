@@ -7,6 +7,7 @@ import { BackHeader, Card, EmptyState, PrimaryButton, ScreenContainer, SectionHe
 import { Feedback, Medico, Turno } from "@/domain";
 import { getMedico, getPacienteActual, listFeedbackPaciente, listTurnosParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
+import { tomarAviso } from "@/utils/avisoAlVolver";
 import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 /**
@@ -19,9 +20,11 @@ export default function FeedbackScreen() {
   const [pendientes, setPendientes] = useState<{ turno: Turno; medico?: Medico }[]>([]);
   const [enviados, setEnviados] = useState<{ feedback: Feedback; medico?: Medico }[]>([]);
   const [cargado, setCargado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      setAviso(tomarAviso());
       (async () => {
         const p = await getPacienteActual();
         const [turnos, feedbacks] = await Promise.all([listTurnosParaCalificar(p.id), listFeedbackPaciente(p.id)]);
@@ -35,6 +38,12 @@ export default function FeedbackScreen() {
   return (
     <ScreenContainer>
       <BackHeader titulo="Feedback" subtitulo="Tu opinión ayuda a otros pacientes" />
+
+      {aviso ? (
+        <Text style={[styles.aviso, { color: theme.colors.success }]} accessibilityLiveRegion="polite">
+          {aviso}
+        </Text>
+      ) : null}
 
       <SectionHeader title="Para calificar" />
       {cargado && pendientes.length === 0 && (
@@ -86,6 +95,7 @@ export default function FeedbackScreen() {
 
 const styles = StyleSheet.create({
   card: { marginBottom: 12 },
+  aviso: { fontSize: 13, marginBottom: 12 },
   nombre: { fontSize: 15, fontWeight: "600" },
   meta: { fontSize: 12, marginTop: 2 },
   enviadoHeader: { flexDirection: "row", alignItems: "center", gap: 8 },

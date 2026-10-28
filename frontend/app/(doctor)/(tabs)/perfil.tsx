@@ -1,13 +1,20 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
-import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
-import { BadgeCheck, Fingerprint, MapPin, Star } from "lucide-react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { Alert, Platform, Pressable, StyleSheet, Switch, View } from "react-native";
+import { BadgeCheck, Fingerprint, MapPin, Settings, ShieldPlus, Star } from "lucide-react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 
-import { Avatar, Card, LogoutButton, ScreenContainer, SectionHeader, Text } from "@/components";
-import { Especialidad, Medico } from "@/domain";
+import { AvisoProfesional, Card, FotoPerfilEditable, LogoutButton, PrimaryButton, ScreenContainer, SectionHeader, Text } from "@/components";
+import { Especialidad, Medico, ObraSocialConPlanes } from "@/domain";
 import { useAuth } from "@/hooks/useAuth";
-import { getEspecialidad, getMedicoActual, LugarDeAtencion, listLugaresDeAtencion } from "@/services";
+import {
+  getEspecialidad,
+  getMedicoActual,
+  LugarDeAtencion,
+  listLugaresDeAtencion,
+  listMisFranjas,
+  listObrasSociales,
+} from "@/services";
 import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
@@ -15,19 +22,27 @@ import {
   setBiometriaHabilitada,
 } from "@/services/biometria";
 import { useTheme } from "@/theme";
+import { tomarAviso } from "@/utils/avisoAlVolver";
+import { resumenPlanes } from "@/utils/cobertura";
 import { iniciales } from "@/utils/format";
+import { alPresionar } from "@/utils/presionado";
 
 /**
- * Perfil profesional: los datos del registro (padrón), los lugares de atención y los ajustes de seguridad.
- * No muestra horarios de atención: la disponibilidad la resuelven los turnos (Sprint 2).
+ * Perfil profesional: los datos del registro (padrón), las coberturas que atiende (las elige él, regla 17), los
+ * lugares de atención (filtrados por esas coberturas) y los ajustes de seguridad. Sus horarios se cargan en la
+ * Agenda, no acá. La ruedita de arriba abre Configuración (modo claro u oscuro).
  */
 export default function DoctorPerfilScreen() {
   const { theme } = useTheme();
   const { sesion } = useAuth();
+  const router = useRouter();
 
   const [medico, setMedico] = useState<Medico | null>(null);
   const [especialidad, setEspecialidad] = useState<Especialidad | undefined>();
   const [lugares, setLugares] = useState<LugarDeAtencion[]>([]);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
+  const [sinHorarios, setSinHorarios] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [biometriaActiva, setBiometriaActiva] = useState(false);
   const [soportaBiometria, setSoportaBiometria] = useState(false);
 
@@ -42,12 +57,20 @@ export default function DoctorPerfilScreen() {
           estaBiometriaHabilitada(),
         ]);
 
-        const [esp, l] = await Promise.all([getEspecialidad(m.especialidadId), listLugaresDeAtencion(m.sedesIds)]);
+        const [esp, l, os, franjas] = await Promise.all([
+          getEspecialidad(m.especialidadId),
+          listLugaresDeAtencion(m.sedesIds),
+          listObrasSociales(),
+          listMisFranjas(),
+        ]);
 
         if (!activo) return;
         setMedico(m);
         setEspecialidad(esp);
         setLugares(l);
+        setObrasSociales(os);
+        setSinHorarios(franjas.length === 0);
+        setAviso(tomarAviso());
         setSoportaBiometria(tieneHardware && tieneEnrolamiento);
         setBiometriaActiva(habilitada);
       })();
@@ -98,12 +121,34 @@ export default function DoctorPerfilScreen() {
 
   return (
     <ScreenContainer>
-      <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
-        Mi perfil
-      </Text>
+      <View style={styles.encabezado}>
+        <Text variant="heading" style={[styles.title, { color: theme.colors.foreground }]}>
+          Mi perfil
+        </Text>
+        {/* Misma pantalla de Configuración que el paciente (modo claro u oscuro). */}
+        <Pressable
+          onPress={() => router.push("/(doctor)/configuracion")}
+          accessibilityRole="button"
+          accessibilityLabel="Configuración"
+          hitSlop={4}
+          style={({ pressed }) => [
+            styles.botonConfig,
+            { backgroundColor: theme.colors.muted, borderRadius: theme.radii.full },
+            alPresionar(pressed),
+          ]}
+        >
+          <Settings size={20} color={theme.colors.foreground} />
+        </Pressable>
+      </View>
 
       <Card style={styles.perfil}>
-        <Avatar uri={medico.avatarUrl} iniciales={iniciales(medico.nombre, medico.apellido)} size={72} />
+        <FotoPerfilEditable
+          avatarUrl={medico.avatarUrl}
+          iniciales={iniciales(medico.nombre, medico.apellido)}
+          quienLaVe="Tu foto la ven los pacientes en tu perfil, al reservar un turno y en sus turnos con vos."
+          colorFondo={theme.colors.card}
+          onCambio={(avatarUrl) => setMedico((m) => (m ? { ...m, avatarUrl } : m))}
+        />
         <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
           {medico.nombre} {medico.apellido}
         </Text>
@@ -126,7 +171,53 @@ export default function DoctorPerfilScreen() {
         <Text style={[styles.descripcion, { color: theme.colors.mutedForeground }]}>{medico.descripcion}</Text>
       </Card>
 
+      <AvisoProfesional
+        sinCoberturas={medico.coberturas.length === 0}
+        sinHorarios={sinHorarios}
+        onCargarCoberturas={() => router.push("/(doctor)/coberturas")}
+        onCargarHorarios={() => router.push("/(doctor)/horarios")}
+      />
+
+      <SectionHeader title="Coberturas que atiendo" />
+      {aviso ? (
+        <Text style={[styles.aviso, { color: theme.colors.success }]} accessibilityLiveRegion="polite">
+          {aviso}
+        </Text>
+      ) : null}
+      {medico.coberturas.length === 0 ? (
+        <Text style={[styles.meta, { color: theme.colors.mutedForeground, marginBottom: 10 }]}>
+          Todavía no elegiste coberturas: ningún paciente te ve.
+        </Text>
+      ) : (
+        <Card style={styles.item}>
+          {medico.coberturas.map((c) => {
+            const obraSocial = obrasSociales.find((o) => o.id === c.obraSocialId);
+            return (
+              <View key={c.obraSocialId} style={[styles.itemRow, styles.cobertura]}>
+                <ShieldPlus size={16} color={theme.colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.itemTitulo, { color: theme.colors.foreground }]}>{obraSocial?.nombre ?? "Obra social"}</Text>
+                  <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>{resumenPlanes(c, obraSocial)}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </Card>
+      )}
+      <PrimaryButton
+        label={medico.coberturas.length === 0 ? "Elegir coberturas" : "Editar coberturas"}
+        variant="outline"
+        onPress={() => router.push("/(doctor)/coberturas")}
+      />
+
+      {/* Los lugares van después de las coberturas: se eligen entre los que aceptan alguna de ellas. */}
+      <View style={{ height: 16 }} />
       <SectionHeader title="Lugares de atención" />
+      {lugares.length === 0 ? (
+        <Text style={[styles.meta, { color: theme.colors.mutedForeground, marginBottom: 10 }]}>
+          Todavía no elegiste dónde atendés: sin lugares no podés cargar horarios.
+        </Text>
+      ) : null}
       {lugares.map(({ sede, institucion }) => (
         <Card key={sede.id} style={styles.item}>
           <View style={styles.itemRow}>
@@ -140,6 +231,13 @@ export default function DoctorPerfilScreen() {
           </View>
         </Card>
       ))}
+
+      <PrimaryButton
+        label={lugares.length === 0 ? "Elegir lugares" : "Editar lugares"}
+        variant="outline"
+        onPress={() => router.push("/(doctor)/lugares")}
+      />
+
 
       {/* Ajuste de ingreso con huella para el médico */}
       {soportaBiometria ? (
@@ -176,7 +274,9 @@ export default function DoctorPerfilScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 20 },
+  encabezado: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: "700" },
+  botonConfig: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   perfil: { alignItems: "center", gap: 8, marginBottom: 28, paddingVertical: 24 },
   nombre: { fontSize: 20, fontWeight: "700", marginTop: 4 },
   badges: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 4 },
@@ -186,5 +286,7 @@ const styles = StyleSheet.create({
   item: { marginBottom: 10 },
   itemRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   itemTitulo: { fontSize: 14, fontWeight: "600" },
+  cobertura: { paddingVertical: 6 },
+  aviso: { fontSize: 13, marginBottom: 10 },
   meta: { fontSize: 12, marginTop: 2 },
 });

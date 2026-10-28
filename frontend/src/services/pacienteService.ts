@@ -1,111 +1,84 @@
 import { Paciente } from "@/domain";
-import { pacientesMock } from "@/mocks";
-import { hoyIso } from "@/utils/format";
 
-import { delay } from "./apiClient";
+import { api } from "./apiClient";
 import { getSesionActual } from "./authService";
-import { getTurnosEnMemoria } from "./turnoService";
-
-// Estado en memoria: el paciente puede editar sus datos durante la sesión.
-let pacientes: Paciente[] = pacientesMock.map((p) => ({ ...p }));
+import { listAgendaMedico } from "./turnoService";
 
 /**
- * El paciente de la sesión. No simula latencia: son los datos de quien inició sesión, que la app ya tiene
- * cargados (con backend, se piden una vez al ingresar y se guardan). Las pantallas lo usan para armar el
- * resto de los pedidos, así que hacerlo esperar demoraba todas en 250 ms.
+ * El paciente de la sesión (`GET /api/pacientes/yo`). Se pide una vez y queda en memoria: las pantallas lo usan
+ * para armar el resto de los pedidos y no tienen que esperarlo cada vez. Si cambia la sesión, se vuelve a pedir.
  */
+let pacienteActual: Paciente | null = null;
+let pedido: Promise<Paciente> | null = null;
+
 export async function getPacienteActual(): Promise<Paciente> {
   const sesion = getSesionActual();
   if (sesion?.rol !== "paciente") throw new Error("No hay paciente autenticado");
-  const paciente = pacientes.find((p) => p.id === sesion.pacienteId);
-  if (!paciente) throw new Error("No hay paciente autenticado");
-  return paciente;
+  if (pacienteActual?.id === sesion.pacienteId) return pacienteActual;
+  pedido ??= api<Paciente>("/api/pacientes/yo")
+    .then((p) => (pacienteActual = p))
+    .finally(() => {
+      pedido = null;
+    });
+  return pedido;
 }
 
-export async function getPaciente(id: string): Promise<Paciente | undefined> {
-  return delay(pacientes.find((p) => p.id === id));
-}
+const actualizar = (p: Paciente) => (pacienteActual = p);
 
-export async function listPacientes(): Promise<Paciente[]> {
-  return delay(pacientes);
+/** Después de cambiar la foto de perfil (`fotoPerfil.ts`), el paciente en memoria queda con la nueva. */
+export function actualizarFotoPacienteActual(avatarUrl: string | undefined): void {
+  const sesion = getSesionActual();
+  if (!pacienteActual || sesion?.rol !== "paciente" || pacienteActual.id !== sesion.pacienteId) return;
+  const { avatarUrl: _anterior, ...resto } = pacienteActual;
+  pacienteActual = avatarUrl ? { ...resto, avatarUrl } : resto;
 }
 
 /**
- * Pacientes asignados a un profesional: los que tienen un turno próximo (pendiente,
- * confirmado o reprogramado) con él. Los que solo tuvieron turnos pasados no cuentan.
+ * Un paciente que el usuario de la sesión puede ver: el propio paciente, o uno que el profesional tiene en su
+ * agenda (el vínculo es por turnos; si no hay, `undefined`).
  */
-export async function listPacientesAsignados(medicoId: string): Promise<Paciente[]> {
-  const hoy = hoyIso();
-  const ids = new Set(
-    getTurnosEnMemoria()
-      .filter((t) => t.medicoId === medicoId && t.fecha >= hoy)
-      .filter((t) => t.estado !== "cancelado" && t.estado !== "completado" && t.estado !== "rechazado")
-      .map((t) => t.pacienteId),
-  );
-  return delay(pacientes.filter((p) => ids.has(p.id)));
-}
-
-function actualizar(id: string, cambios: Partial<Paciente>): Paciente {
-  const actual = pacientes.find((p) => p.id === id);
-  if (!actual) throw new Error("Paciente no encontrado");
-  const nuevo = { ...actual, ...cambios };
-  pacientes = pacientes.map((p) => (p.id === id ? nuevo : p));
-  return nuevo;
+export async function getPaciente(id: string): Promise<Paciente | undefined> {
+  const sesion = getSesionActual();
+  if (sesion?.rol === "paciente") {
+    const yo = await getPacienteActual();
+    return yo.id === id ? yo : undefined;
+  }
+  if (sesion?.rol === "doctor") return (await listAgendaMedico(sesion.medicoId)).find((t) => t.paciente?.id === id)?.paciente;
+  return undefined;
 }
 
 /** Cambio de obra social/plan. Cambia lo que el paciente ve en toda la app (filtro transversal, CLAUDE.md §5). */
-export async function cambiarCobertura(pacienteId: string, planMedicoId: string): Promise<Paciente> {
-  if (!planMedicoId) throw new Error("Elegí tu obra social o prepaga.");
-  return delay(actualizar(pacienteId, { planMedicoId }));
+export async function cambiarCobertura(_pacienteId: string, planMedicoId: string): Promise<Paciente> {
+  if (!planMedicoId) throw new Error("Elegí tu obra social y tu plan.");
+  return actualizar(await api<Paciente>("/api/pacientes/yo", { metodo: "PATCH", cuerpo: { planMedicoId } }));
 }
 
-export async function quitarMedicoFavorito(pacienteId: string, medicoId: string): Promise<Paciente> {
-  const paciente = pacientes.find((p) => p.id === pacienteId);
-  if (!paciente) throw new Error("Paciente no encontrado");
-  return delay(actualizar(pacienteId, { medicosFavoritosIds: paciente.medicosFavoritosIds.filter((id) => id !== medicoId) }));
+const favorito = async (tipo: "medicos" | "instituciones", id: string, marcar: boolean) =>
+  actualizar(await api<Paciente>(`/api/pacientes/yo/favoritos/${tipo}/${encodeURIComponent(id)}`, { metodo: marcar ? "PUT" : "DELETE" }));
+
+export async function quitarMedicoFavorito(_pacienteId: string, medicoId: string): Promise<Paciente> {
+  return favorito("medicos", medicoId, false);
 }
 
 /** Marca o desmarca una institución como favorita. La favorita queda de opción por defecto al reservar un turno. */
-export async function alternarInstitucionFavorita(pacienteId: string, institucionId: string): Promise<Paciente> {
-  const paciente = pacientes.find((p) => p.id === pacienteId);
-  if (!paciente) throw new Error("Paciente no encontrado");
-  const favoritas = paciente.institucionesFavoritasIds;
-  return delay(
-    actualizar(pacienteId, {
-      institucionesFavoritasIds: favoritas.includes(institucionId)
-        ? favoritas.filter((id) => id !== institucionId)
-        : [...favoritas, institucionId],
-    }),
-  );
+export async function alternarInstitucionFavorita(_pacienteId: string, institucionId: string): Promise<Paciente> {
+  const paciente = await getPacienteActual();
+  return favorito("instituciones", institucionId, !paciente.institucionesFavoritasIds.includes(institucionId));
 }
 
-export async function quitarInstitucionFavorita(pacienteId: string, institucionId: string): Promise<Paciente> {
-  const paciente = pacientes.find((p) => p.id === pacienteId);
-  if (!paciente) throw new Error("Paciente no encontrado");
-  return delay(
-    actualizar(pacienteId, {
-      institucionesFavoritasIds: paciente.institucionesFavoritasIds.filter((id) => id !== institucionId),
-    }),
-  );
+export async function quitarInstitucionFavorita(_pacienteId: string, institucionId: string): Promise<Paciente> {
+  return favorito("instituciones", institucionId, false);
 }
 
-/**
- * Alterna (agrega o quita) un médico en la lista de favoritos del paciente actual.
- */
+/** Alterna (agrega o quita) un médico en la lista de favoritos del paciente actual. Devuelve si quedó favorito. */
 export async function alternarMedicoFavorito(medicoId: string): Promise<boolean> {
   const paciente = await getPacienteActual();
   const esFavorito = paciente.medicosFavoritosIds.includes(medicoId);
-  const nuevasFavoritas = esFavorito
-    ? paciente.medicosFavoritosIds.filter((id) => id !== medicoId)
-    : [...paciente.medicosFavoritosIds, medicoId];
-
-  actualizar(paciente.id, { medicosFavoritosIds: nuevasFavoritas });
+  await favorito("medicos", medicoId, !esFavorito);
   return !esFavorito;
 }
 
-/**
- * Consulta si un médico está marcado como favorito por el paciente actual.
- */
+/** Consulta si un médico está marcado como favorito por el paciente actual. */
 export async function esMedicoFavorito(medicoId: string): Promise<boolean> {
   try {
     const paciente = await getPacienteActual();

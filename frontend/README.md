@@ -12,7 +12,9 @@ antes de tocar código.
 - React Native 0.86 + **Expo SDK 57** (pineado — no actualizar sin confirmación)
 - TypeScript (`strict: true`)
 - Expo Router (navegación file-based)
-- `react-native-maps` (Google Maps)
+- Mapa con **MapLibre GL JS + OpenFreeMap** dentro de un WebView (`react-native-webview`): anda en Expo Go, web y
+  la app compilada, sin clave de API
+- `expo-image-picker` + `expo-image-manipulator` (foto de perfil: cámara o galería, recortada a 512×512 JPEG)
 
 ## Requisitos previos
 
@@ -36,10 +38,26 @@ git clone https://github.com/eduescuti/docapp-go.git
 cd docapp-go/frontend
 
 npm install
+cp .env.example .env     # una sola vez: dirección del backend (EXPO_PUBLIC_API_URL)
 npx expo start
 ```
 
 Esto levanta **Metro** (el bundler de React Native) y muestra un QR en la terminal.
+
+### La app necesita el backend
+
+Login, registro y los datos ya conectados vienen de la API (ver el estado en el README del backend). Antes de
+abrir la app, levantá el backend (`docapp-go-backend/backend`: `npm install`, `cp .env.example .env`,
+`npm run db:migrate`, `npm run db:seed`, `npm run dev`) y dejá en `frontend/.env` su dirección:
+
+| Dónde probás | `EXPO_PUBLIC_API_URL` |
+|---|---|
+| Web (`npx expo start --web`) | `http://localhost:3000` |
+| Celular con Expo Go | `http://<IP de la computadora en la red>:3000` (p. ej. `http://192.168.0.10:3000`), con el celular en la misma red. `localhost` en el celular es el propio celular. |
+
+Después de cambiar `.env` hay que reiniciar `npx expo start`. Si la app dice "No pudimos conectarnos con el
+servidor", probá `http://<esa dirección>/api/health` en el navegador del celular. Las cuentas de prueba están en
+[`USUARIOS-DE-PRUEBA.md`](USUARIOS-DE-PRUEBA.md).
 
 ### Probar en el celular (Expo Go) — método principal
 
@@ -86,10 +104,11 @@ npx expo-doctor         # chequea que la instalación y config de Expo estén sa
 
 Las instituciones de la app son los **1.077 establecimientos de salud de CABA** del REFES
 (Registro Federal de Establecimientos de Salud, Ministerio de Salud de la Nación, licencia
-CC BY 4.0): hospitales, clínicas y sanatorios, centros médicos y laboratorios. Viven en
-`src/mocks/data/refes-caba.json`, que **no se edita a mano**: lo genera un script.
+CC BY 4.0): hospitales, clínicas y sanatorios, centros médicos y laboratorios. Los carga el **seed del
+backend** (`backend/prisma/datos/demo.json`); la app los pide a la API.
 
-Para regenerarlo con una versión nueva del REFES:
+`src/mocks/data/refes-caba.json` es la salida del script que procesa el CSV del REFES (la app ya no lo
+importa). Para regenerarlo con una versión nueva:
 
 ```bash
 # 1. Bajar el CSV (~9 MB) a scripts/.cache/, que está en .gitignore.
@@ -100,16 +119,21 @@ curl -skL -o scripts/.cache/refes-20251215.csv "<URL del CSV>"
 node scripts/importar-refes.mjs scripts/.cache/refes-20251215.csv
 ```
 
+Después hay que pasar esos establecimientos a `demo.json` del backend: hoy no hay un paso automático para eso.
+
 Los públicos se muestran a todos los pacientes (CLAUDE.md §10, regla 15). Los privados, solo
-si aceptan la obra social del paciente; esa relación se carga aparte desde las cartillas
-(Fase 3 del plan en `DocApp Go/investigacion-apis/plan-integracion-apis/`).
+si aceptan la obra social del paciente (entera o su plan). Esa relación no existe como dato
+público: la carga el admin desde la app (Instituciones → tocar una), y el seed trae las coberturas
+verificadas de 9 hospitales y el catálogo de 26 obras sociales (detalle en
+`DocApp Go (backend)/docs/08-coberturas.md`).
 
-## Nota sobre la clave de Google Maps
+## Nota sobre el mapa
 
-`react-native-maps` necesita `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` en `.env` para mostrar el mapa
-con estilo de Google (sin la clave, en Android el mapa puede no renderizar). `.env` está en
-`.gitignore` — **nunca la commitees** (CLAUDE.md §11). Pedile la clave a quien administre el
-proyecto en Google Cloud Console, o generá una propia restringida a tu paquete de Android.
+El mapa es MapLibre + OpenFreeMap en un WebView (en web, en un `<iframe>`), así que **no necesita clave**.
+`react-native-maps` sigue instalado y `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` sigue en `.env.example` solo por si el
+docente exige el SDK de Google en la app compilada (pendiente de confirmar). Si alguna vez se usa la clave, va en
+`.env`, que está en `.gitignore` — **nunca la commitees** (CLAUDE.md §11). El detalle de la decisión está en
+`investigacion-apis/08-motor-del-mapa.md`.
 
 ## Problemas comunes
 
@@ -129,7 +153,8 @@ Ver CLAUDE.md §4 para el detalle de `app/` y `src/`. En resumen:
 - `src/theme/` — los tres temas tipados del sistema de diseño (A, B, C — este último es el modo oscuro).
 - `src/domain/` — tipos del dominio médico.
 - `src/services/` — la única puerta de entrada a los datos; hoy leen `src/mocks/`, mañana un backend real.
-- `src/mocks/` — datos de prueba.
+- `src/mocks/` — solo las preguntas frecuentes de Ayuda: los datos vienen del backend (sus datos de prueba
+  los carga el seed).
 - [`USUARIOS-DE-PRUEBA.md`](USUARIOS-DE-PRUEBA.md) — cuentas para el SignIn, fichas para el SignUp y dónde modificarlas.
 
 ## Estado
@@ -140,6 +165,8 @@ Ver CLAUDE.md §4 para el detalle de `app/` y `src/`. En resumen:
   automático.
 - **Profesional:** agenda, pacientes asignados, ficha del paciente (historial con ese
   profesional + notas privadas) y perfil.
+- **Foto de perfil:** el paciente (Mi perfil) y el profesional (Perfil) la suben, cambian o quitan; se
+  guarda en el backend. En web, "Sacar una foto" abre el selector de archivos de la computadora.
 - **Admin:** panel con métricas de uso y gráfico de pacientes por obra social, alta de obras
   sociales y de instituciones.
 

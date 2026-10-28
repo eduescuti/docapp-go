@@ -15,7 +15,7 @@ import {
   StatCard,
   Text,
 } from "@/components";
-import { Institucion, Paciente, PlanMedico, TipoInstitucion } from "@/domain";
+import { Institucion, Paciente, PlanConObraSocial, TipoInstitucion } from "@/domain";
 import { getPacienteActual, getPlanMedico, listInstituciones, searchMedicos } from "@/services";
 import { useTheme } from "@/theme";
 
@@ -34,7 +34,7 @@ export default function PlanScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const [paciente, setPaciente] = useState<Paciente | null>(null);
-  const [plan, setPlan] = useState<PlanMedico | undefined>();
+  const [plan, setPlan] = useState<PlanConObraSocial | undefined>();
   const [instituciones, setInstituciones] = useState<Institucion[]>([]);
   const [cantidadMedicos, setCantidadMedicos] = useState(0);
 

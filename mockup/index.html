@@ -92,6 +92,18 @@ button { font: inherit; color: inherit; }
 .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 4px; padding: 1px 6px; }
 .tag.native { background: var(--native-soft); color: var(--native); }
 .tag.plan { background: var(--plan-soft); color: var(--plan); }
+.tag.nuevo { background: #DCFCE7; color: #166534; }
+/* Cambios del 28/10/2026 y rutas del backend (panel lateral) */
+.card-s.cambios { background: #F0FDF4; border-color: #BBF7D0; gap: 14px; }
+.card-s.cambios .spec-role { color: #166534; }
+.card-s.cambios .keys li svg { color: #16A34A; }
+.apis { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.apis li { display: flex; gap: 8px; align-items: baseline; font: 500 12.5px/1.35 var(--f-mono); overflow-wrap: anywhere; }
+.apis b { flex: none; min-width: 52px; text-align: center; font-size: 10.5px; padding: 3px 5px; border-radius: 5px; }
+.apis small { display: block; font: 500 12px/1.35 var(--f-body); color: var(--muted); }
+.m-GET { background: #E0F2FE; color: #075985; } .m-POST { background: #DCFCE7; color: #166534; }
+.m-PUT { background: #FEF3C7; color: #92400E; } .m-PATCH { background: #EDE9FE; color: #5B21B6; }
+.m-DELETE { background: #FEE2E2; color: #991B1B; }
 
 /* ---------- Escenario con el teléfono ---------- */
 .stage { display: flex; flex-direction: column; align-items: center; min-height: 0; min-width: 0; gap: 10px; }
@@ -472,7 +484,7 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       </div>
       <div>
         <div class="brand-name">DocApp Go</div>
-        <div class="brand-sub">Sprint 1 · Pantallas y flujo de navegación · Programación de Apps Móviles (UCA)</div>
+        <div class="brand-sub">Sprint 1 · actualizado al 28/10/2026 · Pantallas y flujo de navegación · Programación de Apps Móviles (UCA)</div>
       </div>
     </div>
     <nav class="roles" id="roles" aria-label="Rol"></nav>
@@ -495,7 +507,7 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       <ol class="screens" id="screenList"></ol>
       <div class="legend">
         <div><span class="tag native">Nativo</span> usa hardware del teléfono</div>
-        <div><span class="tag plan">Plan</span> se completa con el plan de integración de APIs</div>
+        <div><span class="tag nuevo">28/10</span> pantalla con cambios del 28/10/2026</div>
         <div>Tocá dentro del teléfono para navegar, o usá las flechas ← → del teclado.</div>
       </div>
     </aside>
@@ -679,13 +691,13 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
     return '<div class="statusbar"><span>10:24</span><span class="notch"></span><span class="sb-icons">' + ic("signal", 16) + ic("battery", 22, 1.6) + '</span></div>';
   }
   var TABS = {
-    paciente: [["inicio", "Inicio", "home"], ["turnos", "Turnos", "calendar"], ["estudios", "Estudios", "file"], ["buscar", "Buscar", "search"], ["menu", "Menú", "menu"]],
-    doctor: [["agenda", "Agenda", "calendar"], ["pacientes", "Pacientes", "users"], ["perfil-doc", "Perfil", "user"]],
+    paciente: [["inicio", "Inicio", "home"], ["turnos", "Turnos", "calendar"], ["estudios", "Estudios", "file"], ["", "Recetas", "pill"], ["menu", "Menú", "menu"]],
+    doctor: [["agenda", "Inicio", "home"], ["pacientes", "Pacientes", "users"], ["perfil-doc", "Perfil", "user"]],
     admin: [["panel", "Panel", "chart"], ["obras", "Obras sociales", "card"], ["instituciones", "Instituciones", "building"]]
   };
   function tabbar(rol, active) {
     return '<nav class="tabbar">' + TABS[rol].map(function (t) {
-      return '<button class="' + (t[0] === active ? "on" : "") + '" data-go="' + t[0] + '" aria-label="' + t[1] + '">' + ic(t[2], 22) + '<span>' + t[1] + '</span></button>';
+      return '<button class="' + (t[0] === active ? "on" : "") + '" ' + (t[0] ? 'data-go="' + t[0] + '"' : 'data-act="toast" data-msg="Recetas: Activas | Pasadas y Archivados (no está dibujada en este mockup)."') + ' aria-label="' + t[1] + '">' + ic(t[2], 22) + '<span>' + t[1] + '</span></button>';
     }).join("") + '</nav>';
   }
   function back(title, to) {
@@ -730,13 +742,12 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
   S["registro-paciente"] = function () {
     var reqs = ["Al menos 8 caracteres", "Una mayúscula", "Un número", "Un carácter especial"];
     return '<div class="content">' + back("Registro de paciente", "registro") +
-      '<p class="mut" style="margin:-6px 0 16px">Completá tus datos y tu cobertura</p>' +
-      '<div class="grid2" style="gap:10px">' + field("Nombre", "Sofía") + field("Apellido", "Martínez") + '</div>' +
-      field("DNI", "12345678") +
+      '<p class="mut" style="margin:-6px 0 16px">Escaneá tu DNI y elegí tu cobertura</p>' +
+      '<div class="card" style="margin-bottom:14px"><div class="row"><div class="iconbox">' + ic("idcard", 20) + '</div><div class="grow"><div class="small" style="color:var(--a-okfg);font-weight:700">IDENTIDAD VERIFICADA</div><div class="name">Lucía García</div><div class="meta">DNI 40.111.222 · escaneado con la cámara</div></div></div></div>' +
       field("Obra social / prepaga", "OSDE 210", { right: ic("right", 16) }) +
       field("Contraseña", "••••••••••••") +
       '<div style="display:grid;gap:4px;margin:-4px 0 16px">' + reqs.map(function (r) { return '<span class="check">' + ic("check", 14, 2.5) + r + '</span>'; }).join("") + '</div>' +
-      '<button class="btn" data-act="toast" data-msg="Tus datos son válidos. La cuenta todavía no se guarda: no hay base de datos en el Sprint 1.">Crear cuenta</button></div>';
+      '<button class="btn" data-act="toast" data-msg="Cuenta creada: entrás directo a la app.">Crear cuenta</button></div>';
   };
 
   S["registro-profesional"] = function () {
@@ -749,7 +760,7 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       '<dt>Matrícula</dt><dd>154321</dd><dt>Código del profesional</dt><dd>541043250006</dd>' +
       '<dt>Emisor</dt><dd>Ministerio de Salud de la Nación</dd><dt>Provincia</dt><dd>CABA</dd>' +
       '<dt>Estado de matrícula</dt><dd><span class="badge ok">Habilitada en CABA</span></dd></dl></div>' +
-      '<div class="stack" style="margin-top:16px"><button class="btn" data-act="toast" data-msg="Paso 3: crear la contraseña. La cuenta se habilita cuando exista la base de datos.">Sí, soy yo</button><button class="btn ghost" data-act="toast" data-msg="Vuelve al paso 1 para corregir DNI, matrícula o profesión.">No, revisar mis datos</button></div></div>';
+      '<div class="stack" style="margin-top:16px"><button class="btn" data-act="toast" data-msg="Paso 3: Crear cuenta, y entrás directo.">Sí, soy yo</button><button class="btn ghost" data-act="toast" data-msg="Vuelve al paso 1 para corregir DNI, matrícula o profesión.">No, revisar mis datos</button></div></div>';
   };
 
   /* Credencial del plan (CredencialPlan): la misma en el carrusel del Inicio y en Mi plan. */
@@ -778,8 +789,8 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       '<div class="carr" id="carr">' + paginas.map(function (p) { return '<div class="pag">' + p + '</div>'; }).join("") + '</div>' +
       '<div class="sect"><span class="h2">Accesos rápidos</span></div>' +
       '<div class="qa">' +
-      [["buscar", "search", "Buscar"], ["turnos", "steth", "Turnos"], ["estudios", "file", "Estudios"], ["mapa", "pin", "Centros"]].map(function (q) {
-        return '<button data-go="' + q[0] + '" aria-label="' + q[2] + '"><span class="circ">' + ic(q[1], 22) + '</span>' + q[2] + '</button>';
+      [["", "pill", "Recetas"], ["turnos", "steth", "Turnos"], ["estudios", "file", "Estudios"], ["mapa", "pin", "Centros"]].map(function (q) {
+        return '<button ' + (q[0] ? 'data-go="' + q[0] + '"' : 'data-act="toast" data-msg="Recetas: no está dibujada en este mockup."') + ' aria-label="' + q[2] + '"><span class="circ">' + ic(q[1], 22) + '</span>' + q[2] + '</button>';
       }).join("") + '</div>' +
       '<div class="sect"><span class="h2">Instituciones cercanas</span><button class="link" data-go="mapa">Ver mapa</button></div>' +
       vistaPrevia() +
@@ -825,19 +836,9 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       '<span class="attrib chica"><i>i</i></span></button>';
   }
 
-  S.buscar = function () {
-    var list = MEDICOS.filter(function (m) { return ui.esp === "Todas" || m.esp === ui.esp; });
-    return '<div class="content"><div class="h1">Buscar</div>' +
-      '<div class="row" style="gap:8px;margin-bottom:14px"><div class="input ph grow">' + ic("search", 18) + 'Médicos, especialidades...</div><button class="roundbtn" style="border-radius:var(--a-r2);box-shadow:none;border:1px solid var(--a-bd)" aria-label="Filtros" data-act="toast" data-msg="Filtros: plan, distancia, disponibilidad, valoración (próximo sprint).">' + ic("sliders", 18) + '</button></div>' +
-      '<div class="chips" style="margin-bottom:14px">' + ESPECIALIDADES.map(function (e) { return '<button class="chip' + (ui.esp === e ? " on" : "") + '" data-act="esp" data-v="' + e + '">' + e + '</button>'; }).join("") + '</div>' +
-      '<div class="small mut" style="margin-bottom:8px">' + list.length + ' profesionales que atienden <b>OSDE 210</b></div>' +
-      '<div class="stack">' + (list.length ? list.map(function (m) { return doctorRow(m, "medico"); }).join("") : '<div class="card mut" style="text-align:center">No hay profesionales de esta especialidad para tu cobertura.</div>') + '</div>' +
-      '</div>' + tabbar("paciente", "buscar");
-  };
-
   S.medico = function () {
     var m = medico(ui.medico);
-    return '<div class="content">' + back("Perfil profesional", "buscar") +
+    return '<div class="content">' + back("Perfil profesional", "inicio") +
       '<div style="display:grid;justify-items:center;gap:6px;text-align:center"><div class="av lg">' + m.ini + '</div><div class="h1" style="margin:8px 0 0;font-size:22px">' + m.nombre + '</div><div class="mut">' + m.esp + ' · ' + m.matricula + '</div></div>' +
       '<div class="grid2" style="grid-template-columns:repeat(3,1fr);margin:18px 0">' +
       '<div class="stat" style="text-align:center"><b>' + m.val.toString().replace(".", ",") + '</b><span>Valoración</span></div>' +
@@ -858,16 +859,16 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
     var html = '<div class="content">' + back("Reservar turno", "medico") +
       '<div class="card" style="margin-bottom:16px"><div class="row"><div class="av">' + m.ini + '</div><div class="grow"><div class="name">' + m.nombre + '</div><div class="meta">' + m.esp + '</div></div></div></div>' +
       '<div class="field"><label>Sede</label><div class="input">' + ic("pin", 16) + '<span style="flex:1">' + m.sede + ' · ' + m.dir + '</span>' + ic("right", 16) + '</div></div>' +
-      '<div class="row" style="justify-content:space-between;margin:4px 0 10px"><span class="h2" style="font-size:15px">Octubre 2026</span><span class="small mut">Presencial · Control</span></div>' +
+      '<div class="row" style="justify-content:space-between;margin:4px 0 10px"><span class="h2" style="font-size:15px">Octubre 2026</span></div>' +
       '<div class="days" style="margin-bottom:18px">' + dias.map(function (d, i) { return '<button class="day' + (ui.day === i ? " on" : "") + '" data-act="day" data-v="' + i + '"><span>' + d[0] + '</span><b>' + d[1] + '</b></button>'; }).join("") + '</div>' +
       '<div class="h2" style="font-size:15px;margin-bottom:10px">Horarios disponibles</div>' +
       '<div class="slots" style="margin-bottom:20px">' + slots.map(function (s) {
         var t = tomados.indexOf(s) >= 0;
         return '<button class="slot' + (ui.slot === s ? " on" : "") + '" ' + (t ? "disabled aria-label=\"" + s + " ocupado\"" : 'data-act="slot" data-v="' + s + '"') + '>' + s + '</button>';
       }).join("") + '</div>' +
-      '<button class="btn" data-act="overlay" data-v="confirmado">Confirmar reserva</button></div>';
+      '<button class="btn" data-act="overlay" data-v="confirmado">Solicitar turno</button></div>';
     if (ui.overlay === "confirmado") {
-      html += '<div class="overlay"><div class="dialog"><div class="okcirc">' + ic("check", 30, 2.5) + '</div><div class="h2">Turno confirmado</div><div class="mut">Tu turno fue reservado con éxito.</div>' +
+      html += '<div class="overlay"><div class="dialog"><div class="okcirc">' + ic("check", 30, 2.5) + '</div><div class="h2">Turno solicitado</div><div class="mut">Queda pendiente hasta que el profesional lo confirme.</div>' +
         '<div class="card" style="text-align:left;box-shadow:none"><div class="name" style="font-size:14px">' + m.nombre + '</div><div class="meta">' + dias[ui.day][0] + ' ' + dias[ui.day][1] + ' oct · ' + ui.slot + '</div><div class="meta">' + m.sede + '</div></div>' +
         '<button class="btn" data-go="turnos">Ver mis turnos</button></div></div>';
     }
@@ -1008,7 +1009,7 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
 
   S.menu = function () {
     var secciones = [
-      ["Mi salud", [["plan", "card", "Mi plan médico"], [null, "pill", "Mis recetas"], [null, "file", "Órdenes médicas"], [null, "history", "Historial"]]],
+      ["Mi salud", [["plan", "card", "Mi plan médico"], [null, "history", "Historial"]]],
       ["Favoritos y avisos", [[null, "heart", "Médicos favoritos"], [null, "pin", "Instituciones favoritas"], ["notificaciones", "bell", "Notificaciones", 2], ["calificar", "star", "Feedback"]]],
       ["Cuenta", [[null, "user", "Mi perfil"], [null, "shield", "Seguridad"], ["configuracion", "settings", "Configuración"], [null, "help", "Ayuda"]]]
     ];
@@ -1194,10 +1195,10 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       ir: [["registro-paciente", "Registro de paciente"], ["registro-profesional", "Registro profesional"]],
       datos: "Pantalla de navegación, sin datos." },
     "registro-paciente": { rol: "acceso", titulo: "Registro de paciente", ruta: "app/(auth)/registro-paciente.tsx",
-      resumen: "Alta con nombre, DNI, contraseña segura y obra social.",
+      resumen: "Alta con el DNI escaneado, contraseña segura y obra social → plan.",
       clave: ["La obra social filtra todo lo que el paciente ve en la app", "Contraseña con 8 caracteres, mayúscula, número y símbolo"],
       ir: [["login", "Iniciar sesión"]],
-      datos: "planMedicoService.listPlanesMedicos() y validation.ts. En el Sprint 1 valida pero no guarda la cuenta." },
+      datos: "planMedicoService.listPlanesMedicos() y validation.ts. Crea la cuenta y entra directo." },
     "registro-profesional": { rol: "acceso", titulo: "Registro profesional", ruta: "app/(auth)/registro-medico.tsx",
       resumen: "La matrícula se verifica en el padrón nacional antes de crear la cuenta.",
       clave: ["Tres pasos: datos, confirmación y cuenta", "Solo pasan las matrículas habilitadas"],
@@ -1209,29 +1210,24 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       ir: [["turnos", "Mis turnos"], ["plan", "Mi plan médico"], ["mapa", "Mapa"], ["notificaciones", "Notificaciones"]],
       datos: "turnoService.getProximoTurno(), planMedicoService, notificacionService e institucionService.buscarCentros(). Componentes Carrusel, CredencialPlan y MapaCentros (modo vista previa).",
       nativo: ["gps", "push"], plan: "Fase 3: la vista previa suma los centros privados que acepta tu obra social." },
-    buscar: { rol: "paciente", titulo: "Buscar", ruta: "app/(paciente)/buscar.tsx",
-      resumen: "Profesionales que atienden tu obra social, por especialidad.",
-      clave: ["Solo aparece lo que cubre tu plan", "Filtro rápido por especialidad"],
-      ir: [["medico", "Perfil profesional"]],
-      datos: "especialidadService y medicoService.searchMedicos({ planMedicoId })." },
     medico: { rol: "paciente", titulo: "Perfil profesional", ruta: "app/(paciente)/medico/[id].tsx",
       resumen: "Lo esencial arriba; el detalle, más abajo.",
       clave: ["Valoración y experiencia", "Dónde atiende y si acepta tu plan"],
       ir: [["reservar", "Solicitar turno"]],
       datos: "medicoService.getMedico(id)." },
     reservar: { rol: "paciente", titulo: "Reservar turno", ruta: "app/(paciente)/reservar/[medicoId].tsx",
-      resumen: "Sede, día, horario y confirmación, en una sola pantalla.",
+      resumen: "Día → horario → hospital → especialidad → profesional, y el turno nace pendiente.",
       clave: ["Los horarios ocupados no se pueden elegir", "Una reserva bloquea el horario: no hay doble reserva"],
       ir: [["turnos", "Mis turnos"]],
       datos: "turnoService.getHorariosDisponibles() y reservarTurno()." },
     turnos: { rol: "paciente", titulo: "Mis turnos", ruta: "app/(paciente)/turnos.tsx",
       resumen: "Tocá un turno para ver el detalle. Cancelar pide una segunda confirmación.",
-      clave: ["Detalle: profesional, fecha, tipo de consulta y sede con «Cómo llegar»", "Cancelar con segunda confirmación", "Historial: eliminar de a uno o todo (solo se oculta de la lista)"],
+      clave: ["Detalle: profesional, fecha y sede con «Cómo llegar»", "Cancelar con segunda confirmación", "Historial: eliminar de a uno o todo (solo se oculta de la lista)"],
       ir: [["medico", "Perfil profesional"], ["calificar", "Calificar consulta"], ["inicio", "Inicio"]],
       datos: "turnoService.listMisTurnos(), cancelarTurno(), ocultarTurnoDelHistorial() y vaciarHistorialTurnos(). Paneles BottomSheet + Confirmacion." },
     calificar: { rol: "paciente", titulo: "Calificar consulta", ruta: "app/(paciente)/cuenta/calificar/[turnoId].tsx",
       resumen: "De 1 a 5 estrellas, solo después de un turno cumplido.",
-      clave: ["Cinco criterios y un comentario opcional"],
+      clave: ["Solo las estrellas son obligatorias", "Cinco criterios y comentario opcionales"],
       ir: [["turnos", "Mis turnos"]],
       datos: "feedbackService.enviarFeedback()." },
     estudios: { rol: "paciente", titulo: "Mis estudios", ruta: "app/(paciente)/estudios.tsx",
@@ -1265,7 +1261,7 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       clave: ["La app arranca en claro aunque el teléfono esté en modo oscuro", "Probalo: el teléfono del emulador cambia de tema"],
       ir: [["menu", "Menú"]],
       datos: "useTheme().setPreferencia(\"claro\" | \"oscuro\")." },
-    agenda: { rol: "doctor", titulo: "Agenda", ruta: "app/(doctor)/index.tsx",
+    agenda: { rol: "doctor", titulo: "Inicio", ruta: "app/(doctor)/index.tsx",
       resumen: "El día del profesional: cuántos turnos tiene y quién viene.",
       clave: ["Turnos de hoy y de los próximos 7 días"],
       ir: [["ficha", "Ficha del paciente"], ["pacientes", "Mis pacientes"]],
@@ -1302,15 +1298,58 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       datos: "institucionService.crearInstitucion().", plan: "Fase 6: Georef (API del Estado, gratis) completa latitud y longitud a partir de la dirección." }
   };
 
+  /* Cambios del 28/10/2026 (lo que cambió respecto de este mockup) y rutas del backend que usa cada pantalla.
+     El dibujo del teléfono sigue siendo el del Sprint 1: lo nuevo se cuenta acá. */
+  var CAMBIOS = {
+    login: ["La sesión es un token: queda guardado cifrado en el teléfono y vence a los 90 días sin usar la app", "Al abrir la app se valida el token guardado; con huella, primero se pide la huella"],
+    "registro-paciente": ["Primero se escanea con la cámara el código PDF417 del frente del DNI", "DNI, nombre y apellido salen del código: no se escriben", "Un mismo DNI físico no abre dos cuentas (se guarda solo un HMAC del número de trámite)", "Después: obra social → plan y contraseña"],
+    "registro-profesional": ["También escanea el DNI: tiene que ser de la persona de la ficha del padrón", "78 especialidades oficiales, solo las de su profesión (Res. 1814/2015 y 199/2011), en orden alfabético", "El selector de especialidad tiene buscador"],
+    inicio: ["“Ver turno” lleva a Turnos → Próximos, se desplaza hasta ese turno, lo resalta y abre su detalle"],
+    medico: ["“Reservar” entra a la reserva con el profesional y su especialidad ya elegidos"],
+    reservar: ["Orden estricto: día → horario → hospital → especialidad → profesional", "Cada paso se habilita recién con el anterior elegido; cambiar uno suelta los siguientes", "Sin “Cualquiera” ni “Todas”: solo el hospital favorito se propone solo", "El backend recibe los 5 datos y revisa la combinación entera"],
+    turnos: ["Pestañas Reservar | Próximos y botón de Historial", "Al llegar desde “Ver turno” del Inicio, el turno se resalta y se abre su detalle"],
+    calificar: ["Solo “¿Cómo fue tu consulta?” (estrellas) es obligatoria", "Puntualidad, atención, trato, claridad y experiencia general pasan a ser opcionales"],
+    mapa: ["Buscador arriba del mapa (nombre, dirección o tipo) en lugar del aviso “N centros para…”", "Al tocarlo pasa a la lista; al elegir un resultado, el mapa va hasta ese centro", "La referencia de colores va en una sola fila"],
+    configuracion: ["El profesional también llega acá, desde la ruedita de su Perfil (modo claro u oscuro)"],
+    agenda: ["Mis horarios: vista Semana (una columna por día, bloques del color de cada lugar) o Por día", "Los 7 botones de los días entran en una sola fila"],
+    ficha: ["“Asignar orden” y “Asignar receta” tienen el mismo alto"],
+    "perfil-doc": ["“Coberturas que atiendo” va antes que “Lugares de atención”", "Los lugares que puede elegir son los públicos y los que aceptan alguna de sus coberturas", "Ruedita arriba que abre Configuración"],
+    panel: ["Métricas: instituciones con más turnos, después turnos por especialidad y por estado", "Cada gráfico tiene su color", "Ranking de mejor valorados con datos (opiniones del seed)"]
+  };
+  var APIS = {
+    login: [["POST", "/api/auth/login", "DNI + contraseña → token"], ["GET", "/api/sesion", "¿el token guardado sigue valiendo?"]],
+    registro: [],
+    "registro-paciente": [["POST", "/api/auth/registro/dni", "lee el código escaneado"], ["GET", "/api/planes"], ["POST", "/api/auth/registro/paciente"]],
+    "registro-profesional": [["GET", "/api/profesiones"], ["GET", "/api/especialidades"], ["POST", "/api/auth/registro/dni"], ["POST", "/api/auth/registro/profesional/verificar", "busca la ficha del padrón"], ["POST", "/api/auth/registro/profesional"]],
+    inicio: [["GET", "/api/pacientes/yo"], ["GET", "/api/pacientes/yo/turnos/proximo"], ["GET", "/api/instituciones", "vista previa del mapa"], ["GET", "/api/notificaciones", "la campana"]],
+    medico: [["GET", "/api/medicos/:id"], ["PUT", "/api/pacientes/yo/favoritos/medicos/:medicoId"], ["DELETE", "/api/pacientes/yo/favoritos/medicos/:medicoId"]],
+    reservar: [["GET", "/api/turnos/dias-con-turnos?desde=&hasta=", "días con lugar"], ["GET", "/api/turnos/disponibles?fecha=", "horarios libres de ese día"], ["GET", "/api/instituciones?sedes=", "hospitales con ese horario"], ["GET", "/api/especialidades"], ["PUT", "/api/pacientes/yo/favoritos/instituciones/:id", "guardar como favorito"], ["POST", "/api/turnos", "{ fecha, hora, sedeId, especialidadId, medicoId } → pendiente"]],
+    turnos: [["GET", "/api/pacientes/yo/turnos", "{ proximos, historial }"], ["PATCH", "/api/turnos/:id", "cancelar (24 h antes) u ocultar del historial"], ["POST", "/api/turnos/:id/reprogramar"], ["DELETE", "/api/pacientes/yo/turnos/historial", "“Eliminar todo” (oculta)"]],
+    calificar: [["GET", "/api/pacientes/yo/feedback/pendientes"], ["POST", "/api/turnos/:id/feedback", "{ estrellas, criterios?, comentario? }"]],
+    estudios: [["GET", "/api/pacientes/yo/ordenes?archivadas="], ["GET", "/api/pacientes/yo/resultados?archivados="], ["GET", "/api/resultados/:id/pdf", "cada descarga queda registrada"], ["PATCH", "/api/ordenes/:id", "archivar"], ["PATCH", "/api/resultados/:id", "archivar"]],
+    mapa: [["GET", "/api/instituciones?tipos=&lat=&lng=&radioKm=", "públicos + los que aceptan tu plan"], ["PUT", "/api/pacientes/yo/favoritos/instituciones/:id"], ["DELETE", "/api/pacientes/yo/favoritos/instituciones/:id"]],
+    menu: [["GET", "/api/pacientes/yo"], ["POST", "/api/auth/logout", "revoca el token"]],
+    notificaciones: [["GET", "/api/notificaciones"], ["PATCH", "/api/notificaciones", "marcar todas leídas"], ["PATCH", "/api/notificaciones/:id"]],
+    plan: [["GET", "/api/pacientes/yo"], ["GET", "/api/planes"], ["PATCH", "/api/pacientes/yo", "{ planMedicoId }"]],
+    configuracion: [["PATCH", "/api/auth/contrasena", "cambiar contraseña (Seguridad)"]],
+    agenda: [["GET", "/api/medicos/yo/agenda?desde=&hasta="], ["GET", "/api/medicos/yo/franjas", "Mis horarios"], ["PUT", "/api/medicos/yo/franjas"]],
+    pacientes: [["GET", "/api/medicos/yo/pacientes", "los que tienen un turno próximo con él"]],
+    ficha: [["GET", "/api/medicos/yo/pacientes/:pacienteId/ordenes"], ["GET", "/api/medicos/yo/pacientes/:pacienteId/recetas"], ["GET", "/api/medicos/yo/pacientes/:pacienteId/notas"], ["POST", "/api/medicos/yo/pacientes/:pacienteId/notas"], ["PATCH", "/api/turnos/:id", "confirmar o rechazar"], ["POST", "/api/ordenes"], ["POST", "/api/recetas"]],
+    "perfil-doc": [["GET", "/api/medicos/yo"], ["PUT", "/api/medicos/yo/coberturas"], ["GET", "/api/sedes/buscar?q=", "solo lugares compatibles con sus coberturas"], ["PUT", "/api/medicos/yo/lugares"], ["PUT", "/api/usuarios/yo/foto"], ["DELETE", "/api/usuarios/yo/foto"]],
+    panel: [["GET", "/api/admin/estadisticas"], ["GET", "/api/admin/metricas", "pestaña Métricas"]],
+    obras: [["GET", "/api/planes"], ["POST", "/api/admin/planes"]],
+    instituciones: [["GET", "/api/admin/instituciones?q="], ["POST", "/api/admin/instituciones"], ["PUT", "/api/admin/instituciones/:id/coberturas", "con fuente y fecha"]]
+  };
+
   var ROLES = [
     ["acceso", "Acceso", ["login", "registro", "registro-paciente", "registro-profesional"]],
-    ["paciente", "Paciente", ["inicio", "buscar", "medico", "reservar", "turnos", "calificar", "estudios", "mapa", "menu", "notificaciones", "plan", "configuracion"]],
+    ["paciente", "Paciente", ["inicio", "medico", "reservar", "turnos", "calificar", "estudios", "mapa", "menu", "notificaciones", "plan", "configuracion"]],
     ["doctor", "Profesional", ["agenda", "pacientes", "ficha", "perfil-doc"]],
     ["admin", "Administrador", ["panel", "obras", "instituciones"]]
   ];
   var ORDER = [];
   ROLES.forEach(function (r) { ORDER = ORDER.concat(r[2]); });
-  var FLUJO = [["login", "Login"], ["inicio", "Inicio"], ["buscar", "Buscar"], ["medico", "Médico"], ["reservar", "Reservar"], ["turnos", "Mis turnos"], ["calificar", "Calificar"]];
+  var FLUJO = [["login", "Login"], ["inicio", "Inicio"], ["medico", "Médico"], ["reservar", "Reservar"], ["turnos", "Mis turnos"], ["calificar", "Calificar"]];
 
   /* ---------------- Render ---------------- */
   var $app = document.getElementById("app");
@@ -1369,7 +1408,6 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
       var cuerpo = '<button class="prof" data-go="medico" data-med="' + m.id + '" aria-label="Ver perfil de ' + m.nombre + '"><div class="av" style="width:52px;height:52px">' + m.ini + '</div>' +
         '<div class="grow"><div class="name" style="font-size:16px;font-weight:700">' + m.nombre + '</div><div class="meta">' + m.esp + ' · Mat. ' + m.matricula + '</div></div><span class="mut">' + ic("right", 18) + '</span></button>' +
         seccion("calendar", "Fecha y horario", '<div class="sec-v">' + t.larga + ' · ' + t.hora + ' h</div>') +
-        seccion("steth", "Tipo de consulta", '<div class="sec-v">' + t.tipo + '</div>') +
         seccion("pin", "Sede", '<div class="sec-v">' + m.sede + '</div><div class="small mut">' + m.dir + ', CABA</div><button class="enlace" data-act="toast" data-msg="Abre Google Maps con la ruta hasta ' + m.sede + '.">Cómo llegar</button>');
       var pie = t.prox
         ? '<button class="btn outline" data-act="confirmar" data-v="cancelar">Cancelar turno</button>'
@@ -1422,20 +1460,19 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
     document.getElementById("indexTitle").textContent = "Pantallas · " + grupo[1];
     $list.innerHTML = grupo[2].map(function (id) {
       var m = META[id], idx = ORDER.indexOf(id) + 1;
-      var tags = (m.nativo ? '<span class="tag native">Nativo</span>' : "") + (m.plan ? '<span class="tag plan">Plan</span>' : "");
+      var tags = (m.nativo ? '<span class="tag native">Nativo</span>' : "") + (CAMBIOS[id] ? '<span class="tag nuevo">28/10</span>' : "");
       return '<li><button type="button" data-screen="' + id + '" aria-current="' + (id === ui.screen) + '"><span class="n">' + (idx < 10 ? "0" : "") + idx + '</span><span class="t">' + m.titulo + '</span>' + (tags ? '<span class="tags">' + tags + '</span>' : "") + '</button></li>';
     }).join("");
 
     var m = META[ui.screen];
     var chev = ic("right", 15, 2.4);
-    var html = '<div class="card-s"><div class="spec-head"><span class="spec-role">' + grupo[1] + '</span>' + (m.plan ? '<span class="pill plan">Plan de APIs</span>' : "") + '</div>' +
+    var html = '<div class="card-s"><div class="spec-head"><span class="spec-role">' + grupo[1] + '</span>' + "" + '</div>' +
       '<h1 class="spec-title">' + m.titulo + '</h1><p class="spec-sum">' + m.resumen + '</p>' +
       '<div><div class="lbl">Lo importante</div><ul class="keys">' + m.clave.map(function (x) { return "<li>" + ic("check", 16, 2.6) + "<span>" + x + "</span></li>"; }).join("") + '</ul></div>' +
       '<div><div class="lbl">Desde acá vas a</div><div class="goto">' + m.ir.map(function (x) { return '<button type="button" data-screen="' + x[0] + '">' + x[1] + ic("right", 14, 2.4) + '</button>'; }).join("") + '</div></div>' +
       '<details class="more"><summary>' + chev + 'Ver detalle técnico</summary><div class="more-body">' +
       '<div><div class="lbl">Archivo</div><code>' + m.ruta + '</code></div>' +
       '<div><div class="lbl">De dónde salen los datos</div>' + m.datos + '</div>' +
-      (m.plan ? '<div class="planbox"><div class="lbl">Plan de integración de APIs</div>' + m.plan + '</div>' : "") +
       '</div></details></div>';
     if (m.nativo) {
       html += '<div class="card-s native"><div class="spec-head"><span class="spec-role">Componentes nativos</span><span class="pill native">Consigna 1.4</span></div>' +
@@ -1445,6 +1482,15 @@ button.mk::before { content: ""; position: absolute; inset: -12px; }
             '<details><summary>' + chev + 'Justificación técnica</summary><div class="why">' + n.why + '</div></details></div></div>';
         }).join("") + '</div>';
     }
+    if (CAMBIOS[ui.screen]) {
+      html += '<div class="card-s cambios"><div class="spec-head"><span class="spec-role">Cambios del 28/10/2026</span></div><ul class="keys">' +
+        CAMBIOS[ui.screen].map(function (x) { return "<li>" + ic("check", 16, 2.6) + "<span>" + x + "</span></li>"; }).join("") + '</ul></div>';
+    }
+    var apis = APIS[ui.screen] || [];
+    html += '<div class="card-s"><div class="spec-head"><span class="spec-role">Rutas de la API</span><span class="pill plan">Backend</span></div>' +
+      (apis.length ? '<ul class="apis">' + apis.map(function (a) {
+        return '<li><b class="m-' + a[0] + '">' + a[0] + '</b><span>' + a[1] + (a[2] ? '<small>' + a[2] + '</small>' : "") + '</span></li>';
+      }).join("") + '</ul>' : '<p class="spec-sum">Ninguna: esta pantalla solo elige a qué registro ir.</p>') + '</div>';
     $spec.innerHTML = html;
 
     var fi = FLUJO.map(function (f) { return f[0]; }).indexOf(ui.screen);

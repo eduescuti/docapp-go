@@ -32,7 +32,7 @@ import {
   Text,
   TextField,
 } from "@/components";
-import { EstadoOrden, EstadoTurno, Medico, NotaPaciente, OrdenLaboratorio, Paciente, PlanMedico, Receta } from "@/domain";
+import { EstadoOrden, EstadoTurno, Medico, NotaPaciente, OrdenLaboratorio, Paciente, PlanConObraSocial, Receta } from "@/domain";
 import {
   confirmarTurno,
   crearNotaPaciente,
@@ -48,12 +48,13 @@ import {
 } from "@/services";
 import { useTheme } from "@/theme";
 import { tomarAviso } from "@/utils/avisoAlVolver";
+import { nombrePlan } from "@/utils/cobertura";
 import { formatFechaCorta, formatFechaHora, formatFechaLarga, hoyIso, iniciales } from "@/utils/format";
 
 interface Ficha {
   medico: Medico;
   paciente: Paciente;
-  plan?: PlanMedico;
+  plan?: PlanConObraSocial;
   turnos: TurnoDeAgenda[];
   recetas: Receta[];
   ordenes: OrdenLaboratorio[];
@@ -262,7 +263,7 @@ export default function DoctorPacienteScreen() {
 
       <Card style={{ marginBottom: 16 }}>
         <View style={styles.perfilRow}>
-          <Avatar iniciales={iniciales(paciente.nombre, paciente.apellido)} size={56} />
+          <Avatar uri={paciente.avatarUrl} iniciales={iniciales(paciente.nombre, paciente.apellido)} size={56} />
           <View style={{ flex: 1 }}>
             <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
               {paciente.nombre} {paciente.apellido}
@@ -270,7 +271,7 @@ export default function DoctorPacienteScreen() {
             <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>DNI {paciente.dni}</Text>
           </View>
         </View>
-        <Dato label="Cobertura" valor={plan?.nombre ?? "—"} />
+        <Dato label="Cobertura" valor={plan ? nombrePlan(plan) : "—"} />
       </Card>
 
       <View style={styles.acciones}>
@@ -514,7 +515,7 @@ function Accion({ icon: Icon, titulo, detalle, onPress }: { icon: LucideIcon; ti
   // El flex va en un contenedor: con onPress, Card envuelve su vista en un Pressable que no recibe el estilo.
   return (
     <View style={styles.accionContenedor}>
-      <Card style={styles.accion} onPress={onPress} accessibilityLabel={`${titulo}: ${detalle}`}>
+      <Card style={styles.accion} llenar onPress={onPress} accessibilityLabel={`${titulo}: ${detalle}`}>
         <View style={[styles.tapaIcono, { backgroundColor: theme.colors.accent }]}>
           <Icon size={20} color={theme.colors.accentForeground} />
         </View>

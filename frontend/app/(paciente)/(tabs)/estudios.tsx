@@ -252,7 +252,7 @@ export default function EstudiosScreen() {
         </Text>
         {esNuevo(item.estudio) ? (
           <View style={[styles.nuevo, { backgroundColor: theme.colors.accent }]}>
-            <View style={[styles.nuevoPunto, { backgroundColor: theme.colors.primary }]} />
+            <View style={[styles.nuevoPunto, { backgroundColor: theme.colors.accentForeground }]} />
             <Text style={[styles.nuevoTexto, { color: theme.colors.accentForeground }]}>Nuevo</Text>
           </View>
         ) : null}

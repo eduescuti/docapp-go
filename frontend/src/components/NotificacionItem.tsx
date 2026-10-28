@@ -20,6 +20,7 @@ import { Text } from "./Text";
 const ICONOS: Record<TipoNotificacion, LucideIcon> = {
   recordatorio_turno: Bell,
   turno_confirmado: CalendarCheck,
+  turno_rechazado: CalendarX,
   turno_cancelado: CalendarX,
   turno_reprogramado: CalendarClock,
   resultado_disponible: FileCheck,

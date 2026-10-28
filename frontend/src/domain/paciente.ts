@@ -16,5 +16,9 @@ export interface Paciente {
   numeroAfiliado: string;
   medicosFavoritosIds: string[];
   institucionesFavoritasIds: string[];
+  /**
+   * Foto de perfil (`/api/fotos/...`, la completa `urlDeLaApi`). La carga él en Mi perfil; la ven él y los
+   * profesionales que lo tienen asignado por un turno, no el admin. Sin foto se ven las iniciales.
+   */
   avatarUrl?: string;
 }

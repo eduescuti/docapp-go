@@ -11,6 +11,7 @@ import {
   esMedicoFavorito,
   getEspecialidad,
   getMedico,
+  urlDeLaApi,
 } from "@/services";
 import { useTheme } from "@/theme";
 import { nombreConTitulo } from "@/utils/format";
@@ -48,7 +49,7 @@ export default function MedicoProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={styles.heroImageWrapper}>
-        {medico.avatarUrl && <Image source={{ uri: medico.avatarUrl }} style={styles.heroImage} />}
+        {medico.avatarUrl && <Image source={{ uri: urlDeLaApi(medico.avatarUrl) }} style={styles.heroImage} />}
         <View style={[styles.heroOverlay, { backgroundColor: theme.colors.background }]} />
       </View>
 

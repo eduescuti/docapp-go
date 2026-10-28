@@ -1,29 +1,33 @@
-import { Institucion, Sede, TipoInstitucion } from "@/domain";
-import { fuenteInstitucionesMock, institucionesMock } from "@/mocks";
-import { distanciaKm } from "@/utils/geo";
+import { CoberturaAceptada, FuenteCobertura, Institucion, PlanMedico, Sede, TipoInstitucion } from "@/domain";
+import { cubrePlan } from "@/utils/cobertura";
 
-import { delay } from "./apiClient";
-
-// Estado en memoria: el admin puede sumar instituciones durante la sesión.
-let instituciones: Institucion[] = [...institucionesMock];
+import { api, ErrorApi } from "./apiClient";
 
 export interface FiltrosInstitucion {
   planMedicoId?: string;
 }
 
-/** Reglas 1 y 15 (CLAUDE.md §10): un público atiende a todos; un privado, solo si acepta el plan. */
-export function aceptaCobertura(institucion: Institucion, planMedicoId: string): boolean {
-  return institucion.origen === "publico" || institucion.planesAceptadosIds.includes(planMedicoId);
+/**
+ * Reglas 1 y 15 (CLAUDE.md §10): un público atiende a todos; un privado o de seguridad social, solo si acepta
+ * la obra social del paciente (entera o su plan). Lo mismo que filtra el backend; la app lo usa sobre datos que ya
+ * tiene (p. ej. los lugares del profesional al asignar una orden).
+ */
+export function aceptaCobertura(institucion: Institucion, plan: Pick<PlanMedico, "id" | "obraSocialId">): boolean {
+  return institucion.origen === "publico" || cubrePlan(institucion.coberturas, plan);
 }
 
-/** Solo devuelve lo disponible para la cobertura del paciente, si se indica su plan. */
+/**
+ * Con `planMedicoId` (el del paciente de la sesión): las que puede usar, `GET /api/instituciones`. Sin plan (admin):
+ * todas, primero las que tienen coberturas, `GET /api/admin/instituciones`.
+ */
 export async function listInstituciones(filtros: FiltrosInstitucion = {}): Promise<Institucion[]> {
-  const { planMedicoId } = filtros;
-  const resultado = planMedicoId ? instituciones.filter((inst) => aceptaCobertura(inst, planMedicoId)) : instituciones;
-  return delay(resultado);
+  if (!filtros.planMedicoId) return api<Institucion[]>("/api/admin/instituciones");
+  const centros = await api<CentroCercano[]>("/api/instituciones");
+  return centros.map((c) => c.institucion);
 }
 
 export interface FiltrosCentros {
+  /** Lo resuelve el backend con el plan del paciente de la sesión; se mantiene por compatibilidad. */
   planMedicoId: string;
   tipos?: TipoInstitucion[];
   /** Ubicación real del paciente. Sin ella no se calculan distancias y se ordena por nombre. */
@@ -41,77 +45,41 @@ export interface CentroCercano {
   motivo: "publica" | "cobertura";
 }
 
+function consultaCentros(params: { tipos?: string[]; cerca?: { latitud: number; longitud: number }; radioKm?: number; limite?: number; sedes?: string[] }) {
+  const q = new URLSearchParams();
+  if (params.tipos && params.tipos.length > 0) q.set("tipos", params.tipos.join(","));
+  if (params.cerca) {
+    q.set("lat", String(params.cerca.latitud));
+    q.set("lng", String(params.cerca.longitud));
+  }
+  if (params.radioKm !== undefined) q.set("radioKm", String(params.radioKm));
+  if (params.limite !== undefined) q.set("limite", String(params.limite));
+  if (params.sedes) q.set("sedes", params.sedes.join(","));
+  const texto = q.toString();
+  return `/api/instituciones${texto ? `?${texto}` : ""}`;
+}
+
 /**
- * Centros que el paciente puede usar, para el mapa y la lista: cobertura → tipos → radio →
- * orden por distancia → límite. Con backend sería `GET /instituciones?plan=&tipos=&lat=&lng=&radio=&limite=`.
+ * Centros que el paciente puede usar, para el mapa y la lista: cobertura → tipos → radio → orden por distancia →
+ * límite. Lo resuelve el backend con el plan de la sesión.
  */
 export async function buscarCentros(filtros: FiltrosCentros): Promise<CentroCercano[]> {
-  const { planMedicoId, tipos, cerca, radioKm, limite } = filtros;
-  const centros: CentroCercano[] = [];
-  for (const institucion of instituciones) {
-    if (!aceptaCobertura(institucion, planMedicoId)) continue;
-    if (tipos && tipos.length > 0 && !tipos.includes(institucion.tipo)) continue;
-    if (institucion.sedes.length === 0) continue;
-    const conDistancia = institucion.sedes.map((sede) => ({
-      sede,
-      distanciaKm: cerca ? distanciaKm(cerca.latitud, cerca.longitud, sede.latitud, sede.longitud) : undefined,
-    }));
-    const masCercana = conDistancia.reduce((a, b) => ((b.distanciaKm ?? 0) < (a.distanciaKm ?? 0) ? b : a));
-    if (radioKm !== undefined && masCercana.distanciaKm !== undefined && masCercana.distanciaKm > radioKm) continue;
-    centros.push({
-      institucion,
-      sede: masCercana.sede,
-      distanciaKm: masCercana.distanciaKm,
-      motivo: institucion.origen === "publico" ? "publica" : "cobertura",
-    });
-  }
-  centros.sort((a, b) =>
-    a.distanciaKm !== undefined && b.distanciaKm !== undefined
-      ? a.distanciaKm - b.distanciaKm
-      : a.institucion.nombre.localeCompare(b.institucion.nombre, "es"),
-  );
-  return delay(limite ? centros.slice(0, limite) : centros);
+  return api<CentroCercano[]>(consultaCentros(filtros));
 }
 
-/**
- * Los centros de esas sedes puntuales (p. ej. las que tienen turnos libres en la reserva), para
- * elegir uno en el mapa. No filtra por cobertura: quien llama ya eligió cuáles mostrar.
- */
-export async function listCentrosPorSedes(
-  sedeIds: string[],
-  cerca?: { latitud: number; longitud: number },
-): Promise<CentroCercano[]> {
-  const centros: CentroCercano[] = [];
-  for (const institucion of instituciones) {
-    for (const sede of institucion.sedes) {
-      if (!sedeIds.includes(sede.id)) continue;
-      centros.push({
-        institucion,
-        sede,
-        distanciaKm: cerca ? distanciaKm(cerca.latitud, cerca.longitud, sede.latitud, sede.longitud) : undefined,
-        motivo: institucion.origen === "publico" ? "publica" : "cobertura",
-      });
-    }
-  }
-  centros.sort((a, b) =>
-    a.distanciaKm !== undefined && b.distanciaKm !== undefined
-      ? a.distanciaKm - b.distanciaKm
-      : a.institucion.nombre.localeCompare(b.institucion.nombre, "es"),
-  );
-  return delay(centros);
-}
-
-/** Acceso sincrónico para otros services (p. ej. el detalle de un turno). Las pantallas usan las funciones async. */
-export function getInstitucionEnMemoria(id: string): Institucion | undefined {
-  return instituciones.find((i) => i.id === id);
-}
-
-export function getSedeEnMemoria(sedeId: string): Sede | undefined {
-  return instituciones.flatMap((i) => i.sedes).find((s) => s.id === sedeId);
+/** Los centros de esas sedes puntuales (p. ej. las que tienen turnos libres en la reserva), para elegir uno en el mapa. */
+export async function listCentrosPorSedes(sedeIds: string[], cerca?: { latitud: number; longitud: number }): Promise<CentroCercano[]> {
+  if (sedeIds.length === 0) return [];
+  return api<CentroCercano[]>(consultaCentros({ sedes: sedeIds, cerca }));
 }
 
 export async function getInstitucion(id: string): Promise<Institucion | undefined> {
-  return delay(instituciones.find((i) => i.id === id));
+  try {
+    return await api<Institucion>(`/api/instituciones/${encodeURIComponent(id)}`);
+  } catch (e) {
+    if (e instanceof ErrorApi && e.status === 404) return undefined;
+    throw e;
+  }
 }
 
 export interface DatosNuevaInstitucion {
@@ -122,44 +90,37 @@ export interface DatosNuevaInstitucion {
   telefono: string;
   latitud: number;
   longitud: number;
-  planesAceptadosIds: string[];
+  coberturas: CoberturaAceptada[];
+  fuente: FuenteCobertura;
 }
 
-/** Alta de institución con su sede principal. Las coordenadas son las que después usa el mapa. */
+/** Alta de institución con su sede principal (admin). Las coordenadas son las que después usa el mapa. */
 export async function crearInstitucion(datos: DatosNuevaInstitucion): Promise<Institucion> {
   const nombre = datos.nombre.trim();
-  if (!nombre || !datos.direccion.trim() || !datos.ciudad.trim()) {
-    throw new Error("Completá nombre, dirección y ciudad.");
-  }
+  if (!nombre || !datos.direccion.trim() || !datos.ciudad.trim()) throw new Error("Completá nombre, dirección y ciudad.");
   if (!Number.isFinite(datos.latitud) || Math.abs(datos.latitud) > 90) throw new Error("Latitud inválida.");
   if (!Number.isFinite(datos.longitud) || Math.abs(datos.longitud) > 180) throw new Error("Longitud inválida.");
-  if (datos.planesAceptadosIds.length === 0) throw new Error("Elegí al menos una obra social aceptada.");
+  if (datos.coberturas.length === 0) throw new Error("Elegí al menos una obra social aceptada.");
+  const { fuente, ...resto } = datos;
+  return api<Institucion>("/api/admin/instituciones", {
+    metodo: "POST",
+    cuerpo: { ...resto, nombre, telefono: datos.telefono.trim() || undefined, ...fuente },
+  });
+}
 
-  const id = `inst-${Date.now()}`;
-  const institucion: Institucion = {
-    id,
-    nombre,
-    tipo: datos.tipo,
-    // Hasta que el formulario tenga el selector Público / Privado (Fase 6 del plan), las altas
-    // del admin son privadas: se ven solo para las obras sociales elegidas, como hasta ahora.
-    origen: "privado",
-    planesAceptadosIds: datos.planesAceptadosIds,
-    sedes: [
-      {
-        id: `sede-${id}-1`,
-        institucionId: id,
-        nombre,
-        direccion: datos.direccion.trim(),
-        ciudad: datos.ciudad.trim(),
-        latitud: datos.latitud,
-        longitud: datos.longitud,
-        telefono: datos.telefono.trim() || undefined,
-      },
-    ],
-  };
-  // Primero, para que el admin la vea arriba de la lista.
-  instituciones = [institucion, ...instituciones];
-  return delay(institucion);
+/**
+ * El admin reemplaza las coberturas de una institución, con su fuente y fecha (regla 17), como
+ * `PUT /api/admin/instituciones/:id/coberturas`. Los públicos no tienen coberturas: los ven todos (regla 15).
+ */
+export async function guardarCoberturasInstitucion(
+  institucionId: string,
+  coberturas: CoberturaAceptada[],
+  fuente: FuenteCobertura,
+): Promise<Institucion> {
+  return api<Institucion>(`/api/admin/instituciones/${encodeURIComponent(institucionId)}/coberturas`, {
+    metodo: "PUT",
+    cuerpo: { coberturas, ...fuente },
+  });
 }
 
 export interface FuenteInstituciones {
@@ -168,12 +129,19 @@ export interface FuenteInstituciones {
   version: string;
 }
 
+/** De dónde salen los establecimientos, para la atribución en Menú → Ayuda (licencia CC BY 4.0). */
+const FUENTE_INSTITUCIONES: FuenteInstituciones = {
+  fuente: "REFES — Registro Federal de Establecimientos de Salud, Ministerio de Salud de la Nación",
+  licencia: "CC BY 4.0",
+  version: "2025-12-15",
+};
+
 export async function getFuenteInstituciones(): Promise<FuenteInstituciones> {
-  return delay(fuenteInstitucionesMock);
+  return FUENTE_INSTITUCIONES;
 }
 
 export async function getSede(sedeId: string): Promise<Sede | undefined> {
-  return delay(instituciones.flatMap((i) => i.sedes).find((s) => s.id === sedeId));
+  return (await listLugaresDeAtencion([sedeId]))[0]?.sede;
 }
 
 /** Un lugar de atención de un profesional: la sede con su institución (hospital) ya resuelta. */
@@ -184,10 +152,11 @@ export interface LugarDeAtencion {
 
 /** Lugares de atención (sedes) de un profesional, en un solo pedido. Los que no se encuentran se omiten. */
 export async function listLugaresDeAtencion(sedeIds: string[]): Promise<LugarDeAtencion[]> {
-  const lugares = sedeIds.flatMap((id) => {
-    const sede = getSedeEnMemoria(id);
-    const institucion = sede ? getInstitucionEnMemoria(sede.institucionId) : undefined;
-    return sede && institucion ? [{ sede, institucion }] : [];
-  });
-  return delay(lugares);
+  if (sedeIds.length === 0) return [];
+  return api<LugarDeAtencion[]>(`/api/sedes?ids=${sedeIds.map(encodeURIComponent).join(",")}`);
+}
+
+/** Búsqueda de lugares por nombre, para que el profesional elija dónde atiende. `GET /api/sedes/buscar?q=`. */
+export async function buscarLugares(texto: string): Promise<LugarDeAtencion[]> {
+  return api<LugarDeAtencion[]>(`/api/sedes/buscar?q=${encodeURIComponent(texto.trim())}`);
 }

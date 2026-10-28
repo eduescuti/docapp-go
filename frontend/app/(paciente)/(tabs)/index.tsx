@@ -19,7 +19,7 @@ import {
   StatusBadge,
   Text,
 } from "@/components";
-import { Especialidad, Institucion, Medico, Notificacion, Paciente, PlanMedico, Sede, Turno } from "@/domain";
+import { Especialidad, Institucion, Medico, Notificacion, Paciente, PlanConObraSocial, Sede, Turno } from "@/domain";
 import { useTabsEnFoco } from "@/hooks/useTabsEnFoco";
 import { CENTRO_CABA, useUbicacion } from "@/hooks/useUbicacion";
 import {
@@ -52,7 +52,7 @@ export default function HomeScreen() {
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [proximo, setProximo] = useState<ProximoTurnoInfo | null>(null);
-  const [plan, setPlan] = useState<PlanMedico | undefined>();
+  const [plan, setPlan] = useState<PlanConObraSocial | undefined>();
   // El carrusel se muestra recién cuando se sabe si hay próximo turno: si no, aparece primero la credencial
   // del plan y el turno entra un par de segundos después.
   const [cargado, setCargado] = useState(false);
@@ -320,8 +320,10 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
           <PrimaryButton
             label="Ver turno"
             variant="outline"
-            onPress={() => router.navigate("/turnos")}
-            accessibilityLabel="Ver turno"
+            // Lleva a Turnos → Próximos y abre el detalle de este turno; `t` cambia en cada toque para que se
+            // vuelva a abrir aunque sea el mismo.
+            onPress={() => router.navigate({ pathname: "/turnos", params: { abrirTurno: proximo.turno.id, t: String(Date.now()) } })}
+            accessibilityLabel="Ver el detalle del próximo turno"
           />
         </View>
         {proximo.sede ? (

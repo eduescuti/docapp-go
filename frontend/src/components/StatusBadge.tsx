@@ -9,7 +9,6 @@ const ETIQUETAS: Record<EstadoTurno | EstadoOrden, string> = {
   confirmado: "Confirmado",
   pendiente: "Pendiente",
   cancelado: "Cancelado",
-  reprogramado: "Reprogramado",
   completado: "Completado",
   rechazado: "Rechazado",
   listo: "Listo",

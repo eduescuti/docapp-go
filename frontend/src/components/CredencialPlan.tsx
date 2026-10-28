@@ -1,13 +1,14 @@
 import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { ShieldCheck } from "lucide-react-native";
 
-import type { PlanMedico } from "@/domain";
+import type { PlanConObraSocial } from "@/domain";
 import { useTheme } from "@/theme";
+import { nombrePlan } from "@/utils/cobertura";
 import { alPresionar } from "@/utils/presionado";
 import { Text } from "./Text";
 
 interface CredencialPlanProps {
-  plan?: PlanMedico;
+  plan?: PlanConObraSocial;
   /** "Sofía Martínez" */
   afiliado: string;
   dni: string;
@@ -20,15 +21,15 @@ interface CredencialPlanProps {
 export function CredencialPlan({ plan, afiliado, dni, onPress, style }: CredencialPlanProps) {
   const { theme } = useTheme();
   const color = theme.colors.primaryForeground;
-  const descripcion = `Credencial: ${plan?.nombre ?? ""}, ${afiliado}, DNI ${dni}`;
+  const descripcion = `Credencial: ${plan ? nombrePlan(plan) : ""}, ${afiliado}, DNI ${dni}`;
 
   const contenido = (
     <>
       <View style={styles.encabezado}>
-        <Text style={[styles.aseguradora, { color }]}>{plan?.aseguradora ?? "—"}</Text>
+        <Text style={[styles.aseguradora, { color }]}>{plan?.obraSocial.nombre ?? "—"}</Text>
         <ShieldCheck size={24} color={color} />
       </View>
-      <Text variant="heading" style={[styles.plan, { color }]}>{plan?.nombre ?? "Cargando..."}</Text>
+      <Text variant="heading" style={[styles.plan, { color }]}>{plan ? nombrePlan(plan) : "Cargando..."}</Text>
       <View style={styles.pie}>
         <View>
           <Text style={[styles.etiqueta, { color }]}>Afiliado/a</Text>

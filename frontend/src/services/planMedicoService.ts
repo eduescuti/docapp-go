@@ -1,32 +1,44 @@
-import { PlanMedico } from "@/domain";
-import { planesMedicosMock } from "@/mocks";
+import { ObraSocialConPlanes, PlanConObraSocial } from "@/domain";
 
-import { delay } from "./apiClient";
+import { api } from "./apiClient";
 
-// Estado en memoria: el admin puede sumar obras sociales durante la sesión.
-let planes: PlanMedico[] = [...planesMedicosMock];
+// Catálogo de obras sociales y planes (`GET /api/planes`): se pide una vez y se vuelve a pedir si el admin suma uno.
+let catalogo: Promise<ObraSocialConPlanes[]> | null = null;
 
-export async function listPlanesMedicos(): Promise<PlanMedico[]> {
-  return delay(planes);
+/** Obras sociales con sus planes, por nombre. */
+export async function listObrasSociales(): Promise<ObraSocialConPlanes[]> {
+  catalogo ??= api<ObraSocialConPlanes[]>("/api/planes", { conSesion: false }).catch((e: unknown) => {
+    catalogo = null;
+    throw e;
+  });
+  return catalogo;
 }
 
-export async function getPlanMedico(id: string): Promise<PlanMedico | undefined> {
-  return delay(planes.find((p) => p.id === id));
+/** Todos los planes con su obra social (para mostrar el plan de cada paciente). */
+export async function listPlanesMedicos(): Promise<PlanConObraSocial[]> {
+  return (await listObrasSociales()).flatMap(({ planes: lista, ...obraSocial }) => lista.map((plan) => ({ ...plan, obraSocial })));
+}
+
+export async function getPlanMedico(id: string): Promise<PlanConObraSocial | undefined> {
+  return (await listPlanesMedicos()).find((p) => p.id === id);
 }
 
 export interface DatosNuevoPlan {
-  aseguradora: string;
-  nombre: string;
+  obraSocial: string;
+  /** Vacío: la obra social nueva arranca con el plan "General". */
+  plan: string;
 }
 
-export async function crearPlanMedico(datos: DatosNuevoPlan): Promise<PlanMedico> {
-  const aseguradora = datos.aseguradora.trim();
-  const nombre = datos.nombre.trim();
-  if (!aseguradora || !nombre) throw new Error("Completá la obra social y el nombre del plan.");
-  const duplicado = planes.some((p) => p.nombre.toLowerCase() === nombre.toLowerCase());
-  if (duplicado) throw new Error("Ya existe un plan con ese nombre.");
-
-  const plan: PlanMedico = { id: `plan-${Date.now()}`, aseguradora, nombre };
-  planes = [...planes, plan];
-  return delay(plan);
+/**
+ * Alta de un plan (admin). Si la obra social no existe se crea (con el plan "General" si no se indica otro); si
+ * existe, el plan se suma a ella.
+ */
+export async function crearPlanMedico(datos: DatosNuevoPlan): Promise<PlanConObraSocial> {
+  if (!datos.obraSocial.trim()) throw new Error("Completá el nombre de la obra social.");
+  const plan = await api<PlanConObraSocial>("/api/admin/planes", {
+    metodo: "POST",
+    cuerpo: { obraSocial: datos.obraSocial.trim(), plan: datos.plan.trim() || undefined },
+  });
+  catalogo = null;
+  return plan;
 }

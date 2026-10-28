@@ -2,8 +2,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KEY_BIOMETRIA_HABILITADA = "@docapp:biometria_habilitada";
 const KEY_ULTIMO_DNI = "@docapp:ultimo_dni";
-const KEY_ULTIMA_CLAVE = "@docapp:ultima_clave";
 const KEY_ULTIMO_ROL = "@docapp:ultimo_rol";
+
+/** Versiones anteriores de la app guardaban la contraseña para la huella: se borra al abrir la app. */
+export async function borrarContrasenaGuardada(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem("@docapp:ultima_clave");
+  } catch {
+    // Nada que borrar.
+  }
+}
 
 export async function estaBiometriaHabilitada(): Promise<boolean> {
   try {
@@ -37,12 +45,13 @@ export async function habilitarBiometriaAutomatica(forzar: boolean): Promise<voi
   }
 }
 
-export async function guardarSesionBiometrica(dni: string, clave?: string, rol?: string): Promise<void> {
+/**
+ * Recuerda el DNI de la última cuenta que entró en este teléfono (para el ingreso con huella). La contraseña no
+ * se guarda nunca: la huella desbloquea el token de sesión, que vive cifrado en `tokenSesion.ts`.
+ */
+export async function guardarSesionBiometrica(dni: string, rol?: string): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY_ULTIMO_DNI, dni);
-    if (clave) {
-      await AsyncStorage.setItem(KEY_ULTIMA_CLAVE, clave);
-    }
     if (rol) {
       await AsyncStorage.setItem(KEY_ULTIMO_ROL, rol);
     }
@@ -51,18 +60,13 @@ export async function guardarSesionBiometrica(dni: string, clave?: string, rol?:
   }
 }
 
-export async function obtenerDatosSesionBiometrica(): Promise<{
-  dni: string | null;
-  clave: string | null;
-  rol: string | null;
-}> {
+export async function obtenerDatosSesionBiometrica(): Promise<{ dni: string | null; rol: string | null }> {
   try {
     const dni = await AsyncStorage.getItem(KEY_ULTIMO_DNI);
-    const clave = await AsyncStorage.getItem(KEY_ULTIMA_CLAVE);
     const rol = await AsyncStorage.getItem(KEY_ULTIMO_ROL);
-    return { dni, clave, rol };
+    return { dni, rol };
   } catch {
-    return { dni: null, clave: null, rol: null };
+    return { dni: null, rol: null };
   }
 }
 
@@ -71,7 +75,8 @@ export async function limpiarSesionBiometrica(): Promise<void> {
     // La preferencia queda en "false" (no se borra) para que se sepa que se apagó a propósito.
     await AsyncStorage.setItem(KEY_BIOMETRIA_HABILITADA, "false");
     await AsyncStorage.removeItem(KEY_ULTIMO_DNI);
-    await AsyncStorage.removeItem(KEY_ULTIMA_CLAVE);
+    // Versiones anteriores guardaban acá la contraseña: se borra si quedó.
+    await AsyncStorage.removeItem("@docapp:ultima_clave");
     await AsyncStorage.removeItem(KEY_ULTIMO_ROL);
   } catch (e) {
     console.error("Error limpiando credenciales biométricas", e);

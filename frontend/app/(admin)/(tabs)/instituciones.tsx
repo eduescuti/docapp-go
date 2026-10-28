@@ -1,23 +1,28 @@
 import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
-import { Building2, FlaskConical, Hospital, Stethoscope } from "lucide-react-native";
+import { Building2, ChevronRight, FlaskConical, Hospital, Stethoscope } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 
 import {
+  CampoBusqueda,
+  CamposFuente,
   Card,
-  Chip,
+  FuenteEditable,
   IconBadge,
   PrimaryButton,
   ScreenContainer,
   SectionHeader,
   SelectField,
+  SelectorCoberturas,
   Text,
   TextField,
 } from "@/components";
-import { Institucion, PlanMedico, TipoInstitucion } from "@/domain";
-import { crearInstitucion, listInstituciones, listPlanesMedicos } from "@/services";
+import { CoberturaAceptada, Institucion, ObraSocialConPlanes, TipoInstitucion } from "@/domain";
+import { crearInstitucion, listInstituciones, listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
+import { resumenCoberturas } from "@/utils/cobertura";
+import { hoyIso } from "@/utils/format";
 
 const TIPOS: { value: TipoInstitucion; label: string; icon: LucideIcon }[] = [
   { value: "hospital", label: "Hospital", icon: Hospital },
@@ -28,17 +33,27 @@ const TIPOS: { value: TipoInstitucion; label: string; icon: LucideIcon }[] = [
 
 const esTipo = (v: string): v is TipoInstitucion => TIPOS.some((t) => t.value === v);
 
-/** Con ~1.000 establecimientos del REFES no se dibujan todos: el buscador queda para más adelante. */
+/** Con ~1.000 establecimientos del REFES no se dibujan todos: se busca por nombre. */
 const LIMITE_LISTA = 30;
+
+const FUENTE_VACIA: FuenteEditable = { fuente: "web_institucion", fuenteUrl: "" };
+
+/** Sin tildes ni mayúsculas, para que "guemes" encuentre "Güemes". */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** "-34,60" o "-34.60" -> -34.6 */
 const parseCoordenada = (v: string) => Number.parseFloat(v.replace(",", "."));
 
-/** Alta y listado de hospitales, clínicas, centros médicos y laboratorios. */
+/**
+ * Alta y listado de hospitales, clínicas, centros médicos y laboratorios. Tocar una abre la edición de sus
+ * coberturas (las carga solo el admin, regla 17).
+ */
 export default function AdminInstitucionesScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
   const [instituciones, setInstituciones] = useState<Institucion[]>([]);
-  const [planes, setPlanes] = useState<PlanMedico[]>([]);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
+  const [busqueda, setBusqueda] = useState("");
   const [formAbierto, setFormAbierto] = useState(false);
 
   const [nombre, setNombre] = useState("");
@@ -48,22 +63,20 @@ export default function AdminInstitucionesScreen() {
   const [telefono, setTelefono] = useState("");
   const [latitud, setLatitud] = useState("");
   const [longitud, setLongitud] = useState("");
-  const [planesIds, setPlanesIds] = useState<string[]>([]);
+  const [coberturas, setCoberturas] = useState<CoberturaAceptada[]>([]);
+  const [fuente, setFuente] = useState<FuenteEditable>(FUENTE_VACIA);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   const cargar = useCallback(() => {
-    Promise.all([listInstituciones(), listPlanesMedicos()]).then(([i, p]) => {
+    Promise.all([listInstituciones(), listObrasSociales()]).then(([i, os]) => {
       setInstituciones(i);
-      setPlanes(p);
+      setObrasSociales(os);
     });
   }, []);
 
   useFocusEffect(cargar);
-
-  const togglePlan = (id: string) =>
-    setPlanesIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const limpiar = () => {
     setNombre("");
@@ -73,7 +86,8 @@ export default function AdminInstitucionesScreen() {
     setTelefono("");
     setLatitud("");
     setLongitud("");
-    setPlanesIds([]);
+    setCoberturas([]);
+    setFuente(FUENTE_VACIA);
   };
 
   const handleGuardar = async () => {
@@ -89,7 +103,8 @@ export default function AdminInstitucionesScreen() {
         telefono,
         latitud: parseCoordenada(latitud),
         longitud: parseCoordenada(longitud),
-        planesAceptadosIds: planesIds,
+        coberturas,
+        fuente: { fuente: fuente.fuente, fuenteUrl: fuente.fuenteUrl, verificadoEl: hoyIso() },
       });
       limpiar();
       setFormAbierto(false);
@@ -102,12 +117,16 @@ export default function AdminInstitucionesScreen() {
     }
   };
 
-  const nombrePlan = (id: string) => planes.find((p) => p.id === id)?.aseguradora;
   const coberturaTexto = (inst: Institucion) => {
     if (inst.origen === "publico") return "Público: atiende a todas las coberturas";
-    const aseguradoras = Array.from(new Set(inst.planesAceptadosIds.map(nombrePlan).filter(Boolean)));
-    return aseguradoras.length > 0 ? `Acepta: ${aseguradoras.join(", ")}` : "Sin obras sociales cargadas";
+    return inst.coberturas.length > 0 ? `Acepta: ${resumenCoberturas(inst.coberturas, obrasSociales)}` : "Sin obras sociales cargadas";
   };
+
+  // Primero las que ya tienen coberturas (las del seed y las que cargó el admin); el resto, en el orden de carga.
+  const buscada = normalizar(busqueda.trim());
+  const filtradas = instituciones
+    .filter((i) => !buscada || normalizar(i.nombre).includes(buscada))
+    .sort((a, b) => Number(b.coberturas.length > 0) - Number(a.coberturas.length > 0));
   const tipoInfo = (t: TipoInstitucion) => TIPOS.find((x) => x.value === t) ?? TIPOS[0];
 
   return (
@@ -172,11 +191,9 @@ export default function AdminInstitucionesScreen() {
               </View>
             </View>
             <Text style={[styles.label, { color: theme.colors.mutedForeground }]}>Obras sociales aceptadas</Text>
-            <View style={styles.chips}>
-              {planes.map((p) => (
-                <Chip key={p.id} label={p.nombre} selected={planesIds.includes(p.id)} onPress={() => togglePlan(p.id)} />
-              ))}
-            </View>
+            <SelectorCoberturas obrasSociales={obrasSociales} value={coberturas} onChange={setCoberturas} />
+            <View style={{ height: 16 }} />
+            <CamposFuente value={fuente} onChange={setFuente} />
             {error ? <Text style={[styles.msg, { color: theme.colors.danger }]}>{error}</Text> : null}
             <View style={{ gap: 12 }}>
               <PrimaryButton label="Guardar institución" onPress={handleGuardar} loading={guardando} />
@@ -194,16 +211,29 @@ export default function AdminInstitucionesScreen() {
         )}
 
         <SectionHeader title={`Cargadas (${instituciones.length})`} />
-        {instituciones.length > LIMITE_LISTA ? (
-          <Text style={[styles.sub, { color: theme.colors.mutedForeground, marginTop: 0 }]}>
-            Se muestran las primeras {LIMITE_LISTA}. Las que agregues aparecen arriba de todo.
-          </Text>
-        ) : null}
-        {instituciones.slice(0, LIMITE_LISTA).map((inst) => {
+        <CampoBusqueda
+          valor={busqueda}
+          onChange={setBusqueda}
+          placeholder="Buscar por nombre"
+          accessibilityLabel="Buscar institución por nombre"
+        />
+        <Text style={[styles.sub, { color: theme.colors.mutedForeground, marginTop: 8 }]}>
+          {filtradas.length === 0
+            ? "No hay instituciones con ese nombre."
+            : filtradas.length > LIMITE_LISTA
+              ? `Se muestran ${LIMITE_LISTA} de ${filtradas.length}: primero las que tienen coberturas. Tocá una para editarlas.`
+              : "Tocá una para editar sus coberturas."}
+        </Text>
+        {filtradas.slice(0, LIMITE_LISTA).map((inst) => {
           const info = tipoInfo(inst.tipo);
           const sede = inst.sedes[0];
           return (
-            <Card key={inst.id} style={styles.item}>
+            <Card
+              key={inst.id}
+              style={styles.item}
+              onPress={() => router.push(`/(admin)/institucion/${inst.id}`)}
+              accessibilityLabel={`${inst.nombre}. Editar coberturas`}
+            >
               <View style={styles.row}>
                 <IconBadge icon={info.icon} size={36} />
                 <View style={{ flex: 1 }}>
@@ -216,6 +246,7 @@ export default function AdminInstitucionesScreen() {
                     {coberturaTexto(inst)}
                   </Text>
                 </View>
+                <ChevronRight size={18} color={theme.colors.mutedForeground} />
               </View>
             </Card>
           );
@@ -230,7 +261,6 @@ const styles = StyleSheet.create({
   sub: { fontSize: 13, marginTop: 4, marginBottom: 20 },
   cardTitle: { fontSize: 16, fontWeight: "600", marginBottom: 16 },
   label: { fontSize: 12, fontWeight: "500", marginBottom: 8 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
   coordRow: { flexDirection: "row", gap: 12 },
   msg: { fontSize: 13, marginBottom: 12 },
   item: { marginBottom: 10 },

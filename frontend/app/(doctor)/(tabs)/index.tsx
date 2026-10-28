@@ -4,9 +4,9 @@ import { StyleSheet, View } from "react-native";
 import { CalendarCheck, CalendarDays, Clock, Hourglass, MapPin, Users } from "lucide-react-native";
 import { addDays, format } from "date-fns";
 
-import { Card, ScreenContainer, SectionHeader, StatCard, StatusBadge, Text } from "@/components";
+import { AvisoProfesional, Card, ScreenContainer, SectionHeader, StatCard, StatusBadge, Text } from "@/components";
 import { Especialidad, Medico } from "@/domain";
-import { getEspecialidad, getMedicoActual, listAgendaMedico, listPacientesAsignados, TurnoDeAgenda } from "@/services";
+import { getEspecialidad, getMedicoActual, listAgendaMedico, listMisFranjas, listPacientesAsignados, TurnoDeAgenda } from "@/services";
 import { useTheme } from "@/theme";
 import { conservarSiIgual } from "@/utils/estable";
 import { formatFechaCorta, hoyIso } from "@/utils/format";
@@ -20,6 +20,7 @@ export default function DoctorInicioScreen() {
   const [especialidad, setEspecialidad] = useState<Especialidad | undefined>();
   const [proximos, setProximos] = useState<TurnoDeAgenda[]>([]);
   const [cantidadAsignados, setCantidadAsignados] = useState(0);
+  const [sinHorarios, setSinHorarios] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,10 +29,11 @@ export default function DoctorInicioScreen() {
         const m = await getMedicoActual();
         const hoy = hoyIso();
         // Un solo pedido por dato: la agenda ya viene con paciente y lugar.
-        const [esp, agenda, asignados] = await Promise.all([
+        const [esp, agenda, asignados, franjas] = await Promise.all([
           getEspecialidad(m.especialidadId),
           listAgendaMedico(m.id),
           listPacientesAsignados(m.id),
+          listMisFranjas(),
         ]);
         const futuros = agenda.filter(
           ({ turno }) =>
@@ -42,6 +44,7 @@ export default function DoctorInicioScreen() {
         setEspecialidad(esp);
         setProximos((anterior) => conservarSiIgual(anterior, futuros));
         setCantidadAsignados(asignados.length);
+        setSinHorarios(franjas.length === 0);
       })();
       return () => {
         activo = false;
@@ -72,6 +75,16 @@ export default function DoctorInicioScreen() {
           {especialidad ? ` · ${especialidad.nombre}` : ""} · Mat. {medico.matricula}
         </Text>
       )}
+
+      {medico ? (
+        <AvisoProfesional
+          sinCoberturas={medico.coberturas.length === 0}
+          sinHorarios={sinHorarios}
+          onCargarCoberturas={() => router.push("/(doctor)/coberturas")}
+          onCargarHorarios={() => router.push("/(doctor)/horarios")}
+          style={styles.aviso}
+        />
+      ) : null}
 
       <View style={styles.stats}>
         <StatCard icon={CalendarCheck} valor={turnosHoy} etiqueta="Turnos hoy" />
@@ -144,6 +157,7 @@ const styles = StyleSheet.create({
   saludo: { fontSize: 14 },
   nombre: { fontSize: 24, fontWeight: "700", marginTop: 2 },
   sub: { fontSize: 13, marginTop: 4 },
+  aviso: { marginTop: 20, marginBottom: 0 },
   stats: { flexDirection: "row", gap: 10, marginTop: 24, marginBottom: 20 },
   pendientes: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, marginBottom: 24 },
   pendientesTexto: { flex: 1, fontSize: 13, lineHeight: 19, fontWeight: "500" },

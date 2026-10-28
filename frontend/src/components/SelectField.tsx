@@ -4,6 +4,7 @@ import { Check, ChevronDown, Heart, HelpCircle, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { CampoBusqueda } from "./CampoBusqueda";
 import { Colapsable } from "./Colapsable";
 import { SheetModal } from "./SheetModal";
 import { Text } from "./Text";
@@ -32,16 +33,33 @@ interface SelectFieldProps {
   error?: string;
   /** Botón a la derecha del campo (p. ej. elegir en el mapa). Debería medir 48 px de alto, como el campo. */
   accion?: React.ReactNode;
+  /** Listas largas: arriba de las opciones aparece un buscador con este texto de ayuda (p. ej. especialidades). */
+  buscador?: string;
 }
 
+/** Sin tildes ni mayúsculas, para que "cardio" encuentre "Cardiología". */
+const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 /** Selector de una opción: campo que abre un bottom sheet con la lista (equivalente RN de un `<select>`). */
-export function SelectField({ label, placeholder = "Seleccionar", options, value, onChange, error, accion }: SelectFieldProps) {
+export function SelectField({ label, placeholder = "Seleccionar", options, value, onChange, error, accion, buscador }: SelectFieldProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [abierto, setAbierto] = useState(false);
   // Grupo cuyo "?" está desplegado.
   const [ayudaAbierta, setAyudaAbierta] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
   const seleccionada = options.find((o) => o.value === value);
+  // Cada palabra escrita tiene que estar en el nombre o la descripción de la opción.
+  const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+  const visibles =
+    buscador && palabras.length > 0
+      ? options.filter((o) => palabras.every((p) => normalizar(`${o.label} ${o.description ?? ""}`).includes(p)))
+      : options;
+  const cerrar = () => {
+    setAbierto(false);
+    setAyudaAbierta(null);
+    setBusqueda("");
+  };
 
   return (
     <View style={styles.wrapper}>
@@ -75,13 +93,12 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
 
       <SheetModal
         visible={abierto}
-        onClose={() => {
-          setAbierto(false);
-          setAyudaAbierta(null);
-        }}
+        onClose={cerrar}
         etiquetaFondo="Cerrar selector"
         style={[
           styles.sheet,
+          // Con buscador, alto fijo: la hoja no salta mientras la lista se achica al escribir.
+          buscador ? styles.sheetConBuscador : null,
           {
             backgroundColor: theme.colors.card,
             borderColor: theme.colors.border,
@@ -94,7 +111,7 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
         <View style={styles.sheetHeader}>
           <Text variant="heading" style={[styles.sheetTitle, { color: theme.colors.foreground }]}>{label}</Text>
           <Pressable
-            onPress={() => setAbierto(false)}
+            onPress={cerrar}
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
             hitSlop={8}
@@ -103,13 +120,25 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
             <X size={20} color={theme.colors.mutedForeground} />
           </Pressable>
         </View>
+        {buscador ? (
+          <View style={styles.buscador}>
+            <CampoBusqueda valor={busqueda} onChange={setBusqueda} placeholder={buscador} accessibilityLabel={buscador} />
+            <Text style={[styles.cantidad, { color: theme.colors.mutedForeground }]}>
+              {visibles.length === 0
+                ? "No hay opciones con ese nombre."
+                : `${visibles.length} ${visibles.length === 1 ? "opción" : "opciones"}`}
+            </Text>
+          </View>
+        ) : null}
         <FlatList
-          data={options}
+          data={visibles}
           extraData={ayudaAbierta}
           keyExtractor={(o) => o.value}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           renderItem={({ item, index }) => {
             const activa = item.value === value;
-            const abreGrupo = !!item.group && item.group !== options[index - 1]?.group;
+            const abreGrupo = !!item.group && item.group !== visibles[index - 1]?.group;
             return (
               <View>
                 {abreGrupo ? (
@@ -151,7 +180,7 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
                 <Pressable
                   onPress={() => {
                     onChange(item.value);
-                    setAbierto(false);
+                    cerrar();
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={item.destacada ? `${item.label}, favorito` : item.label}
@@ -202,6 +231,9 @@ const styles = StyleSheet.create({
   fieldText: { fontSize: 14, flex: 1 },
   error: { fontSize: 12, marginTop: 6 },
   sheet: { maxHeight: "70%", borderWidth: 1, paddingHorizontal: 24, paddingTop: 16 },
+  sheetConBuscador: { height: "75%", maxHeight: "75%" },
+  buscador: { marginBottom: 4 },
+  cantidad: { fontSize: 12, marginTop: 8, marginBottom: 4 },
   sheetHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   sheetTitle: { fontSize: 17, fontWeight: "600" },
   closeBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },

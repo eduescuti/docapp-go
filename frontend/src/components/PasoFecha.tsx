@@ -87,7 +87,7 @@ export const PasoFecha = React.memo(function PasoFecha({ fecha, hoy, limite, dia
           style={[
             styles.botonCalendario,
             {
-              backgroundColor: calendarioAbierto ? theme.colors.accent : theme.colors.card,
+              backgroundColor: calendarioAbierto ? theme.colors.highlight : theme.colors.card,
               borderColor: calendarioAbierto ? theme.colors.primary : theme.colors.border,
             },
           ]}
