@@ -32,11 +32,19 @@ const config: ExpoConfig = {
         apiKey: googleMapsApiKey,
       },
     },
+    googleServicesFile: "./google-services.json",
   },
   web: {
     favicon: "./assets/favicon.png",
   },
   plugins: [
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/icon.png",
+        color: "#0284c7",
+      },
+    ],
     "expo-router",
     [
       // Pantalla de carga: el logo de DocApp Go (el mismo del login) sobre el fondo del tema claro.
@@ -79,8 +87,12 @@ const config: ExpoConfig = {
     ],
   ],
   extra: {
-    router: {},
+    eas: {
+      projectId: "728cb1fa-cb6e-4462-914f-4a8feadbf32e", // 👈 Pegá acá el UUID que te dio EAS
+    },
   },
+
+  
 };
 
 export default config;

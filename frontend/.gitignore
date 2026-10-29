@@ -43,3 +43,5 @@ yarn-error.*
 
 # REFES crudo descargado para scripts/importar-refes.mjs (~9 MB, no se versiona)
 scripts/.cache/
+
+google-services.json
