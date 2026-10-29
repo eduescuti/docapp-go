@@ -49,7 +49,6 @@ export async function registrarPushToken(): Promise<string | null> {
   try {
     // Al correr en Development Build, devuelve el token FCM real de Google
     const token = (await Notifications.getDevicePushTokenAsync()).data;
-    console.log("🔥 Token FCM obtenido:", token);
 
     // Se registra en el backend bajo las rutas de notificaciones
     await api<void>("/api/notificaciones/fcm-token", {
