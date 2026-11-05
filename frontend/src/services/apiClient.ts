@@ -31,6 +31,40 @@ export function alVencerSesion(accion: (() => void) | null): void {
   avisarSesionRechazada = accion;
 }
 
+/** Arma los headers del pedido: tipo de respuesta, tipo de cuerpo y token. */
+function armarHeaders(acepta: string, hayCuerpo: boolean, token: string | null): Record<string, string> {
+  const headers: Record<string, string> = { Accept: acepta };
+  if (hayCuerpo) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+/** Hace el fetch y lo corta si tarda más de ESPERA_MAXIMA_MS. */
+async function fetchConTiempoLimite(url: string, init: RequestInit): Promise<Response> {
+
+  const control = new AbortController();
+  const temporizador = setTimeout(() => control.abort(), ESPERA_MAXIMA_MS);
+
+  try {
+    return await fetch(url, { ...init, signal: control.signal });
+  } catch {
+    // Sin red, servidor caído o timeout: al usuario le damos el mismo mensaje.
+    throw new ErrorApi(0, "No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.");
+  } finally {
+    clearTimeout(temporizador); // siempre se limpia, haya salido bien o mal
+  }
+}
+
+/** Saca el mensaje de error que mandó el backend ({ error: "..." }). */
+async function leerMensajeDeError(respuesta: Response): Promise<string> {
+  const MENSAJE_POR_DEFECTO = "Ocurrió un error. Probá de nuevo en un rato.";
+  const datos: unknown = await respuesta.json().catch(() => null); // si no es JSON, null
+  if (typeof datos === "object" && datos !== null && "error" in datos && typeof datos.error === "string") {
+    return datos.error;
+  }
+  return MENSAJE_POR_DEFECTO;
+}
+
 /**
  * Se usa en "api()" y "apiArchivo()"
  * 
@@ -44,42 +78,24 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
 
   if (!API_URL) {
     throw new ErrorApi(0, "Falta configurar EXPO_PUBLIC_API_URL en el archivo .env de la app.");
-  };
+  }
 
   const token = conSesion ? tokenActual() : null;
-  const headers: Record<string, string> = { Accept: acepta };
-  if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
-  if (token) headers.Authorization = `Bearer ${token}`;
 
-  const control = new AbortController();
-  const espera = setTimeout(() => control.abort(), ESPERA_MAXIMA_MS);
-  let respuesta: Response;
-  try {
-    respuesta = await fetch(`${API_URL}${ruta}`, {
-      method: metodo,
-      headers,
-      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-      signal: control.signal,
-    });
-  } catch {
-    throw new ErrorApi(0, "No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.");
-  } finally {
-    clearTimeout(espera);
-  }
+  const respuesta = await fetchConTiempoLimite(`${API_URL}${ruta}`, {
+    method: metodo,
+    headers: armarHeaders(acepta, cuerpo !== undefined, token),
+    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+  });
 
-  if (!respuesta.ok) {
-    if (respuesta.status === 401 && token) {
-      await borrarToken();
-      avisarSesionRechazada?.();
-    }
-    const datos: unknown = await respuesta.json().catch(() => null);
-    const mensaje =
-      typeof datos === "object" && datos !== null && "error" in datos && typeof datos.error === "string"
-        ? datos.error
-        : "Ocurrió un error. Probá de nuevo en un rato.";
-    throw new ErrorApi(respuesta.status, mensaje);
+  if (respuesta.ok) return respuesta;
+
+  // 401 con token = la sesión venció o fue rechazada: se limpia y se avisa a la app.
+  if (respuesta.status === 401 && token) {
+    await borrarToken();
+    avisarSesionRechazada?.();
   }
-  return respuesta;
+  throw new ErrorApi(respuesta.status, await leerMensajeDeError(respuesta));
 }
 
 /** MAIN: es el "fetch" de nuestros REQUEST (devuelve el JSON con la consulta). */
