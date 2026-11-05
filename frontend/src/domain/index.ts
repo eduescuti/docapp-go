@@ -41,7 +41,7 @@ export interface PlanConObraSocial extends PlanMedico {
   obraSocial: ObraSocial;
 }
 
-/** Una obra social con sus planes: `GET /api/planes` (registro, selector de coberturas). */
+/** Una obra social con sus planes: `GET /api/catalogos/planes` (registro, selector de coberturas). */
 export interface ObraSocialConPlanes extends ObraSocial {
   planes: PlanMedico[];
 }

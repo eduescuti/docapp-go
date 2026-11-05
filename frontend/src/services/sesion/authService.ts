@@ -43,7 +43,7 @@ export async function restaurarSesion(): Promise<Sesion> {
     throw new Error("Iniciá sesión con tu DNI y tu contraseña.");
   };
 
-  return await api<Sesion>("/api/sesion");
+  return await api<Sesion>("/api/auth/sesion");
 }
 
 /** Hace un POST que revoca el token en el backend y borra la sesión del teléfono, aunque no haya conexión. */
@@ -78,7 +78,7 @@ export async function cambiarPassword(actual: string, nueva: string): Promise<vo
 
 /** Hace un GET de las profesiones del padrón, para el registro de profesional. */
 export async function listProfesiones(): Promise<string[]> {
-  return api<string[]>("/api/profesiones", { conSesion: false });
+  return api<string[]>("/api/catalogos/profesiones", { conSesion: false });
 }
 
 /** Valida antes de ir al backend si están bien los datos. */

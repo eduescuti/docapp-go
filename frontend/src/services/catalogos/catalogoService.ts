@@ -9,7 +9,7 @@ let catalogoEspecialidades: Promise<Especialidad[]> | null = null;
 
 /** Hace un GET de las especialidades, ordenadas por nombre. Se pide una vez y queda en memoria. */
 export async function listEspecialidades(): Promise<Especialidad[]> {
-  catalogoEspecialidades ??= api<Especialidad[]>("/api/especialidades", { conSesion: false }).catch((e: unknown) => {
+  catalogoEspecialidades ??= api<Especialidad[]>("/api/catalogos/especialidades", { conSesion: false }).catch((e: unknown) => {
     catalogoEspecialidades = null;
     throw e;
   });
@@ -26,7 +26,7 @@ let catalogoObrasSociales: Promise<ObraSocialConPlanes[]> | null = null;
 
 /** Hace un GET de las obras sociales con sus planes, ordenadas por nombre. Se pide una vez y queda en memoria. */
 export async function listObrasSociales(): Promise<ObraSocialConPlanes[]> {
-  catalogoObrasSociales ??= api<ObraSocialConPlanes[]>("/api/planes", { conSesion: false }).catch((e: unknown) => {
+  catalogoObrasSociales ??= api<ObraSocialConPlanes[]>("/api/catalogos/planes", { conSesion: false }).catch((e: unknown) => {
     catalogoObrasSociales = null;
     throw e;
   });

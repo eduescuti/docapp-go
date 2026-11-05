@@ -33,7 +33,7 @@ Se ingresa con **DNI + contraseña**. El rol lo define la cuenta, no se elige en
   de los dos falló). Con 5 fallos seguidos del mismo DNI en 15 minutos se bloquea un rato.
 - **La sesión queda iniciada** en el celular hasta que se cierra sesión o pasan 90 días sin usar la app. En web
   (navegador) dura mientras no se recargue la página.
-- Las cuentas están en `backend/prisma/datos/demo.json` (contraseñas en `backend/src/seed.ts`); en la base solo
+- Las cuentas están en `backend/prisma/datos/demo.json` (contraseñas en `backend/src/seed/index.ts`); en la base solo
   queda el hash de la contraseña.
 
 ### Qué ve cada uno según su cobertura (reglas 15 y 18)
@@ -131,4 +131,4 @@ Los DNI de la tabla de la sección 1 ya están en uso.
 - Al menos **un carácter especial** (`!@#$%...`)
 
 Las valida la app al escribir ([`src/utils/validation.ts`](src/utils/validation.ts)) y **también el backend**
-(`backend/src/validacion.ts`): lo que valida la app se puede saltear llamando a la API directo.
+(`backend/src/comun/validacion.ts`): lo que valida la app se puede saltear llamando a la API directo.
