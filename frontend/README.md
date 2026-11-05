@@ -150,24 +150,36 @@ docente exige el SDK de Google en la app compilada (pendiente de confirmar). Si 
 Ver CLAUDE.md §4 para el detalle de `app/` y `src/`. En resumen:
 
 - `app/` — rutas de Expo Router, agrupadas por rol: `(auth)`, `(paciente)`, `(doctor)`, `(admin)`.
-- `src/theme/` — los tres temas tipados del sistema de diseño (A, B, C — este último es el modo oscuro).
-- `src/domain/` — tipos del dominio médico.
-- `src/services/` — la única puerta de entrada a los datos; hoy leen `src/mocks/`, mañana un backend real.
+- `src/theme/` — los temas tipados del sistema de diseño: A (modo claro) y C (modo oscuro). El B se sacó del código
+  el 05/11/2026 (su tabla queda en CLAUDE.md §7).
+- `src/domain/index.ts` — todos los tipos del dominio médico, en un solo archivo.
+- `src/components/` — componentes reutilizables en carpetas (`base/`, `formularios/`, `pantalla/`, `modales/`, …),
+  importados desde `@/components`.
+- `src/services/` — la única puerta de entrada a los datos, en carpetas por tema (`sesion/`, `usuarios/`, `turnos/`,
+  `historialMedico/`, `catalogos/`, `notificaciones/`, `admin/`), las mismas que `servicios/` del backend. Todos
+  los pedidos a la API salen de `pedir()` en `services/apiClient.ts` (URL del `.env`, token, 15 s de espera y
+  errores `{ error }` → `ErrorApi`). Qué endpoint usa cada función está en `docs/04-api.md` del backend.
+- `src/utils/` — `format`, `cobertura`, `validation` y `ui`.
 - `src/mocks/` — solo las preguntas frecuentes de Ayuda: los datos vienen del backend (sus datos de prueba
   los carga el seed).
 - [`USUARIOS-DE-PRUEBA.md`](USUARIOS-DE-PRUEBA.md) — cuentas para el SignIn, fichas para el SignUp y dónde modificarlas.
 
 ## Estado
 
-- **Paciente:** base funcional de las 7 pantallas de referencia (`/template-ejemplo-figma`).
-  Todas las tarjetas del Menú tienen su página (`app/(paciente)/cuenta/`), la campana del
-  Inicio abre un panel de notificaciones y en Configuración se elige modo claro, oscuro o
-  automático.
-- **Profesional:** agenda, pacientes asignados, ficha del paciente (historial con ese
-  profesional + notas privadas) y perfil.
+La app está **conectada entera al backend** (28/10/2026): no quedan mocks de datos.
+
+- **Paciente:** base funcional de las 7 pantallas de referencia (`/template-ejemplo-figma`): reserva paso a paso,
+  turnos, estudios, recetas, mapa y feedback. Todas las tarjetas del Menú tienen su página
+  (`app/(paciente)/cuenta/`), la campana del Inicio abre un panel de notificaciones y en Configuración se elige modo
+  claro u oscuro.
+- **Profesional:** Inicio, Agenda (calendario del mes y sus franjas de atención en Mis horarios), pacientes
+  asignados, ficha del paciente (confirmar o rechazar turnos, asignar órdenes y recetas, historial con ese
+  profesional y notas privadas) y Perfil (coberturas que atiende y lugares de atención).
 - **Foto de perfil:** el paciente (Mi perfil) y el profesional (Perfil) la suben, cambian o quitan; se
   guarda en el backend. En web, "Sacar una foto" abre el selector de archivos de la computadora.
-- **Admin:** panel con métricas de uso y gráfico de pacientes por obra social, alta de obras
-  sociales y de instituciones.
+- **Notificaciones push** (29/10/2026): al entrar, la app registra el token FCM del teléfono en el backend
+  (`registrarPushToken()`) y los avisos llegan al teléfono, además de la lista de la campana. En web no hay push.
+- **Admin:** panel con métricas de uso y gráfico de pacientes por obra social, pestaña Métricas, alta de obras
+  sociales e instituciones y edición de las coberturas de cada institución (con su fuente).
 
 Ver CLAUDE.md §13 para el detalle de qué falta.
