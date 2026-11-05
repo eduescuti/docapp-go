@@ -1,10 +1,10 @@
 import { Redirect, Stack } from "expo-router";
 
-import { BarraInferiorContext } from "@/components/BarraInferiorContext";
-import { CapaProfundidad } from "@/components/CapaProfundidad";
+import { BarraInferiorContext } from "@/components/pantalla/BarraInferiorContext";
+import { CapaProfundidad } from "@/components/pantalla/CapaProfundidad";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
-import { OPCIONES_STACK, PRESENTACION_BASE, rutaInicio } from "@/utils/navigation";
+import { OPCIONES_STACK, PRESENTACION_BASE, rutaInicio } from "@/utils/ui";
 
 // Aunque se entre directo a una pantalla de detalle (p. ej. un link), las pestañas quedan debajo.
 export const unstable_settings = { initialRouteName: "(tabs)" };

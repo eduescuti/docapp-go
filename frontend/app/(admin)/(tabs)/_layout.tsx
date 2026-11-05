@@ -1,7 +1,7 @@
 import { Building2, ChartColumn, CreditCard, LayoutDashboard } from "lucide-react-native";
 
 import { BarraPestanas } from "@/components";
-import { BarraInferiorContext } from "@/components/BarraInferiorContext";
+import { BarraInferiorContext } from "@/components/pantalla/BarraInferiorContext";
 import { PestanasDeslizables } from "@/navigation/PestanasDeslizables";
 import { useTheme } from "@/theme";
 

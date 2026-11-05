@@ -5,9 +5,9 @@ import { MessageSquareHeart } from "lucide-react-native";
 
 import { BackHeader, Card, EmptyState, PrimaryButton, ScreenContainer, SectionHeader, StarRating, Text } from "@/components";
 import { Feedback, Medico, Turno } from "@/domain";
-import { getMedico, getPacienteActual, listFeedbackPaciente, listTurnosParaCalificar } from "@/services";
+import { getMedico, listFeedbackPaciente, listTurnosParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
-import { tomarAviso } from "@/utils/avisoAlVolver";
+import { tomarAviso } from "@/utils/ui";
 import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 /**
@@ -26,8 +26,7 @@ export default function FeedbackScreen() {
     useCallback(() => {
       setAviso(tomarAviso());
       (async () => {
-        const p = await getPacienteActual();
-        const [turnos, feedbacks] = await Promise.all([listTurnosParaCalificar(p.id), listFeedbackPaciente(p.id)]);
+        const [turnos, feedbacks] = await Promise.all([listTurnosParaCalificar(), listFeedbackPaciente()]);
         setPendientes(await Promise.all(turnos.map(async (turno) => ({ turno, medico: await getMedico(turno.medicoId) }))));
         setEnviados(await Promise.all(feedbacks.map(async (feedback) => ({ feedback, medico: await getMedico(feedback.medicoId) }))));
         setCargado(true);

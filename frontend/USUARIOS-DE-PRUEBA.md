@@ -91,7 +91,7 @@ Usá cualquier contraseña que cumpla los requisitos, por ejemplo `Segura#2026`.
 
 | DNI | Matrícula | Profesión | Profesional | Resultado esperado |
 |---|---|---|---|---|
-| **`40123456`** | **`154321`** | **Kinesiólogo** | Juan Fernández | **Ficha de demo** (son los placeholders del formulario): crea la cuenta |
+| `40123456` | `154321` | Kinesiólogo | Juan Fernández | Crea la cuenta |
 | `30111222` | `145872` | Médico | Martín Acosta | Crea la cuenta |
 | `35222333` | `128904` | Enfermero | Paula Ríos | Crea la cuenta |
 | `36555777` | `117650` | Kinesiólogo | Federico Luna | Crea la cuenta |

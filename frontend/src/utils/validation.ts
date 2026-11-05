@@ -34,3 +34,13 @@ export const ERROR_DNI = "Ingresá un DNI válido (7 u 8 dígitos).";
 export function esDniValido(dni: string): boolean {
   return /^\d{7,8}$/.test(normalizarDni(dni));
 }
+
+/** Largo máximo de la matrícula: el mismo que acepta el backend. */
+export const MATRICULA_MAX_LENGTH = 30;
+
+export const ERROR_MATRICULA = "La matrícula tiene que ser un número.";
+
+/** Matrícula del profesional: solo dígitos, sin letras, puntos ni espacios en el medio. */
+export function esMatriculaValida(matricula: string): boolean {
+  return new RegExp(`^\\d{1,${MATRICULA_MAX_LENGTH}}$`).test(matricula.trim());
+}

@@ -24,13 +24,12 @@ import {
   CarpetaAnio,
   desarchivarReceta,
   esRecetaActiva,
-  getPacienteActual,
   listMisRecetas,
   RecetaConDetalle,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
-import { formatFechaCorta, formatFechaLarga, nombreConTitulo } from "@/utils/format";
+import { conservarSiIgual } from "@/utils/ui";
+import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 type Tab = "activas" | "pasadas";
 
@@ -71,9 +70,8 @@ export default function RecetasScreen() {
   const [aviso, setAviso] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
-    const p = await getPacienteActual();
     // Un solo pedido: las recetas ya vienen con el profesional y su especialidad.
-    const mis = await listMisRecetas(p.id);
+    const mis = await listMisRecetas();
     setActivas((anterior) => conservarSiIgual(anterior, mis.activas));
     setPasadas((anterior) => conservarSiIgual(anterior, mis.pasadas));
     setArchivo((anterior) => conservarSiIgual(anterior, mis.archivadas));
@@ -120,7 +118,7 @@ export default function RecetasScreen() {
         setAviso(`"${receta.medicacion}" volvió a Pasadas.`);
       } else {
         const archivada = await archivarReceta(receta.id);
-        const mis = await listMisRecetas(archivada.pacienteId);
+        const mis = await listMisRecetas();
         setAviso(`Archivada en ${nombreCarpeta(mis.archivadas, archivada.archivadoEl ?? "")}.`);
       }
       setAbierta(null);

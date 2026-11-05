@@ -8,7 +8,7 @@ import { AvisoProfesional, Card, ScreenContainer, SectionHeader, StatCard, Statu
 import { Especialidad, Medico } from "@/domain";
 import { getEspecialidad, getMedicoActual, listAgendaMedico, listMisFranjas, listPacientesAsignados, TurnoDeAgenda } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
+import { conservarSiIgual } from "@/utils/ui";
 import { formatFechaCorta, hoyIso } from "@/utils/format";
 
 /** Inicio del profesional: resumen del día y próximos turnos agrupados por fecha. El calendario está en Agenda. */
@@ -31,8 +31,8 @@ export default function DoctorInicioScreen() {
         // Un solo pedido por dato: la agenda ya viene con paciente y lugar.
         const [esp, agenda, asignados, franjas] = await Promise.all([
           getEspecialidad(m.especialidadId),
-          listAgendaMedico(m.id),
-          listPacientesAsignados(m.id),
+          listAgendaMedico(),
+          listPacientesAsignados(),
           listMisFranjas(),
         ]);
         const futuros = agenda.filter(

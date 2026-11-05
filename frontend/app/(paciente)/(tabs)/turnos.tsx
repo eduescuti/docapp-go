@@ -31,9 +31,9 @@ import {
   vaciarHistorialTurnos,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
+import { conservarSiIgual } from "@/utils/ui";
 import { formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
-import { etiquetaEstado } from "@/components/StatusBadge";
+import { etiquetaEstado } from "@/components/base/StatusBadge";
 
 type Filtro = "reservar" | "proximos";
 
@@ -129,7 +129,7 @@ export default function TurnosScreen() {
     const paciente = await getPacienteActual();
     setPacienteId(paciente.id);
     // Un solo pedido: los turnos ya vienen con profesional, especialidad y lugar.
-    const mis = await listMisTurnos(paciente.id);
+    const mis = await listMisTurnos();
     setProximos((anterior) => conservarSiIgual(anterior, mis.proximos));
     setHistorial((anterior) => conservarSiIgual(anterior, mis.historial));
   }, []);
@@ -215,7 +215,7 @@ export default function TurnosScreen() {
     if (!pacienteId) return;
     setProcesando(true);
     try {
-      await vaciarHistorialTurnos(pacienteId);
+      await vaciarHistorialTurnos();
       setAviso("Eliminaste todo tu historial de turnos.");
       setVaciando(false);
       await cargar();

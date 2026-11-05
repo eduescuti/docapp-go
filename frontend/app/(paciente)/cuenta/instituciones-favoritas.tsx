@@ -37,7 +37,7 @@ export default function InstitucionesFavoritasScreen() {
 
   const quitar = async (institucionId: string) => {
     if (!paciente) return;
-    await quitarInstitucionFavorita(paciente.id, institucionId);
+    await quitarInstitucionFavorita(institucionId);
     cargar();
   };
 

@@ -17,8 +17,7 @@ import { CoberturaAceptada, Institucion, ObraSocialConPlanes } from "@/domain";
 import { getInstitucion, guardarCoberturasInstitucion, listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
 import { textoFuente } from "@/utils/cobertura";
-import { hoyIso } from "@/utils/format";
-import { ETIQUETA_TIPO } from "@/utils/institucion";
+import { hoyIso, ETIQUETA_TIPO } from "@/utils/format";
 
 const FUENTE_VACIA: FuenteEditable = { fuente: "web_institucion", fuenteUrl: "" };
 

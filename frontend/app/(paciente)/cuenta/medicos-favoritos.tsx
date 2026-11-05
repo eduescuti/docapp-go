@@ -7,7 +7,7 @@ import { Avatar, BackHeader, Card, EmptyState, ScreenContainer, Text } from "@/c
 import { Especialidad, Medico, Paciente } from "@/domain";
 import { getMedico, getPacienteActual, listEspecialidades, quitarMedicoFavorito } from "@/services";
 import { useTheme } from "@/theme";
-import { alPresionar } from "@/utils/presionado";
+import { alPresionar } from "@/utils/ui";
 import { iniciales, nombreConTitulo } from "@/utils/format";
 
 /** Profesionales que el paciente marcó como favoritos. */
@@ -34,7 +34,7 @@ export default function MedicosFavoritosScreen() {
 
   const quitar = async (medicoId: string) => {
     if (!paciente) return;
-    await quitarMedicoFavorito(paciente.id, medicoId);
+    await quitarMedicoFavorito(medicoId);
     cargar();
   };
 

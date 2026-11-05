@@ -18,8 +18,7 @@ import {
 } from "@/services";
 import { useTheme } from "@/theme";
 import { nombrePlan, textoFuente } from "@/utils/cobertura";
-import { formatDistancia, nombreConTitulo } from "@/utils/format";
-import { colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL } from "@/utils/institucion";
+import { formatDistancia, nombreConTitulo, colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL } from "@/utils/format";
 
 const TIPOS: TipoInstitucion[] = ["hospital", "clinica", "centro_medico", "laboratorio"];
 
@@ -52,7 +51,7 @@ export default function MapaScreen() {
     }, []),
   );
   const insets = useSafeAreaInsets();
-  const { estado: estadoUbicacion, coordenada, actualizar } = useUbicacion({ pedirPermiso: true });
+  const { estado: estadoUbicacion, coordenada, actualizar } = useUbicacion(true);
 
   const [pacienteId, setPacienteId] = useState<string>();
   const [favoritas, setFavoritas] = useState<string[]>([]);
@@ -87,7 +86,7 @@ export default function MapaScreen() {
       ? listCentrosPorSedes(sedesParam ? sedesParam.split(",") : [], coordenada ?? undefined).then((todos) =>
           tipo ? todos.filter((c) => c.institucion.tipo === tipo) : todos,
         )
-      : buscarCentros({ planMedicoId, tipos: tipo ? [tipo] : undefined, cerca: coordenada ?? undefined });
+      : buscarCentros({ tipos: tipo ? [tipo] : undefined, cerca: coordenada ?? undefined });
     pedido.then((resultado) => {
       if (activo) setCentrosCargados(resultado);
     });
@@ -116,7 +115,7 @@ export default function MapaScreen() {
 
   const alternarFavorita = async (institucionId: string) => {
     if (!pacienteId) return;
-    const paciente = await alternarInstitucionFavorita(pacienteId, institucionId);
+    const paciente = await alternarInstitucionFavorita(institucionId);
     setFavoritas(paciente.institucionesFavoritasIds);
   };
 
@@ -138,7 +137,7 @@ export default function MapaScreen() {
       setProfesionales([]);
       return;
     }
-    searchMedicos({ sedeId: sedeSeleccionadaId, planMedicoId }).then(setProfesionales);
+    searchMedicos({ sedeId: sedeSeleccionadaId }).then(setProfesionales);
   }, [sedeSeleccionadaId, planMedicoId]);
 
   const irAMiUbicacion = () => {

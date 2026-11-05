@@ -6,7 +6,7 @@ import { MapPin, Plus, X } from "lucide-react-native";
 import { BackHeader, CampoBusqueda, Card, PrimaryButton, ScreenContainer, SectionHeader, Text } from "@/components";
 import { buscarLugares, getMedicoActual, guardarMisLugares, LugarDeAtencion, listLugaresDeAtencion } from "@/services";
 import { useTheme } from "@/theme";
-import { dejarAviso } from "@/utils/avisoAlVolver";
+import { dejarAviso } from "@/utils/ui";
 
 /**
  * Lugares de atención: en qué hospitales o centros atiende el profesional (los elige él, decidido el 27/10/2026).

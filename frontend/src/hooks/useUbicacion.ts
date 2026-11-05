@@ -11,19 +11,15 @@ export type EstadoUbicacion = "cargando" | "concedida" | "denegada" | "error";
 /** Si no hay permiso, el mapa arranca en el Obelisco (centro de CABA). */
 export const CENTRO_CABA: Coordenada = { latitud: -34.6037, longitud: -58.3816 };
 
-interface OpcionesUbicacion {
-  /**
-   * true: pide el permiso si todavía no se dio (pantalla del mapa).
-   * false: usa la ubicación solo si el permiso ya estaba dado (Inicio), sin mostrar el aviso del sistema.
-   */
-  pedirPermiso: boolean;
-}
-
 /**
- * GPS del dispositivo con `expo-location` (componente nativo, consigna 1.4). Devuelve la ubicación
+ * GPS del dispositivo con `expo-location`. Devuelve la ubicación
  * real si hay permiso; si no, `coordenada` es null y quien lo usa decide el centro por defecto.
+ *
+ * @param pedirPermiso
+ * - true: pide el permiso si todavía no se dio (pantalla del mapa).
+ * - false: usa la ubicación solo si el permiso ya estaba dado (Inicio), sin mostrar el aviso del sistema.
  */
-export function useUbicacion({ pedirPermiso }: OpcionesUbicacion) {
+export function useUbicacion(pedirPermiso: boolean) {
   const [estado, setEstado] = useState<EstadoUbicacion>("cargando");
   const [coordenada, setCoordenada] = useState<Coordenada | null>(null);
 

@@ -17,7 +17,7 @@ export default function NotificacionesScreen() {
   const cargar = useCallback(async () => {
     const p = await getPacienteActual();
     setPaciente(p);
-    setNotificaciones(await listNotificacionesPaciente(p.id));
+    setNotificaciones(await listNotificacionesPaciente());
   }, []);
 
   useFocusEffect(
@@ -38,7 +38,7 @@ export default function NotificacionesScreen() {
             label="Marcar todas como leídas"
             variant="outline"
             onPress={async () => {
-              await marcarTodasLeidas(paciente.id);
+              await marcarTodasLeidas();
               cargar();
             }}
           />

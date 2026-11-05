@@ -8,7 +8,7 @@ import { BackHeader, Card, PrimaryButton, ScreenContainer, Text, TextField } fro
 import { Medico, Paciente } from "@/domain";
 import { crearReceta, getMedicoActual, getPaciente } from "@/services";
 import { useTheme } from "@/theme";
-import { dejarAviso } from "@/utils/avisoAlVolver";
+import { dejarAviso } from "@/utils/ui";
 import { formatFechaLarga, hoyIso } from "@/utils/format";
 
 /**

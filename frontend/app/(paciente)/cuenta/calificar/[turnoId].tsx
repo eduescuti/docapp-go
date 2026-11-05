@@ -6,7 +6,7 @@ import { BackHeader, Card, PrimaryButton, ScreenContainer, StarRating, Text, Tex
 import { Feedback, Medico, Turno } from "@/domain";
 import { crearFeedback, getMedico, getPacienteActual, getTurnoParaCalificar } from "@/services";
 import { useTheme } from "@/theme";
-import { dejarAviso } from "@/utils/avisoAlVolver";
+import { dejarAviso } from "@/utils/ui";
 import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 type Criterio = keyof Required<Feedback["criterios"]>;
@@ -54,7 +54,7 @@ export default function CalificarScreen() {
       setError(null);
       (async () => {
         const p = await getPacienteActual();
-        const t = await getTurnoParaCalificar(p.id, turnoId);
+        const t = await getTurnoParaCalificar(turnoId);
         setPacienteId(p.id);
         setTurno(t ?? null);
         if (t) setMedico(await getMedico(t.medicoId));
@@ -69,7 +69,7 @@ export default function CalificarScreen() {
     setError(null);
     setEnviando(true);
     try {
-      await crearFeedback(pacienteId, turnoId, {
+      await crearFeedback(turnoId, {
         estrellas: estrellas as Puntaje,
         criterios,
         comentario,

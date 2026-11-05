@@ -59,5 +59,5 @@ export function usePuenteMapa(enviar: (mensaje: MensajeAlMapa) => void, props: M
     }
   }, []);
 
-  return { listo, recibir };
+  return { recibir };
 }

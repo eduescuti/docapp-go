@@ -5,9 +5,9 @@ import { CalendarClock, CalendarX2, Clock, MapPin } from "lucide-react-native";
 import { addMonths, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 
 import { Calendario, Card, EmptyState, EncabezadoTab, ScreenContainer, StatusBadge, Text } from "@/components";
-import { getMedicoActual, listAgendaMedico, TurnoDeAgenda } from "@/services";
+import { listAgendaMedico, TurnoDeAgenda } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
+import { conservarSiIgual } from "@/utils/ui";
 import { formatFechaLarga, hoyIso } from "@/utils/format";
 
 /** Meses hacia atrás y hacia adelante que se pueden recorrer en el calendario. */
@@ -28,8 +28,7 @@ export default function DoctorAgendaScreen() {
     useCallback(() => {
       let activo = true;
       (async () => {
-        const medico = await getMedicoActual();
-        const turnos = await listAgendaMedico(medico.id);
+        const turnos = await listAgendaMedico();
         if (activo) setAgenda((anterior) => conservarSiIgual(anterior, turnos));
       })();
       return () => {

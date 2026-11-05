@@ -45,7 +45,7 @@ export default function PlanScreen() {
         const [pl, inst, medicos] = await Promise.all([
           getPlanMedico(p.planMedicoId),
           listInstituciones({ planMedicoId: p.planMedicoId }),
-          searchMedicos({ planMedicoId: p.planMedicoId }),
+          searchMedicos(),
         ]);
         setPaciente(p);
         setPlan(pl);

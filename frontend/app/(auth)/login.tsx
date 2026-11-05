@@ -8,14 +8,14 @@ import { Card, PasswordField, PrimaryButton, ScreenContainer, Text, TextField } 
 import { useAuth } from "@/hooks/useAuth";
 import { hayTokenGuardado } from "@/services";
 import { useTheme } from "@/theme";
-import { sinTeclado } from "@/utils/teclado";
+import { sinTeclado } from "@/utils/ui";
 import { ERROR_DNI, esDniValido } from "@/utils/validation";
 import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
   habilitarBiometriaAutomatica,
   obtenerDatosSesionBiometrica,
-} from "@/services/biometria";
+} from "@/services/sesion/biometria";
 
 // La huella se pide sola una vez por apertura de la app; después queda el ícono para reintentar.
 let huellaAutomaticaIntentada = false;

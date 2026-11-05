@@ -66,7 +66,7 @@ export default function PerfilScreen() {
     setMsgCobertura(null);
     setGuardandoCobertura(true);
     try {
-      const actualizado = await cambiarCobertura(paciente.id, planId);
+      const actualizado = await cambiarCobertura(planId);
       setPaciente(actualizado);
       setPlanId(actualizado.planMedicoId);
       setMsgCobertura({ tipo: "ok", texto: "Obra social actualizada. Ya ves los profesionales de tu nuevo plan." });

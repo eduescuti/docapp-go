@@ -5,7 +5,7 @@ import { CalendarClock, ChevronRight, Search } from "lucide-react-native";
 
 import { Avatar, Card, ScreenContainer, Text } from "@/components";
 import { Paciente, PlanConObraSocial, Turno } from "@/domain";
-import { getMedicoActual, listPacientesAsignados, listPlanesMedicos, listTurnosMedico } from "@/services";
+import { listPacientesAsignados, listPlanesMedicos, listTurnosMedico } from "@/services";
 import { useTheme } from "@/theme";
 import { nombrePlan } from "@/utils/cobertura";
 import { formatFechaCorta, hoyIso, iniciales } from "@/utils/format";
@@ -29,10 +29,9 @@ export default function DoctorPacientesScreen() {
     useCallback(() => {
       let activo = true;
       (async () => {
-        const medico = await getMedicoActual();
         const [pacientes, turnos, planes] = await Promise.all([
-          listPacientesAsignados(medico.id),
-          listTurnosMedico(medico.id),
+          listPacientesAsignados(),
+          listTurnosMedico(),
           listPlanesMedicos(),
         ]);
         const hoy = hoyIso();

@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
 
-import { CapaProfundidad } from "@/components/CapaProfundidad";
+import { CapaProfundidad } from "@/components/pantalla/CapaProfundidad";
 import { useTheme } from "@/theme";
-import { OPCIONES_STACK, PRESENTACION_BASE } from "@/utils/navigation";
+import { OPCIONES_STACK, PRESENTACION_BASE } from "@/utils/ui";
 
 export default function AuthLayout() {
   const { theme } = useTheme();

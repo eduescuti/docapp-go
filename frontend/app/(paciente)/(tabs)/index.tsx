@@ -32,8 +32,7 @@ import {
   marcarTodasLeidas,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
-import { alPresionar } from "@/utils/presionado";
+import { conservarSiIgual, alPresionar } from "@/utils/ui";
 import { formatFechaCorta, iniciales, nombreConTitulo } from "@/utils/format";
 
 interface ProximoTurnoInfo {
@@ -53,30 +52,28 @@ export default function HomeScreen() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [proximo, setProximo] = useState<ProximoTurnoInfo | null>(null);
   const [plan, setPlan] = useState<PlanConObraSocial | undefined>();
-  // El carrusel se muestra recién cuando se sabe si hay próximo turno: si no, aparece primero la credencial
-  // del plan y el turno entra un par de segundos después.
   const [cargado, setCargado] = useState(false);
-  // La pista de deslizamiento del carrusel solo corre mientras el Inicio está a la vista.
+
   const [enFoco, setEnFoco] = useState(false);
+  const tabsEnFoco = useTabsEnFoco();
+
   const [puntosMapa, setPuntosMapa] = useState<PuntoMapa[]>([]);
   const [volarA, setVolarA] = useState<PedidoVuelo | null>(null);
   const [errorMapa, setErrorMapa] = useState(false);
-  // El mapa de la vista previa es un WebView: es lo más pesado de las pestañas. Mientras hay otra pantalla encima
-  // se suelta, y al volver se arma recién cuando termina la animación. Así volver no tiene que reconstruirlo
-  // (eso dejaba la pantalla en blanco un rato antes de animar).
-  const tabsEnFoco = useTabsEnFoco();
   const [mapaMontado, setMapaMontado] = useState(false);
+
+  // Solo usa la ubicación si el permiso ya se dio (en el mapa): el Inicio no muestra el aviso del sistema.
+  const { coordenada } = useUbicacion(false);
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [panelAbierto, setPanelAbierto] = useState(false);
+
   useEffect(() => {
     const t = setTimeout(() => setMapaMontado(tabsEnFoco), tabsEnFoco ? 450 : 400);
     return () => clearTimeout(t);
   }, [tabsEnFoco]);
-  // Solo usa la ubicación si el permiso ya se dio (en el mapa): el Inicio no muestra el aviso del sistema.
-  const { coordenada } = useUbicacion({ pedirPermiso: false });
-  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
-  const [panelAbierto, setPanelAbierto] = useState(false);
 
-  const recargarNotificaciones = useCallback(async (pacienteId: string) => {
-    const lista = await listNotificacionesPaciente(pacienteId);
+  const recargarNotificaciones = useCallback(async () => {
+    const lista = await listNotificacionesPaciente();
     setNotificaciones((anterior) => conservarSiIgual(anterior, lista));
   }, []);
 
@@ -88,10 +85,10 @@ export default function HomeScreen() {
       (async () => {
         const p = await getPacienteActual();
         if (!activo) return;
-        recargarNotificaciones(p.id);
+        recargarNotificaciones();
 
         // Plan y próximo turno (ya con profesional, especialidad y lugar) se piden juntos y se muestran juntos.
-        const [pl, detalle] = await Promise.all([getPlanMedico(p.planMedicoId), getProximoTurno(p.id)]);
+        const [pl, detalle] = await Promise.all([getPlanMedico(p.planMedicoId), getProximoTurno()]);
         const info: ProximoTurnoInfo | null = detalle?.medico
           ? { turno: detalle.turno, medico: detalle.medico, especialidad: detalle.especialidad, institucion: detalle.institucion, sede: detalle.sede }
           : null;
@@ -114,7 +111,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!planMedicoId) return;
     let activo = true;
-    buscarCentros({ planMedicoId }).then((centros) => {
+    buscarCentros().then((centros) => {
       if (!activo) return;
       setPuntosMapa(
         centros.map((c) => ({ id: c.institucion.id, latitud: c.sede.latitud, longitud: c.sede.longitud, tipo: c.institucion.tipo })),
@@ -169,13 +166,13 @@ export default function HomeScreen() {
         onPressNotificacion={async (n) => {
           if (!n.leida && paciente) {
             await marcarNotificacionLeida(n.id);
-            recargarNotificaciones(paciente.id);
+            recargarNotificaciones();
           }
         }}
         onMarcarTodas={async () => {
           if (!paciente) return;
-          await marcarTodasLeidas(paciente.id);
-          recargarNotificaciones(paciente.id);
+          await marcarTodasLeidas();
+          recargarNotificaciones();
         }}
         onVerTodas={() => {
           setPanelAbierto(false);
@@ -188,12 +185,12 @@ export default function HomeScreen() {
             vez, a 1 s de entrar, se corren un poquito dos veces para indicar que se pueden deslizar.
             Sin turno próximo, queda solo la credencial. */}
         {cargado ? (
-        <Carrusel
-          activo={enFoco}
-          anchoInicial={anchoPantalla - 48}
-          paginas={[
-            ...(proximo
-              ? [
+          <Carrusel
+            activo={enFoco}
+            anchoInicial={anchoPantalla - 48}
+            paginas={[
+              ...(proximo
+                ? [
                   {
                     clave: "turno",
                     titulo: "Próximo turno",
@@ -201,23 +198,23 @@ export default function HomeScreen() {
                     contenido: <TarjetaProximoTurno proximo={proximo} />,
                   },
                 ]
-              : []),
-            {
-              clave: "plan",
-              titulo: "Mi plan médico",
-              etiqueta: "Mostrar la credencial del plan",
-              contenido: (
-                <CredencialPlan
-                  plan={plan}
-                  afiliado={paciente ? `${paciente.nombre} ${paciente.apellido}` : ""}
-                  dni={paciente?.dni ?? ""}
-                  onPress={() => router.push("/cuenta/plan")}
-                  style={styles.credencial}
-                />
-              ),
-            },
-          ]}
-        />
+                : []),
+              {
+                clave: "plan",
+                titulo: "Mi plan médico",
+                etiqueta: "Mostrar la credencial del plan",
+                contenido: (
+                  <CredencialPlan
+                    plan={plan}
+                    afiliado={paciente ? `${paciente.nombre} ${paciente.apellido}` : ""}
+                    dni={paciente?.dni ?? ""}
+                    onPress={() => router.push("/cuenta/plan")}
+                    style={styles.credencial}
+                  />
+                ),
+              },
+            ]}
+          />
         ) : (
           // Mientras carga, un hueco del alto de la tarjeta para que el Inicio no salte cuando aparece.
           <View
@@ -255,7 +252,7 @@ export default function HomeScreen() {
               ubicacion={coordenada}
               centroInicial={coordenada ?? CENTRO_CABA}
               volarA={volarA}
-              onSeleccionar={() => {}}
+              onSeleccionar={() => { }}
               onError={() => setErrorMapa(true)}
               onListo={() => setErrorMapa(false)}
             />
@@ -279,8 +276,6 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
   return (
     <Card style={styles.tarjetaTurno}>
       <View style={[styles.accentBar, { backgroundColor: theme.colors.primary }]} />
-      {/* Solo la parte de arriba es tocable: si la tarjeta entera fuera un botón, en web
-          "Ver turno" y "Cómo llegar" quedarían anidados dentro de otro <button>. */}
       <Pressable
         onPress={() => router.push(`/medico/${proximo.medico.id}`)}
         accessibilityRole="button"

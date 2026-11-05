@@ -5,7 +5,7 @@ import { FileText, History, Pill, Stethoscope } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 
 import { BackHeader, Card, Chip, EmptyState, ScreenContainer, StatusBadge, Text } from "@/components";
-import { EventoHistorial, getHistorialPaciente, getPacienteActual, TipoEventoHistorial } from "@/services";
+import { EventoHistorial, getHistorialPaciente, TipoEventoHistorial } from "@/services";
 import { useTheme } from "@/theme";
 import { formatFechaLarga } from "@/utils/format";
 
@@ -27,7 +27,7 @@ export default function HistorialScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getPacienteActual().then((p) => getHistorialPaciente(p.id)).then(setEventos);
+      getHistorialPaciente().then(setEventos);
     }, []),
   );
 

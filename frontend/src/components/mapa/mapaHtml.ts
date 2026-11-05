@@ -15,13 +15,11 @@ const MAPLIBRE_VERSION = "5.24.0";
 const MAPLIBRE_CDN = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist`;
 const ESTILOS_URL = "https://tiles.openfreemap.org/styles/";
 const ZOOM_INICIAL = 13;
-// La vista previa es chica: se abre un poco más para que se vean varios centros.
 const ZOOM_VISTA_PREVIA = 12;
 
 interface OpcionesHtml {
   colores: ThemeMapa;
   centro: Coordenada;
-  /** false: vista previa sin gestos (Inicio). */
   interactivo: boolean;
 }
 

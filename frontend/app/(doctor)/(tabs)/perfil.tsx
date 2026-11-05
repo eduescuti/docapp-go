@@ -20,12 +20,11 @@ import {
   guardarSesionBiometrica,
   limpiarSesionBiometrica,
   setBiometriaHabilitada,
-} from "@/services/biometria";
+} from "@/services/sesion/biometria";
 import { useTheme } from "@/theme";
-import { tomarAviso } from "@/utils/avisoAlVolver";
+import { tomarAviso, alPresionar } from "@/utils/ui";
 import { resumenPlanes } from "@/utils/cobertura";
 import { iniciales } from "@/utils/format";
-import { alPresionar } from "@/utils/presionado";
 
 /**
  * Perfil profesional: los datos del registro (padrón), las coberturas que atiende (las elige él, regla 17), los

@@ -47,7 +47,7 @@ import {
   TurnoDeAgenda,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { tomarAviso } from "@/utils/avisoAlVolver";
+import { tomarAviso } from "@/utils/ui";
 import { nombrePlan } from "@/utils/cobertura";
 import { formatFechaCorta, formatFechaHora, formatFechaLarga, hoyIso, iniciales } from "@/utils/format";
 
@@ -143,7 +143,7 @@ export default function DoctorPacienteScreen() {
 
   const cargar = useCallback(async () => {
     const medico = await getMedicoActual();
-    const [paciente, agenda] = await Promise.all([getPaciente(id), listAgendaMedico(medico.id)]);
+    const [paciente, agenda] = await Promise.all([getPaciente(id), listAgendaMedico()]);
     const turnos = agenda.filter(({ turno }) => turno.pacienteId === id);
     if (!paciente || turnos.length === 0) {
       setSinAcceso(true);
@@ -151,9 +151,9 @@ export default function DoctorPacienteScreen() {
     }
     const [plan, recetas, ordenes, notas] = await Promise.all([
       getPlanMedico(paciente.planMedicoId),
-      listRecetasEmitidas(medico.id, paciente.id),
-      listOrdenesEmitidas(medico.id, paciente.id),
-      listNotasPaciente(medico.id, paciente.id),
+      listRecetasEmitidas(paciente.id),
+      listOrdenesEmitidas(paciente.id),
+      listNotasPaciente(paciente.id),
     ]);
     setSinAcceso(false);
     setFicha({ medico, paciente, plan, turnos, recetas, ordenes, notas });
@@ -189,9 +189,9 @@ export default function DoctorPacienteScreen() {
     setErrorNota(null);
     setGuardando(true);
     try {
-      await crearNotaPaciente(ficha.medico.id, ficha.paciente.id, nuevaNota);
+      await crearNotaPaciente(ficha.paciente.id, nuevaNota);
       setNuevaNota("");
-      setFicha({ ...ficha, notas: await listNotasPaciente(ficha.medico.id, ficha.paciente.id) });
+      setFicha({ ...ficha, notas: await listNotasPaciente(ficha.paciente.id) });
     } catch (e) {
       setErrorNota(e instanceof Error ? e.message : "No se pudo guardar la nota.");
     } finally {

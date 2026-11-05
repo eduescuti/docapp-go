@@ -21,19 +21,13 @@ export interface PedidoVuelo {
 export interface MapaCentrosProps {
   puntos: PuntoMapa[];
   seleccionadoId: string | null;
-  /** Ubicación real del paciente (punto azul). Null si no dio permiso. */
   ubicacion: Coordenada | null;
-  /** Dónde arranca la cámara. Solo se usa al cargar el mapa. */
   centroInicial: Coordenada;
   volarA?: PedidoVuelo | null;
   onSeleccionar: (id: string | null) => void;
-  /** El mapa no cargó (sin internet, proveedor caído...). La pantalla ofrece la lista. */
-  onError?: (detalle: string) => void;
-  /** El mapa terminó de cargar (también si antes se había informado un error por demora). */
+  onError?: (detalle: string) => void; // Si da error el mapa, se ofrece la lista
   onListo?: () => void;
-  /** Alto de lo que la pantalla dibuja encima del mapa abajo, para no tapar la atribución. */
   margenInferior?: number;
-  /** false: vista previa sin gestos ni toques (Inicio). Por defecto, true. */
   interactivo?: boolean;
   style?: StyleProp<ViewStyle>;
 }

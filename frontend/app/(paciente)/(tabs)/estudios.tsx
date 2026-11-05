@@ -46,7 +46,7 @@ import {
   marcarResultadoVisto,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { conservarSiIgual } from "@/utils/estable";
+import { conservarSiIgual } from "@/utils/ui";
 import { formatFechaCorta, formatFechaLarga, nombreConTitulo, tituloMedico } from "@/utils/format";
 
 type Tab = "ordenes" | "resultados";
@@ -123,10 +123,10 @@ export default function EstudiosScreen() {
     const paciente = await getPacienteActual();
     setPacienteId(paciente.id);
     const [listaOrdenes, listaResultados, archOrdenes, archResultados, idsVistos] = await Promise.all([
-      listOrdenesPaciente(paciente.id),
-      listResultadosPaciente(paciente.id),
-      listOrdenesArchivadasPaciente(paciente.id),
-      listArchivadosPaciente(paciente.id),
+      listOrdenesPaciente(),
+      listResultadosPaciente(),
+      listOrdenesArchivadasPaciente(),
+      listArchivadosPaciente(),
       listResultadosVistos(paciente.id),
     ]);
     setVistos((anterior) => conservarSiIgual(anterior, idsVistos));
@@ -188,7 +188,7 @@ export default function EstudiosScreen() {
         setAviso(`"${estudioAbierto.estudio.tipo}" volvió a Resultados.`);
       } else {
         const archivado = await archivarEstudio(estudioAbierto.estudio.id);
-        const nuevo = await listArchivadosPaciente(archivado.pacienteId);
+        const nuevo = await listArchivadosPaciente();
         setAviso(`Archivado en Resultados › ${nombreCarpeta(nuevo, archivado.archivadoEl ?? "")}.`);
       }
       setEstudioAbierto(null);
@@ -208,7 +208,7 @@ export default function EstudiosScreen() {
         setAviso(`"${nombre}" volvió a Órdenes.`);
       } else {
         const archivada = await archivarOrden(ordenAbierta.orden.id);
-        const nuevo = await listOrdenesArchivadasPaciente(archivada.pacienteId);
+        const nuevo = await listOrdenesArchivadasPaciente();
         setAviso(`Archivada en Órdenes › ${nombreCarpeta(nuevo, archivada.archivadoEl ?? "")}.`);
       }
       setOrdenAbierta(null);

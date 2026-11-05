@@ -8,7 +8,7 @@ import { BackHeader, Card, IconBadge, LogoutButton, ScreenContainer, SectionHead
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
 import { formatFechaHora } from "@/utils/format";
-import { estaBiometriaHabilitada } from "@/services/biometria";
+import { estaBiometriaHabilitada } from "@/services/sesion/biometria";
 
 const TEXTO_HUELLA = {
   activa: "Activo: al abrir la app ingresás con tu huella",

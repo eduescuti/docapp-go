@@ -1,10 +1,9 @@
-export type ThemeId = "A" | "B" | "C";
+export type ThemeId = "A" | "C";
 
 export interface ThemeColors {
   background: string;
   foreground: string;
   card: string;
-  cardForeground: string;
   primary: string;
   primaryForeground: string;
   muted: string;
@@ -18,7 +17,6 @@ export interface ThemeColors {
    */
   highlight: string;
   success: string;
-  successForeground: string;
   danger: string;
   /** Texto sobre `danger` (botones de confirmación destructiva). */
   dangerForeground: string;
@@ -74,7 +72,6 @@ export type ThemeGraficos = [string, string, string];
 
 export interface Theme {
   id: ThemeId;
-  name: string;
   isDark: boolean;
   colors: ThemeColors;
   mapa: ThemeMapa;
@@ -87,13 +84,11 @@ export interface Theme {
 /** Tema A — Minimalista clínico (claro, sobrio, institucional). CLAUDE.md §7. */
 const themeA: Theme = {
   id: "A",
-  name: "Minimalista clínico",
   isDark: false,
   colors: {
     background: "#FFFFFF",
     foreground: "#0F172A",
     card: "#FFFFFF",
-    cardForeground: "#0F172A",
     primary: "#0284C7",
     primaryForeground: "#FFFFFF",
     muted: "#F1F5F9",
@@ -103,7 +98,6 @@ const themeA: Theme = {
     accentForeground: "#0284C7",
     highlight: "#E0F2FE",
     success: "#22C55E",
-    successForeground: "#FFFFFF",
     danger: "#EF4444",
     dangerForeground: "#FFFFFF",
   },
@@ -138,70 +132,14 @@ const themeA: Theme = {
   },
 };
 
-/** Tema B — Cálido y humano (claro, cercano, redondeado). CLAUDE.md §7. */
-const themeB: Theme = {
-  id: "B",
-  name: "Cálido y humano",
-  isDark: false,
-  colors: {
-    background: "#FFFDFA",
-    foreground: "#43302B",
-    card: "#FFFFFF",
-    cardForeground: "#43302B",
-    primary: "#F97316",
-    primaryForeground: "#FFFFFF",
-    muted: "#FFEDD5",
-    mutedForeground: "#9A3412",
-    border: "#FED7AA",
-    accent: "#FFEDD5",
-    accentForeground: "#EA580C",
-    highlight: "#FFEDD5",
-    success: "#10B981",
-    successForeground: "#FFFFFF",
-    danger: "#DC2626",
-    dangerForeground: "#FFFFFF",
-  },
-  mapa: {
-    estiloBase: "positron",
-    tierra: "#FFFDFA",
-    manzana: "#FFF7ED",
-    edificio: "#FCEFE2",
-    agua: "#D3E9F2",
-    parque: "#E4F1D9",
-    calle: "#FFFFFF",
-    avenida: "#FFFFFF",
-    borde: "#F5DCC3",
-    texto: "#9A3412",
-    textoHalo: "#FFFDFA",
-    ubicacion: "#F97316",
-    marcadorBorde: "#FFFFFF",
-    hospital: "#DC2626",
-    clinica: "#EA580C",
-    centroMedico: "#0D9488",
-    laboratorio: "#9333EA",
-  },
-  graficos: ["#EA580C", "#0D9488", "#7C3AED"],
-  radii: { sm: 8, md: 16, lg: 24, full: 9999 },
-  fonts: { heading: "Nunito_700Bold", body: "Nunito_400Regular" },
-  shadow: {
-    shadowColor: "#F97316",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-};
-
 /** Tema C — Moderno premium (oscuro — es el modo oscuro de la app). CLAUDE.md §7. */
 const themeC: Theme = {
   id: "C",
-  name: "Moderno premium",
   isDark: true,
   colors: {
     background: "#020617",
     foreground: "#F8FAFC",
     card: "#0F172A",
-    cardForeground: "#F8FAFC",
     primary: "#10B981",
     primaryForeground: "#020617",
     muted: "#1E293B",
@@ -211,7 +149,6 @@ const themeC: Theme = {
     accentForeground: "#020617",
     highlight: "#022C22",
     success: "#10B981",
-    successForeground: "#020617",
     danger: "#F87171",
     dangerForeground: "#020617",
   },
@@ -248,6 +185,5 @@ const themeC: Theme = {
 
 export const themes: Record<ThemeId, Theme> = {
   A: themeA,
-  B: themeB,
   C: themeC,
 };

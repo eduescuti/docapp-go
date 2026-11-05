@@ -18,12 +18,11 @@ import {
 } from "@/components";
 import { DatosRegistroMedico, DniLeido, Especialidad, Genero, ProfesionalPadron } from "@/domain";
 import { useAuth } from "@/hooks/useAuth";
-import { getEjemploRegistroProfesional, listEspecialidades, listProfesiones, verificarProfesional } from "@/services";
+import { listEspecialidades, listProfesiones, verificarProfesional } from "@/services";
 import { useTheme } from "@/theme";
-import { esDniValido, esPasswordValida } from "@/utils/validation";
+import { ERROR_MATRICULA, MATRICULA_MAX_LENGTH, esDniValido, esMatriculaValida, esPasswordValida } from "@/utils/validation";
 
 const PASOS = ["Tus datos", "Confirmación", "Crear cuenta"];
-const EJEMPLO = getEjemploRegistroProfesional();
 const GENEROS: { value: Genero; label: string; description: string }[] = [
   { value: "femenino", label: "Femenino", description: "Te mostramos como Dra." },
   { value: "masculino", label: "Masculino", description: "Te mostramos como Dr." },
@@ -73,7 +72,7 @@ export default function RegistroMedicoScreen() {
 
   const errores = {
     dni: !documento ? "Escaneá tu DNI para verificar tu identidad." : !esDniValido(dni) ? "El DNI escaneado no es válido." : undefined,
-    matricula: !matricula.trim() ? "Ingresá tu número de matrícula." : undefined,
+    matricula: !matricula.trim() ? "Ingresá tu número de matrícula." : !esMatriculaValida(matricula) ? ERROR_MATRICULA : undefined,
     profesion: !profesion ? "Elegí tu profesión." : undefined,
     genero: !genero ? "Elegí tu género." : undefined,
     especialidad: !especialidadId ? "Elegí tu especialidad." : undefined,
@@ -181,13 +180,14 @@ export default function RegistroMedicoScreen() {
             label="Matrícula"
             value={matricula}
             onChangeText={setMatricula}
-            placeholder={`Ej. ${EJEMPLO.matricula}`}
+            placeholder="Ej. 123456"
             keyboardType="number-pad"
+            maxLength={MATRICULA_MAX_LENGTH}
             error={mostrar("matricula")}
           />
           <SelectField
             label="Profesión"
-            placeholder={`Elegí tu profesión (ej. ${EJEMPLO.profesion})`}
+            placeholder="Elegí tu profesión"
             options={profesiones.map((p) => ({ value: p, label: p }))}
             value={profesion}
             onChange={(p) => {

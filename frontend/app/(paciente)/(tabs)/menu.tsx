@@ -95,8 +95,8 @@ export default function MenuScreen() {
         setPaciente(p);
         const [pl, notifs, pendientesFb] = await Promise.all([
           getPlanMedico(p.planMedicoId),
-          listNotificacionesPaciente(p.id),
-          countFeedbacksPendientes(p.id),
+          listNotificacionesPaciente(),
+          countFeedbacksPendientes(),
         ]);
         setPlan(pl ?? null);
         setNoLeidas(notifs.filter((n) => !n.leida).length);

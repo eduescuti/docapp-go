@@ -5,7 +5,7 @@ import { FileWarning, Minus, Plus, X } from "lucide-react-native";
 
 import { useTheme } from "@/theme";
 
-import { Text } from "../Text";
+import { Text } from "../base/Text";
 import { VisorPdf } from "./VisorPdf";
 
 const ZOOMS = [1, 1.5, 2, 3];

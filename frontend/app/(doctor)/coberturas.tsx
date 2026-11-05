@@ -6,7 +6,7 @@ import { BackHeader, PrimaryButton, ScreenContainer, SelectorCoberturas, Text } 
 import { CoberturaAceptada, ObraSocialConPlanes } from "@/domain";
 import { getMedicoActual, guardarMisCoberturas, listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
-import { dejarAviso } from "@/utils/avisoAlVolver";
+import { dejarAviso } from "@/utils/ui";
 
 /**
  * "Coberturas que atiendo": el profesional elige con qué obras sociales (y, si quiere, qué planes) trabaja

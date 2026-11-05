@@ -107,8 +107,8 @@ Las instituciones de la app son los **1.077 establecimientos de salud de CABA** 
 CC BY 4.0): hospitales, clínicas y sanatorios, centros médicos y laboratorios. Los carga el **seed del
 backend** (`backend/prisma/datos/demo.json`); la app los pide a la API.
 
-`src/mocks/data/refes-caba.json` es la salida del script que procesa el CSV del REFES (la app ya no lo
-importa). Para regenerarlo con una versión nueva:
+El script `scripts/importar-refes.mjs` procesa el CSV del REFES y genera `src/mocks/data/refes-caba.json`. Es un
+archivo de trabajo: la app no lo importa y no está en el repo. Para generarlo con una versión nueva:
 
 ```bash
 # 1. Bajar el CSV (~9 MB) a scripts/.cache/, que está en .gitignore.

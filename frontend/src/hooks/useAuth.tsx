@@ -11,9 +11,9 @@ import {
   registrarPaciente,
   restaurarSesion,
 } from "@/services";
-import { borrarContrasenaGuardada, estaBiometriaHabilitada } from "@/services/biometria";
-import { registrarPushToken } from "@/services/notificacionService";
-import { reiniciarPistaCarrusel } from "@/utils/pistaCarrusel";
+import { borrarContrasenaGuardada, estaBiometriaHabilitada } from "@/services/sesion/biometria";
+import { registrarPushToken } from "@/services/notificaciones/notificacionService";
+import { reiniciarPistaCarrusel } from "@/utils/ui";
 
 export type { Rol };
 
@@ -24,7 +24,6 @@ interface AuthState {
   sesion: Sesion | null;
   rol: Rol | null;
   login: (dni: string, password: string) => Promise<Sesion>;
-  /** Después de la huella: retoma la sesión guardada en el teléfono. */
   loginBiometrico: () => Promise<Sesion>;
   registrarPaciente: (datos: DatosRegistroPaciente) => Promise<Sesion>;
   registrarMedico: (datos: DatosCuentaMedico) => Promise<Sesion>;

@@ -1,29 +1,11 @@
-import { borrarToken, tokenActual } from "./tokenSesion";
-
-/**
- * Simula la latencia de una API real. La usan los services que todavía leen mocks; desaparece cuando todos
- * estén conectados al backend (CLAUDE.md §4).
- */
-export function delay<T>(value: T, ms = 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
+import { borrarToken, tokenActual } from "./sesion/tokenSesion";
 
 /**
  * Dirección del backend, de `.env` (EXPO_PUBLIC_API_URL). En el celular con Expo Go no sirve `localhost`: va la
  * IP de la computadora en la red (`http://192.168.x.x:3000`).
  */
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-/** Si el servidor no contesta en este tiempo, se avisa en vez de quedarse esperando. */
 const ESPERA_MAXIMA_MS = 15000;
-
-/**
- * URL completa de algo que la API devuelve como ruta relativa, como las fotos de perfil (`/api/fotos/...`): el
- * backend no sabe con qué dirección lo ve el teléfono. Las URL que ya son completas quedan igual.
- */
-export function urlDeLaApi(ruta: string | undefined): string | undefined {
-  if (!ruta) return undefined;
-  return ruta.startsWith("/") ? `${API_URL}${ruta}` : ruta;
-}
 
 /** Error de la API con su status HTTP. El mensaje es el `{ error }` del backend, listo para mostrar. */
 export class ErrorApi extends Error {
@@ -36,26 +18,34 @@ export class ErrorApi extends Error {
   }
 }
 
-let alVencer: (() => void) | null = null;
-
-/** Lo que pasa cuando el backend dice que la sesión ya no vale (401): lo registra `AuthProvider`. */
-export function alVencerSesion(accion: (() => void) | null): void {
-  alVencer = accion;
-}
-
 interface OpcionesPedido {
   metodo?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   cuerpo?: unknown;
-  /** false en login y registro: no manda el token. */
   conSesion?: boolean;
 }
 
+let avisarSesionRechazada: (() => void) | null = null;
+
+/** Lo que pasa cuando el backend dice que la sesión ya no vale (401): lo registra `AuthProvider`. */
+export function alVencerSesion(accion: (() => void) | null): void {
+  avisarSesionRechazada = accion;
+}
+
 /**
- * El único lugar que habla con el backend: arma la URL, manda el token (`Authorization: Bearer`) y convierte
- * los errores en `ErrorApi` con el mensaje del servidor. Si la sesión venció, borra el token y avisa.
- */
+ * Se usa en "api()" y "apiArchivo()"
+ * 
+ * Hace el pedido HTTP (fetch) y espera la respuesta del BACKEND.
+ * Si la sesión venció, borra el token y llama a `avisarSesionRechazada()`.
+ * @param ruta La ruta de la API, p. ej. `/api/auth/login`.
+ * @param opciones Método, cuerpo y si manda el token.
+ * @param acepta Qué tipo de respuesta espera: `application/json` o `/` (para archivos).
+*/
 async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }: OpcionesPedido, acepta: string): Promise<Response> {
-  if (!API_URL) throw new ErrorApi(0, "Falta configurar EXPO_PUBLIC_API_URL en el archivo .env de la app.");
+
+  if (!API_URL) {
+    throw new ErrorApi(0, "Falta configurar EXPO_PUBLIC_API_URL en el archivo .env de la app.");
+  };
+
   const token = conSesion ? tokenActual() : null;
   const headers: Record<string, string> = { Accept: acepta };
   if (cuerpo !== undefined) headers["Content-Type"] = "application/json";
@@ -80,7 +70,7 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
   if (!respuesta.ok) {
     if (respuesta.status === 401 && token) {
       await borrarToken();
-      alVencer?.();
+      avisarSesionRechazada?.();
     }
     const datos: unknown = await respuesta.json().catch(() => null);
     const mensaje =
@@ -92,11 +82,23 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
   return respuesta;
 }
 
-/** Un pedido que devuelve JSON (o nada, con `204`). */
+/** MAIN: es el "fetch" de nuestros REQUEST (devuelve el JSON con la consulta). */
 export async function api<T>(ruta: string, opciones: OpcionesPedido = {}): Promise<T> {
+
   const respuesta = await pedir(ruta, opciones, "application/json");
+
   if (respuesta.status === 204) return undefined as T;
-  return (await respuesta.json().catch(() => null)) as T;
+
+  // Intentamos leer el JSON de la respuesta.
+  let datos;
+  try {
+    datos = await respuesta.json();
+  } catch {
+    datos = null;
+  }
+
+  // Le decimos a TypeScript que `datos` tiene la forma T.
+  return datos as T;
 }
 
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -143,4 +145,11 @@ export async function apiArchivo(ruta: string): Promise<string> {
     lector.readAsDataURL(archivo);
   });
   return binarioDeBase64(dataUrl.slice(dataUrl.indexOf(",") + 1));
+}
+
+/**
+ * Completa la url solo para lo de las fotos (porque tenían una forma aleatoria de crearse)
+ */
+export function urlDeLaApi(ruta: string | undefined): string | undefined {
+  return ruta && `${API_URL}${ruta}`;
 }
