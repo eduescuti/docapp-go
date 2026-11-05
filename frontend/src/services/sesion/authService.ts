@@ -42,8 +42,9 @@ export async function restaurarSesion(): Promise<Sesion> {
   if (!(await cargarTokenGuardado())) {
     throw new Error("Iniciá sesión con tu DNI y tu contraseña.");
   };
-
-  return await api<Sesion>("/api/auth/sesion");
+  const sesion = await api<Sesion>("/api/auth/sesion");
+  sesionActual = sesion;
+  return await sesion;
 }
 
 /** Hace un POST que revoca el token en el backend y borra la sesión del teléfono, aunque no haya conexión. */
