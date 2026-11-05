@@ -27,6 +27,9 @@ export function normalizarDni(dni: string): string {
   return dni.replace(/[.\s]/g, "");
 }
 
+/** El mensaje de un DNI con formato inválido: es el mismo que responde el backend. */
+export const ERROR_DNI = "Ingresá un DNI válido (7 u 8 dígitos).";
+
 /** DNI argentino: 7 u 8 dígitos. */
 export function esDniValido(dni: string): boolean {
   return /^\d{7,8}$/.test(normalizarDni(dni));

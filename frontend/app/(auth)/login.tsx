@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { hayTokenGuardado } from "@/services";
 import { useTheme } from "@/theme";
 import { sinTeclado } from "@/utils/teclado";
+import { ERROR_DNI, esDniValido } from "@/utils/validation";
 import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
@@ -27,6 +28,7 @@ export default function LoginScreen() {
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [biometriaHabilitada, setBiometriaHabilitada] = useState(false);
   const [dniGuardado, setDniGuardado] = useState<string | null>(null);
@@ -68,10 +70,14 @@ export default function LoginScreen() {
   };
 
   const puedeEnviar = dni.trim().length > 0 && password.length > 0;
+  const dniValido = esDniValido(dni);
 
   const handleIngresar = async () => {
     if (!puedeEnviar) return;
+    setIntentoEnviar(true);
     setError(null);
+    // El error aparece al instante, sin gastar un pedido. El backend lo vuelve a revisar.
+    if (!dniValido) return;
     setCargando(true);
     try {
       const sesion = await login(dni, password);
@@ -202,10 +208,11 @@ export default function LoginScreen() {
               setError(null);
             }}
             placeholder="Ej. 12345678"
-            autoCapitalize="none"
+            keyboardType="number-pad"
             autoCorrect={false}
             textContentType="username"
             returnKeyType="next"
+            error={intentoEnviar && !dniValido ? ERROR_DNI : undefined}
           />
           <PasswordField
             label="Contraseña"

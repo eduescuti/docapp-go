@@ -1,5 +1,5 @@
 import { DatosCuentaMedico, DatosRegistroMedico, DatosRegistroPaciente, DniLeido, ProfesionalPadron, Sesion } from "@/domain";
-import { esDniValido, esPasswordValida, normalizarDni } from "@/utils/validation";
+import { ERROR_DNI, esDniValido, esPasswordValida, normalizarDni } from "@/utils/validation";
 
 import { api } from "./apiClient";
 import { borrarToken, cargarTokenGuardado, guardarToken } from "./tokenSesion";
@@ -32,7 +32,7 @@ async function entrar(respuesta: RespuestaIngreso): Promise<Sesion> {
 
 /** Regla 11: login único con DNI + contraseña; el rol lo determina la cuenta. */
 export async function iniciarSesion(dni: string, password: string): Promise<Sesion> {
-  return entrar(await api<RespuestaIngreso>("/api/auth/login", { metodo: "POST", cuerpo: { dni: dni.trim(), password }, conSesion: false }));
+  return entrar(await api<RespuestaIngreso>("/api/auth/login", { metodo: "POST", cuerpo: { dni: normalizarDni(dni), password }, conSesion: false }));
 }
 
 /** ¿Quedó guardado en el teléfono el token de una sesión anterior? */
@@ -87,7 +87,7 @@ export async function listProfesiones(): Promise<string[]> {
 
 /** Lo que se puede revisar sin ir al servidor: así el error aparece al instante. */
 function validarDatosProfesional(datos: DatosRegistroMedico): void {
-  if (!esDniValido(datos.dni)) throw new Error("Ingresá un DNI válido (7 u 8 dígitos).");
+  if (!esDniValido(datos.dni)) throw new Error(ERROR_DNI);
   if (!esPasswordValida(datos.password)) throw new Error("La contraseña no cumple los requisitos de seguridad.");
 }
 

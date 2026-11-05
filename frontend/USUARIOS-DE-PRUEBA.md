@@ -17,7 +17,7 @@ Se ingresa con **DNI + contraseña**. El rol lo define la cuenta, no se elige en
 
 | Rol | DNI | Contraseña | Entra como |
 |---|---|---|---|
-| Administrador | `admin` | `Admin123$` | Panel de administración (única cuenta admin) |
+| Administrador | `99000001` | `Admin123$` | Panel de administración (única cuenta admin; DNI ficticio) |
 | Paciente | `12345678` | `Paciente123$` | Sofía Martínez (OSDE 210) |
 | Paciente | `38456123` | `Paciente123$` | Lucas Gómez (Swiss Medical SMG20) |
 | Paciente | `41789654` | `Paciente123$` | Martina López (OSDE 210) |
@@ -27,7 +27,8 @@ Se ingresa con **DNI + contraseña**. El rol lo define la cuenta, no se elige en
 | Profesional | `42300300` | `Medico123$` | Valeria Sosa (Enfermero, Mat. 132043) |
 | Profesional | `30000001` … `30000009` | `Medico123$` | Méndez, Ruiz, Castro, Fernández, López, Giménez, Paz, Vega y Herrera, en ese orden (DNI ficticios) |
 
-- El DNI acepta puntos o espacios (`42.300.300` funciona igual).
+- El DNI tiene que tener 7 u 8 dígitos y acepta puntos o espacios (`42.300.300` funciona igual). Con otro formato, la
+  app avisa sin ir al servidor y la API responde 400. La palabra `admin` ya no entra.
 - Si el DNI o la contraseña no coinciden, el mensaje es siempre "DNI o contraseña incorrectos." (no revela cuál
   de los dos falló). Con 5 fallos seguidos del mismo DNI en 15 minutos se bloquea un rato.
 - **La sesión queda iniciada** en el celular hasta que se cierra sesión o pasan 90 días sin usar la app. En web
