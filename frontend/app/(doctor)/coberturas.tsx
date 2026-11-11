@@ -9,8 +9,8 @@ import { useTheme } from "@/theme";
 import { dejarAviso } from "@/utils/ui";
 
 /**
- * "Coberturas que atiendo": el profesional elige con qué obras sociales (y, si quiere, qué planes) trabaja
- * (regla 17). Los pacientes de otras coberturas no lo ven (regla 18). Se abre desde su Perfil.
+ * "Coberturas que atiendo": el profesional elige con qué obras sociales (y, si quiere, qué planes) trabaja.
+ * Los pacientes de otras coberturas no lo ven. Se abre desde su Perfil.
  */
 export default function DoctorCoberturasScreen() {
   const { theme } = useTheme();

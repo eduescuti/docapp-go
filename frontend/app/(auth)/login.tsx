@@ -14,7 +14,7 @@ import {
   estaBiometriaHabilitada,
   guardarSesionBiometrica,
   habilitarBiometriaAutomatica,
-  obtenerDatosSesionBiometrica,
+  obtenerDniBiometrico,
 } from "@/services/sesion/biometria";
 
 // La huella se pide sola una vez por apertura de la app; después queda el ícono para reintentar.
@@ -22,12 +22,12 @@ let huellaAutomaticaIntentada = false;
 
 export default function LoginScreen() {
   const { theme } = useTheme();
-  const { login, loginBiometrico } = useAuth();
+  const { login, loginBiometrico, avisoInicio } = useAuth();
   const router = useRouter();
 
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(avisoInicio);
   const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [biometriaHabilitada, setBiometriaHabilitada] = useState(false);
@@ -47,18 +47,18 @@ export default function LoginScreen() {
   const chequearBiometria = async () => {
     try {
       // La huella no reemplaza a la contraseña: desbloquea el token que quedó guardado en el teléfono.
-      const [habilitada, sesion, conToken] = await Promise.all([
+      const [habilitada, dniBiometrico, conToken] = await Promise.all([
         estaBiometriaHabilitada(),
-        obtenerDatosSesionBiometrica(),
+        obtenerDniBiometrico(),
         hayTokenGuardado(),
       ]);
-      if (habilitada && sesion.dni && conToken) {
+      if (habilitada && dniBiometrico && conToken) {
         setBiometriaHabilitada(true);
-        setDniGuardado(sesion.dni);
-        setDni(sesion.dni);
+        setDniGuardado(dniBiometrico);
+        setDni(dniBiometrico);
         if (!huellaAutomaticaIntentada) {
           huellaAutomaticaIntentada = true;
-          ingresarConHuella(sesion.dni, true);
+          ingresarConHuella(dniBiometrico, true);
         }
       } else {
         setBiometriaHabilitada(false);

@@ -41,12 +41,12 @@ demo que un paciente con esa cobertura solo ve hospitales públicos (estado vac�
 
 ## 4. Decisiones a confirmar antes de programar
 
-Son reglas de negocio nuevas o cambios al dominio: según CLAUDE.md §3 se confirman antes de
+Son reglas de negocio nuevas o cambios al dominio: se confirman antes de
 tocar código.
 
 | # | Decisión | Recomendación | Impacto si se elige otra cosa |
 |---|---|---|---|
-| D1 | ¿Los **hospitales públicos** se muestran a **todos** los pacientes, sin importar la cobertura? | **Sí.** En Argentina atienden a toda la población (doc 3). Sumar como regla #15 en CLAUDE.md §10 | Si no: el mapa de cada cobertura queda casi vacío |
+| D1 | ¿Los **hospitales públicos** se muestran a **todos** los pacientes, sin importar la cobertura? | **Sí.** En Argentina atienden a toda la población (doc 3). | Si no: el mapa de cada cobertura queda casi vacío |
 | D2 | ¿Las **3 coberturas** de la tabla de arriba? | Sí, OSDE + Swiss Medical + Galeno | Cambian solo los datos de la Fase 3 |
 | D3 | ¿Se agrega el tipo **`sanatorio`** o se sigue con `clinica`? | Seguir con `clinica` en este sprint (menos cambios). Mostrar "Sanatorio" cuando el nombre lo diga | Si se agrega: tocar `TipoInstitucion`, chips y colores |
 | D4 | ¿Se dejan las instituciones inventadas actuales (Centro Médico Norte, Los Arcos…)? | **No:** se reemplazan por sedes reales. Los médicos mock se reasignan a sedes reales | Si se dejan: mezclar datos reales y ficticios confunde en la demo |
@@ -57,7 +57,7 @@ tocar código.
 
 | # | Estado | Respuesta |
 |---|---|---|
-| D1 | ✅ 09/10/2026 | Sí: los hospitales públicos se muestran a todos los pacientes. Sumada como regla #15 en CLAUDE.md §10 |
+| D1 | ✅ 09/10/2026 | Sí: los hospitales públicos se muestran a todos los pacientes. |
 | D2 | ✅ 09/10/2026 | OSDE 210 + Swiss Medical SMG20 + Galeno Oro, "de momento". Medifé queda sin relaciones. La relación obra social ↔ hospital se guarda como dato propio (`FuenteCobertura`) para que a futuro pueda venir de una integración con las obras sociales sin tocar las pantallas |
 | D3 | ✅ 09/10/2026 | Los sanatorios quedan como `clinica`. El nombre ya dice "Sanatorio" |
 | D4 | ✅ 09/10/2026 | Se reemplazan por sedes reales del REFES. Los médicos, turnos y favoritos mock se reasignan a esas sedes |
@@ -77,4 +77,4 @@ tocar código.
 | El paciente niega el permiso de ubicación | Centro por defecto en el Obelisco (-34.6037, -58.3816) y aviso no bloqueante |
 | Georef caído o lento | Timeout de 6 s, error claro y carga manual de lat/lng como respaldo (ya existe) |
 | Bundle pesado | JSON compacto (claves cortas o solo campos usados). Objetivo < 350 KB |
-| Falta la API key de Google Maps | Va en `.env` / `app.config` (nunca commiteada, CLAUDE.md §11). Para un build propio (development build / APK) la key es obligatoria; verificar en la Fase 5 si Expo Go alcanza para la demo |
+| Falta la API key de Google Maps | Va en `.env` / `app.config`. Para un build propio (development build / APK) la key es obligatoria; verificar en la Fase 5 si Expo Go alcanza para la demo |

@@ -5,10 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme";
 
 interface FormLayoutProps {
-  /** Queda fijo arriba: nunca se va de pantalla. */
   header: React.ReactNode;
   children: React.ReactNode;
-  /** Acciones principales, pegadas al final de la pantalla. */
   footer?: React.ReactNode;
 }
 

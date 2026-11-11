@@ -3,6 +3,7 @@ import {
   Bell,
   CalendarCheck,
   CalendarClock,
+  CalendarPlus,
   CalendarX,
   ClipboardList,
   FileCheck,
@@ -19,6 +20,7 @@ import { Text } from "../base/Text";
 
 const ICONOS: Record<TipoNotificacion, LucideIcon> = {
   recordatorio_turno: Bell,
+  turno_solicitado: CalendarPlus,
   turno_confirmado: CalendarCheck,
   turno_rechazado: CalendarX,
   turno_cancelado: CalendarX,

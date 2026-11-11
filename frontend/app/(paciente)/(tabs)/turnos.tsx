@@ -1,12 +1,14 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, CheckCircle2, ChevronRight, Clock, History, MapPin, Trash2 } from "lucide-react-native";
+import { Calendar, ChevronRight, Clock, History, MapPin, Trash2 } from "lucide-react-native";
 
 import {
   Avatar,
+  AvisoTemporal,
+  BotonIcono,
   BottomSheet,
   CampoBusqueda,
   Card,
@@ -16,6 +18,7 @@ import {
   PrimaryButton,
   ReservaTurno,
   ScreenContainer,
+  SeccionDetalle,
   StatusBadge,
   TabSwitch,
   Text,
@@ -31,8 +34,9 @@ import {
   vaciarHistorialTurnos,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { useAviso } from "@/hooks/useAviso";
 import { conservarSiIgual } from "@/utils/ui";
-import { formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo } from "@/utils/format";
+import { formatFechaCorta, formatFechaLarga, iniciales, nombreConTitulo, normalizar } from "@/utils/format";
 import { etiquetaEstado } from "@/components/base/StatusBadge";
 
 type Filtro = "reservar" | "proximos";
@@ -41,9 +45,6 @@ type Filtro = "reservar" | "proximos";
 const AVISO_SOLICITADO = "Solicitaste tu turno. Queda pendiente hasta que el profesional lo confirme.";
 const AVISO_REPROGRAMADO = "Reprogramaste tu turno. El nuevo queda pendiente hasta que el profesional lo confirme.";
 type Confirmando = "cancelar" | "ocultar" | null;
-
-/** Sin tildes ni mayúsculas, para que "cardiologia" encuentre "Cardiología". */
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Todo lo que se puede buscar de un turno: tipo (especialidad), estado, fecha, horario, profesional y lugar. */
 function textoBuscable({ turno, medico, especialidad, institucion }: TurnoConDetalle): string {
@@ -118,7 +119,7 @@ export default function TurnosScreen() {
   const [procesando, setProcesando] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoTurno | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const { aviso, mostrarAviso } = useAviso();
   // Turno que hay que mostrar y abrir (desde el Inicio), y el que queda resaltado un momento en la lista.
   const [porAbrir, setPorAbrir] = useState<string | null>(null);
   const [destacadoId, setDestacadoId] = useState<string | null>(null);
@@ -144,7 +145,7 @@ export default function TurnosScreen() {
     if (ver?.startsWith("proximos") || ver?.startsWith("reprogramado")) {
       setVerHistorial(false);
       setFiltro("proximos");
-      setAviso(ver.startsWith("reprogramado") ? AVISO_REPROGRAMADO : AVISO_SOLICITADO);
+      mostrarAviso(ver.startsWith("reprogramado") ? AVISO_REPROGRAMADO : AVISO_SOLICITADO);
     }
   }, [ver]);
 
@@ -172,13 +173,6 @@ export default function TurnosScreen() {
     setEstadoFiltro(null);
   }, [verHistorial, filtro]);
 
-  // El aviso de éxito se va solo a los 3 segundos.
-  useEffect(() => {
-    if (!aviso) return;
-    const t = setTimeout(() => setAviso(null), 3000);
-    return () => clearTimeout(t);
-  }, [aviso]);
-
   const abrir = (item: TurnoConDetalle) => {
     setConfirmando(null);
     setAbierto(item);
@@ -196,13 +190,13 @@ export default function TurnosScreen() {
     try {
       if (confirmando === "cancelar") await cancelarTurno(abierto.turno.id);
       else await ocultarTurnoDelHistorial(abierto.turno.id);
-      setAviso(confirmando === "cancelar" ? "Cancelaste el turno. Lo vas a ver en el historial." : "Eliminaste el turno de tu historial.");
+      mostrarAviso(confirmando === "cancelar" ? "Cancelaste el turno. Lo vas a ver en el historial." : "Eliminaste el turno de tu historial.");
       setAbierto(null);
       setConfirmando(null);
       await cargar();
     } catch (e) {
       // P. ej. pasó el plazo de 24 h mientras el detalle estaba abierto.
-      setAviso(e instanceof Error ? e.message : "No se pudo completar la acción.");
+      mostrarAviso(e instanceof Error ? e.message : "No se pudo completar la acción.", "error");
       setAbierto(null);
       setConfirmando(null);
       await cargar();
@@ -216,7 +210,7 @@ export default function TurnosScreen() {
     setProcesando(true);
     try {
       await vaciarHistorialTurnos();
-      setAviso("Eliminaste todo tu historial de turnos.");
+      mostrarAviso("Eliminaste todo tu historial de turnos.");
       setVaciando(false);
       await cargar();
     } finally {
@@ -228,10 +222,8 @@ export default function TurnosScreen() {
   const estados = estadosFiltrables(verHistorial);
   const lista = origen.filter((t) => (!estadoFiltro || t.turno.estado === estadoFiltro) && coincide(t, busqueda));
 
-  // Cuando el turno pedido ya está en la lista: se desplaza hasta él, se resalta y se abre su detalle, en ese
-  // orden y con pausas cortas para que se vea el recorrido (pestaña → lista → turno → detalle).
   const indicePorAbrir = porAbrir && !verHistorial && filtro === "proximos" ? lista.findIndex((x) => x.turno.id === porAbrir) : -1;
-  // Los temporizadores no se cancelan cuando `porAbrir` vuelve a null (eso cortaría el recorrido): solo al salir.
+
   const temporizadores = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => temporizadores.current.forEach(clearTimeout), []);
   useEffect(() => {
@@ -250,12 +242,15 @@ export default function TurnosScreen() {
     ];
     // Solo cuando aparece el índice: `lista` se rearma en cada render.
   }, [indicePorAbrir]);
+
   const hayFiltros = busqueda.trim().length > 0 || estadoFiltro !== null;
+
   /** El tipo de turno (la especialidad pedida) es lo principal; el profesional va debajo. */
   const tipoTurno = (item: TurnoConDetalle) => item.especialidad?.nombre ?? item.medico?.profesion ?? "Turno";
   const nombreMedico = (item: TurnoConDetalle) => (item.medico ? nombreConTitulo(item.medico) : "Profesional");
   const esProximo = abierto ? proximos.some((p) => p.turno.id === abierto.turno.id) : false;
-  // Regla 5: cancelar o reprogramar, hasta 24 h antes. Fuera de plazo los botones se ven deshabilitados con el motivo.
+
+  // Cancelar o reprogramar, hasta 24 h antes. Fuera de plazo los botones se ven deshabilitados con el motivo.
   const sinCambios = abierto ? motivoSinCambios(abierto.turno) : null;
 
   const reprogramar = () => {
@@ -273,15 +268,7 @@ export default function TurnosScreen() {
         etiquetaVolver="Volver a Turnos"
         accion={
           verHistorial ? undefined : (
-            <Pressable
-              onPress={() => setVerHistorial(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Ver el historial de turnos"
-              hitSlop={8}
-              style={[styles.botonHistorial, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
-            >
-              <History size={20} color={theme.colors.primary} />
-            </Pressable>
+            <BotonIcono icono={History} accessibilityLabel="Ver el historial de turnos" onPress={() => setVerHistorial(true)} />
           )
         }
       />
@@ -297,12 +284,7 @@ export default function TurnosScreen() {
         />
       )}
 
-      {aviso ? (
-        <View style={[styles.aviso, { backgroundColor: `${theme.colors.success}1F` }]} accessibilityLiveRegion="polite">
-          <CheckCircle2 size={16} color={theme.colors.success} />
-          <Text style={[styles.avisoTexto, { color: theme.colors.foreground }]}>{aviso}</Text>
-        </View>
-      ) : null}
+      <AvisoTemporal aviso={aviso} />
 
       {!verHistorial && filtro === "reservar" ? (
         <ScrollView
@@ -315,114 +297,114 @@ export default function TurnosScreen() {
             sedeDelMapa={sedeDelMapa}
             onReservado={async () => {
               setFiltro("proximos");
-              setAviso(AVISO_SOLICITADO);
+              mostrarAviso(AVISO_SOLICITADO);
               await cargar();
             }}
           />
         </ScrollView>
       ) : (
-      <>
-      {origen.length > 0 ? (
-        <View style={styles.filtros}>
-          <CampoBusqueda
-            valor={busqueda}
-            onChange={setBusqueda}
-            placeholder="Especialidad, estado, fecha, horario o profesional"
-            accessibilityLabel="Buscar turnos por especialidad, estado, fecha, horario o profesional"
-          />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            <Chip label="Todos" selected={estadoFiltro === null} onPress={() => setEstadoFiltro(null)} />
-            {estados.map((estado) => (
-              <Chip
-                key={estado}
-                label={`${PLURAL_ESTADO[estado]} · ${origen.filter((t) => t.turno.estado === estado).length}`}
-                selected={estadoFiltro === estado}
-                onPress={() => setEstadoFiltro(estadoFiltro === estado ? null : estado)}
+        <>
+          {origen.length > 0 ? (
+            <View style={styles.filtros}>
+              <CampoBusqueda
+                valor={busqueda}
+                onChange={setBusqueda}
+                placeholder="Especialidad, estado, fecha, horario o profesional"
+                accessibilityLabel="Buscar turnos por especialidad, estado, fecha, horario o profesional"
               />
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
-      <FlatList
-        ref={listaRef}
-        data={lista}
-        // Si la fila todavía no se midió, se baja aproximado y se reintenta.
-        onScrollToIndexFailed={({ index, averageItemLength }) => {
-          listaRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
-          setTimeout(() => listaRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.2 }), 300);
-        }}
-        keyExtractor={({ turno }) => turno.id}
-        contentContainerStyle={styles.lista}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          verHistorial && historial.length > 0 ? (
-            <View style={styles.encabezadoHistorial}>
-              <Text style={[styles.cantidad, { color: theme.colors.mutedForeground }]}>
-                {hayFiltros ? `${lista.length} de ${historial.length}` : historial.length} {historial.length === 1 ? "turno" : "turnos"}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                <Chip label="Todos" selected={estadoFiltro === null} onPress={() => setEstadoFiltro(null)} />
+                {estados.map((estado) => (
+                  <Chip
+                    key={estado}
+                    label={`${PLURAL_ESTADO[estado]} · ${origen.filter((t) => t.turno.estado === estado).length}`}
+                    selected={estadoFiltro === estado}
+                    onPress={() => setEstadoFiltro(estadoFiltro === estado ? null : estado)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+          <FlatList
+            ref={listaRef}
+            data={lista}
+            // Si la fila todavía no se midió, se baja aproximado y se reintenta.
+            onScrollToIndexFailed={({ index, averageItemLength }) => {
+              listaRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: true });
+              setTimeout(() => listaRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.2 }), 300);
+            }}
+            keyExtractor={({ turno }) => turno.id}
+            contentContainerStyle={styles.lista}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              verHistorial && historial.length > 0 ? (
+                <View style={styles.encabezadoHistorial}>
+                  <Text style={[styles.cantidad, { color: theme.colors.mutedForeground }]}>
+                    {hayFiltros ? `${lista.length} de ${historial.length}` : historial.length} {historial.length === 1 ? "turno" : "turnos"}
+                  </Text>
+                  <Pressable
+                    onPress={() => setVaciando(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Eliminar todo el historial de turnos"
+                    hitSlop={8}
+                    style={styles.eliminarTodo}
+                  >
+                    <Trash2 size={16} color={theme.colors.danger} />
+                    <Text style={[styles.eliminarTodoTexto, { color: theme.colors.danger }]}>Eliminar todo</Text>
+                  </Pressable>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
+                {hayFiltros
+                  ? "Ningún turno coincide con tu búsqueda."
+                  : verHistorial
+                    ? "Tu historial de turnos está vacío."
+                    : "No tenés turnos próximos. Reservá uno desde la pestaña Reservar."}
               </Text>
-              <Pressable
-                onPress={() => setVaciando(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Eliminar todo el historial de turnos"
-                hitSlop={8}
-                style={styles.eliminarTodo}
+            }
+            renderItem={({ item }) => (
+              <Card
+                style={[
+                  styles.tarjeta,
+                  item.turno.id === destacadoId && { borderColor: theme.colors.primary, backgroundColor: theme.colors.highlight },
+                ]}
+                onPress={() => abrir(item)}
+                accessibilityLabel={`${tipoTurno(item)} con ${nombreMedico(item)}, ${etiquetaEstado(item.turno.estado)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
               >
-                <Trash2 size={16} color={theme.colors.danger} />
-                <Text style={[styles.eliminarTodoTexto, { color: theme.colors.danger }]}>Eliminar todo</Text>
-              </Pressable>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          <Text style={[styles.vacio, { color: theme.colors.mutedForeground }]}>
-            {hayFiltros
-              ? "Ningún turno coincide con tu búsqueda."
-              : verHistorial
-                ? "Tu historial de turnos está vacío."
-                : "No tenés turnos próximos. Reservá uno desde la pestaña Reservar."}
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <Card
-            style={[
-              styles.tarjeta,
-              item.turno.id === destacadoId && { borderColor: theme.colors.primary, backgroundColor: theme.colors.highlight },
-            ]}
-            onPress={() => abrir(item)}
-            accessibilityLabel={`${tipoTurno(item)} con ${nombreMedico(item)}, ${etiquetaEstado(item.turno.estado)}, ${formatFechaCorta(item.turno.fecha)} a las ${item.turno.hora}. Ver detalle`}
-          >
-            <View style={styles.fila}>
-              <Avatar
-                uri={item.medico?.avatarUrl}
-                iniciales={item.medico ? iniciales(item.medico.nombre, item.medico.apellido) : "?"}
-                size={44}
-              />
-              <View style={styles.flex}>
-                <Text variant="heading" style={[styles.tipoTurno, { color: theme.colors.foreground }]} numberOfLines={1}>
-                  {tipoTurno(item)}
-                </Text>
-                <Text style={[styles.nombre, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
-                  {nombreMedico(item)}
-                </Text>
-              </View>
-              <StatusBadge estado={item.turno.estado} />
-            </View>
-            <View style={[styles.pieTarjeta, { borderTopColor: theme.colors.border }]}>
-              <View style={styles.dato}>
-                <Calendar size={14} color={theme.colors.primary} />
-                <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{formatFechaCorta(item.turno.fecha)}</Text>
-              </View>
-              <View style={styles.dato}>
-                <Clock size={14} color={theme.colors.primary} />
-                <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{item.turno.hora}</Text>
-              </View>
-              <View style={styles.flex} />
-              <ChevronRight size={18} color={theme.colors.mutedForeground} />
-            </View>
-          </Card>
-        )}
-      />
-      </>
+                <View style={styles.fila}>
+                  <Avatar
+                    uri={item.medico?.avatarUrl}
+                    iniciales={item.medico ? iniciales(item.medico.nombre, item.medico.apellido) : "?"}
+                    size={44}
+                  />
+                  <View style={styles.flex}>
+                    <Text variant="heading" style={[styles.tipoTurno, { color: theme.colors.foreground }]} numberOfLines={1}>
+                      {tipoTurno(item)}
+                    </Text>
+                    <Text style={[styles.nombre, { color: theme.colors.mutedForeground }]} numberOfLines={1}>
+                      {nombreMedico(item)}
+                    </Text>
+                  </View>
+                  <StatusBadge estado={item.turno.estado} />
+                </View>
+                <View style={[styles.pieTarjeta, { borderTopColor: theme.colors.border }]}>
+                  <View style={styles.dato}>
+                    <Calendar size={14} color={theme.colors.primary} />
+                    <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{formatFechaCorta(item.turno.fecha)}</Text>
+                  </View>
+                  <View style={styles.dato}>
+                    <Clock size={14} color={theme.colors.primary} />
+                    <Text style={[styles.datoTexto, { color: theme.colors.mutedForeground }]}>{item.turno.hora}</Text>
+                  </View>
+                  <View style={styles.flex} />
+                  <ChevronRight size={18} color={theme.colors.mutedForeground} />
+                </View>
+              </Card>
+            )}
+          />
+        </>
       )}
 
       {/* Detalle del turno y sus acciones, con segunda confirmación antes de cancelar o eliminar. */}
@@ -498,13 +480,13 @@ export default function TurnosScreen() {
               </Text>
             ) : null}
 
-            <Seccion icono={Calendar} titulo="Fecha y horario">
+            <SeccionDetalle icono={Calendar} titulo="Fecha y horario">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>
                 {formatFechaLarga(abierto.turno.fecha)} · {abierto.turno.hora} h
               </Text>
-            </Seccion>
+            </SeccionDetalle>
 
-            <Seccion icono={MapPin} titulo="Sede">
+            <SeccionDetalle icono={MapPin} titulo="Sede">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>{abierto.institucion?.nombre ?? "Sede"}</Text>
               {abierto.sede ? (
                 <>
@@ -525,7 +507,7 @@ export default function TurnosScreen() {
                   </Pressable>
                 </>
               ) : null}
-            </Seccion>
+            </SeccionDetalle>
           </View>
         ) : null}
       </BottomSheet>
@@ -544,27 +526,11 @@ export default function TurnosScreen() {
   );
 }
 
-function Seccion({ icono: Icono, titulo, children }: { icono: typeof Calendar; titulo: string; children: ReactNode }) {
-  const { theme } = useTheme();
-  return (
-    <View style={[styles.seccion, { borderTopColor: theme.colors.border }]}>
-      <View style={styles.dato}>
-        <Icono size={14} color={theme.colors.primary} />
-        <Text style={[styles.seccionTitulo, { color: theme.colors.mutedForeground }]}>{titulo}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  botonHistorial: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   filtros: { gap: 10, marginBottom: 14 },
   chips: { gap: 8, alignItems: "center" },
   tipoTurno: { fontSize: 17, fontWeight: "700" },
-  aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  avisoTexto: { flex: 1, fontSize: 13 },
   plazo: { textAlign: "center", marginTop: 0 },
   lista: { paddingBottom: 32 },
   encabezadoHistorial: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
@@ -581,8 +547,6 @@ const styles = StyleSheet.create({
   datoTexto: { fontSize: 13 },
   detalle: { gap: 4 },
   nombreDetalle: { fontSize: 18, fontWeight: "700" },
-  seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
-  seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   valor: { fontSize: 15, fontWeight: "500" },
   enlace: { alignSelf: "flex-start", minHeight: 36, justifyContent: "center" },
   enlaceTexto: { fontSize: 14, fontWeight: "600" },

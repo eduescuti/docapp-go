@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Bell, Calendar, Clock, FileText, MapPin, Pill, Stethoscope } from "lucide-react-native";
+import { Calendar, Clock, FileText, MapPin, Pill, Stethoscope } from "lucide-react-native";
 
 import {
   Avatar,
   Card,
+  CampanaNotificaciones,
   Carrusel,
   CredencialPlan,
   IconBadge,
   MapaCentros,
-  NotificacionesSheet,
   PedidoVuelo,
   PrimaryButton,
   PuntoMapa,
@@ -19,7 +19,7 @@ import {
   StatusBadge,
   Text,
 } from "@/components";
-import { Especialidad, Institucion, Medico, Notificacion, Paciente, PlanConObraSocial, Sede, Turno } from "@/domain";
+import { Especialidad, Institucion, Medico, Paciente, PlanConObraSocial, Sede, Turno } from "@/domain";
 import { useTabsEnFoco } from "@/hooks/useTabsEnFoco";
 import { CENTRO_CABA, useUbicacion } from "@/hooks/useUbicacion";
 import {
@@ -27,9 +27,6 @@ import {
   getPlanMedico,
   getProximoTurno,
   buscarCentros,
-  listNotificacionesPaciente,
-  marcarNotificacionLeida,
-  marcarTodasLeidas,
 } from "@/services";
 import { useTheme } from "@/theme";
 import { conservarSiIgual, alPresionar } from "@/utils/ui";
@@ -46,7 +43,6 @@ interface ProximoTurnoInfo {
 export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  // Ancho de la pantalla menos el margen de ScreenContainer (24 por lado).
   const { width: anchoPantalla } = useWindowDimensions();
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
@@ -64,18 +60,11 @@ export default function HomeScreen() {
 
   // Solo usa la ubicación si el permiso ya se dio (en el mapa): el Inicio no muestra el aviso del sistema.
   const { coordenada } = useUbicacion(false);
-  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
-  const [panelAbierto, setPanelAbierto] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setMapaMontado(tabsEnFoco), tabsEnFoco ? 450 : 400);
     return () => clearTimeout(t);
   }, [tabsEnFoco]);
-
-  const recargarNotificaciones = useCallback(async () => {
-    const lista = await listNotificacionesPaciente();
-    setNotificaciones((anterior) => conservarSiIgual(anterior, lista));
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -85,7 +74,6 @@ export default function HomeScreen() {
       (async () => {
         const p = await getPacienteActual();
         if (!activo) return;
-        recargarNotificaciones();
 
         // Plan y próximo turno (ya con profesional, especialidad y lugar) se piden juntos y se muestran juntos.
         const [pl, detalle] = await Promise.all([getPlanMedico(p.planMedicoId), getProximoTurno()]);
@@ -103,7 +91,7 @@ export default function HomeScreen() {
         activo = false;
         setEnFoco(false);
       };
-    }, [recargarNotificaciones]),
+    }, []),
   );
 
   // Los marcadores de la vista previa: los mismos centros que ve el paciente en el mapa.
@@ -127,8 +115,6 @@ export default function HomeScreen() {
     if (coordenada) setVolarA({ id: Date.now(), coordenada, zoom: 13 });
   }, [coordenada]);
 
-  const noLeidas = notificaciones.filter((n) => !n.leida).length;
-
   return (
     <ScreenContainer style={styles.contenido}>
       <View style={styles.header}>
@@ -140,45 +126,8 @@ export default function HomeScreen() {
             ¿Cómo te sentís?
           </Text>
         </View>
-        <Pressable
-          onPress={() => setPanelAbierto(true)}
-          accessibilityRole="button"
-          accessibilityLabel={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
-          style={({ pressed }) => [
-            styles.bellButton,
-            { borderColor: theme.colors.border, backgroundColor: theme.colors.card },
-            alPresionar(pressed, 0.92),
-          ]}
-        >
-          <Bell size={20} color={theme.colors.foreground} />
-          {noLeidas > 0 && (
-            <View style={[styles.badge, { backgroundColor: theme.colors.danger, borderColor: theme.colors.card }]}>
-              <Text style={styles.badgeText}>{noLeidas}</Text>
-            </View>
-          )}
-        </Pressable>
+        <CampanaNotificaciones verTodas="/cuenta/notificaciones" />
       </View>
-
-      <NotificacionesSheet
-        visible={panelAbierto}
-        notificaciones={notificaciones}
-        onClose={() => setPanelAbierto(false)}
-        onPressNotificacion={async (n) => {
-          if (!n.leida && paciente) {
-            await marcarNotificacionLeida(n.id);
-            recargarNotificaciones();
-          }
-        }}
-        onMarcarTodas={async () => {
-          if (!paciente) return;
-          await marcarTodasLeidas();
-          recargarNotificaciones();
-        }}
-        onVerTodas={() => {
-          setPanelAbierto(false);
-          router.push("/cuenta/notificaciones");
-        }}
-      />
 
       <View style={styles.section}>
         {/* Próximo turno y credencial del plan: se deslizan con el dedo (no avanzan solas). Una sola
@@ -285,7 +234,6 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
         <View style={styles.turnoRow}>
           <View style={styles.turnoDoctor}>
             <Avatar uri={proximo.medico.avatarUrl} iniciales={iniciales(proximo.medico.nombre, proximo.medico.apellido)} />
-            {/* Lo principal es el tipo de turno pedido (la especialidad); el profesional va debajo. */}
             <View style={styles.turnoTextos}>
               <Text variant="heading" style={[styles.tipoTurno, { color: theme.colors.foreground }]} numberOfLines={1}>
                 {proximo.especialidad?.nombre ?? proximo.medico.profesion}
@@ -297,6 +245,7 @@ function TarjetaProximoTurno({ proximo }: { proximo: ProximoTurnoInfo }) {
           </View>
           <StatusBadge estado={proximo.turno.estado} />
         </View>
+
         <View style={styles.turnoMeta}>
           <View style={styles.metaItem}>
             <Calendar size={14} color={theme.colors.primary} />
@@ -360,27 +309,6 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 13, marginBottom: 4 },
   headerTitle: { fontSize: 22, fontWeight: "700" },
-  bellButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    paddingHorizontal: 4,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
   contenido: { flexGrow: 1 },
   section: { marginBottom: 20 },
   tarjetaTurno: { flex: 1 },

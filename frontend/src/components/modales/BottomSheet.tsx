@@ -11,10 +11,8 @@ interface BottomSheetProps {
   visible: boolean;
   titulo: string;
   onClose: () => void;
-  /** A la derecha del título (p. ej. el estado del turno). */
   extraTitulo?: React.ReactNode;
   children: React.ReactNode;
-  /** Botones fijos abajo, fuera del scroll. */
   pie?: React.ReactNode;
 }
 

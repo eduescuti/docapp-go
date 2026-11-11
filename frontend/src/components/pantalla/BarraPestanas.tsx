@@ -23,7 +23,7 @@ export function BarraPestanas({ state, descriptors, position, layout, jumpTo }: 
         {
           backgroundColor: theme.colors.card,
           borderTopColor: theme.colors.border,
-          // En web no hay safe area: un relleno chico alcanza.
+
           paddingBottom: Platform.OS === "web" ? 4 : insets.bottom > 0 ? insets.bottom : 8,
         },
       ]}
@@ -47,7 +47,7 @@ export function BarraPestanas({ state, descriptors, position, layout, jumpTo }: 
         const { options } = descriptors[ruta.key];
         const seleccionada = state.index === i;
         const titulo = options.title ?? ruta.name;
-        // 1 cuando esta pestaña está a la vista, 0 cuando está a una pestaña o más de distancia.
+
         const actividad = position.interpolate({ inputRange: [i - 1, i, i + 1], outputRange: [0, 1, 0], extrapolate: "clamp" });
         const escala = actividad.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
 
@@ -58,17 +58,17 @@ export function BarraPestanas({ state, descriptors, position, layout, jumpTo }: 
             accessibilityRole="tab"
             accessibilityLabel={options.tabBarAccessibilityLabel ?? titulo}
             accessibilityState={{ selected: seleccionada }}
-            // En web `accessibilityState` no llega al DOM: se indica también con la prop equivalente.
+
             aria-selected={seleccionada}
             style={styles.pestana}
           >
             <Animated.View style={[styles.icono, { transform: [{ scale: escala }] }]}>
-              {/* Dos capas, una de cada color: la activa se funde sobre la inactiva. */}
               {options.tabBarIcon?.({ focused: false, color: theme.colors.mutedForeground })}
               <Animated.View style={[StyleSheet.absoluteFill, styles.capaActiva, { opacity: actividad }]}>
                 {options.tabBarIcon?.({ focused: true, color: theme.colors.primary })}
               </Animated.View>
             </Animated.View>
+
             <View>
               <Animated.Text style={[styles.etiqueta, { color: theme.colors.mutedForeground, fontFamily: theme.fonts.body }]}>{titulo}</Animated.Text>
               <Animated.Text

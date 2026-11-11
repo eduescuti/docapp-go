@@ -22,7 +22,7 @@ import { CoberturaAceptada, Institucion, ObraSocialConPlanes, TipoInstitucion } 
 import { crearInstitucion, listInstituciones, listObrasSociales } from "@/services";
 import { useTheme } from "@/theme";
 import { resumenCoberturas } from "@/utils/cobertura";
-import { hoyIso } from "@/utils/format";
+import { hoyIso, normalizar } from "@/utils/format";
 
 const TIPOS: { value: TipoInstitucion; label: string; icon: LucideIcon }[] = [
   { value: "hospital", label: "Hospital", icon: Hospital },
@@ -38,15 +38,12 @@ const LIMITE_LISTA = 30;
 
 const FUENTE_VACIA: FuenteEditable = { fuente: "web_institucion", fuenteUrl: "" };
 
-/** Sin tildes ni mayúsculas, para que "guemes" encuentre "Güemes". */
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
 /** "-34,60" o "-34.60" -> -34.6 */
 const parseCoordenada = (v: string) => Number.parseFloat(v.replace(",", "."));
 
 /**
  * Alta y listado de hospitales, clínicas, centros médicos y laboratorios. Tocar una abre la edición de sus
- * coberturas (las carga solo el admin, regla 17).
+ * coberturas (las carga solo el admin).
  */
 export default function AdminInstitucionesScreen() {
   const { theme } = useTheme();

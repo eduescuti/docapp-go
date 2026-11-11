@@ -19,7 +19,6 @@ export default function PestanasPacienteLayout() {
     <BarraInferiorContext.Provider value>
       <PestanasDeslizables
         tabBar={(props) => <BarraPestanas {...props} />}
-        // "history": volver regresa a la pestaña anterior, no siempre a Inicio.
         backBehavior="history"
         screenOptions={{ sceneStyle: { backgroundColor: theme.colors.background } }}
       >

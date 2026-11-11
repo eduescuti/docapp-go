@@ -21,7 +21,7 @@ import {
   searchMedicos,
 } from "@/services";
 import { useTheme } from "@/theme";
-import { formatFechaLarga, iniciales, nombreConTitulo, ETIQUETA_TIPO } from "@/utils/format";
+import { capitalizar, fechaEnDiasIso, formatFechaLarga, hoyIso, iniciales, nombreConTitulo, ETIQUETA_TIPO } from "@/utils/format";
 import { Avatar } from "../base/Avatar";
 import { BottomSheet } from "../modales/BottomSheet";
 import { Card } from "../base/Card";
@@ -34,23 +34,14 @@ import { SelectField, SelectOption } from "../formularios/SelectField";
 import { Text } from "../base/Text";
 
 interface ReservaTurnoProps {
-  /** Entra con este profesional ya elegido (desde su perfil, o al reprogramar). */
   medicoIdInicial?: string;
-  /**
-   * Reprogramar este turno: con el mismo profesional (`medicoIdInicial`), en cualquiera de sus lugares que le
-   * aparezcan al paciente. Al confirmar se cancela este y se reserva el nuevo en una sola operación.
-   */
   turnoAReprogramarId?: string;
-  /** Hospital elegido en el mapa. `n` cambia en cada elección para que se aplique aunque sea el mismo. */
   sedeDelMapa?: { sedeId: string; n: string };
-  /** El turno quedó reservado y el paciente cerró el aviso. */
   onReservado: (turno: Turno) => void;
 }
 
-/** Cuántos días hacia adelante se puede reservar. */
 const DIAS_RESERVABLES = 90;
 
-/** Qué son los favoritos y cómo repercuten en los turnos: se muestra con el "?" de "Tus favoritos". */
 const AYUDA_FAVORITOS = {
   titulo: "¿Para qué sirven los favoritos?",
   lineas: [
@@ -66,8 +57,6 @@ interface SedeConInstitucion {
   institucion: Institucion;
 }
 
-const capitalizar = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
-
 /** Franja del día a la que pertenece un horario. */
 function franja(hora: string): "Mañana" | "Tarde" | "Noche" {
   const h = Number(hora.slice(0, 2));
@@ -78,14 +67,9 @@ function franja(hora: string): "Mañana" | "Tarde" | "Noche" {
 const sinRepetidos = <T,>(lista: T[]): T[] => [...new Set(lista)];
 
 /**
- * Reserva de un turno en pasos: fecha → horario → hospital → especialidad → profesional.
- * Se empieza por cuándo y las opciones siguientes se arman con quién atiende en ese horario: cada paso
- * muestra solo lo que está libre (reglas 3 y 4) y de profesionales que aceptan el plan del paciente (regla 1).
- *
- * Los pasos se hacen en orden y ninguno se saltea (decidido el 28/10/2026): cada uno se habilita recién cuando
- * el anterior está elegido, no hay "Cualquiera" ni "Todas", y nada se elige solo salvo el hospital favorito, que se
- * propone (cuenta como elegido y se puede cambiar). Cambiar un paso suelta lo elegido en los siguientes. Si se
- * entra desde el perfil de un profesional, la especialidad y el profesional ya vienen elegidos por el paciente.
+ * Reserva en pasos: fecha → horario → hospital → especialidad → profesional, con solo lo libre y lo que cubre el plan.
+ * Cada paso se habilita con el anterior elegido y cambiarlo suelta los siguientes; solo el hospital favorito se propone
+ * solo. Desde el perfil de un profesional, él y su especialidad ya vienen elegidos.
  */
 export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa, onReservado }: ReservaTurnoProps) {
   const { theme } = useTheme();
@@ -97,11 +81,10 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [sedes, setSedes] = useState<Record<string, SedeConInstitucion>>({});
 
-  // Entra con hoy elegido: la tira y los pasos se muestran de entrada y los horarios se piden en paralelo con el resto.
-  const [fecha, setFecha] = useState<string | null>(() => format(new Date(), "yyyy-MM-dd"));
+  const [fecha, setFecha] = useState<string | null>(hoyIso);
   const fechaElegidaPorElPaciente = useRef(false);
   const [hora, setHora] = useState<string | null>(null);
-  // null: todavía no eligió (rige el favorito, si hay).
+
   const [sedeId, setSedeId] = useState<string | null>(null);
   const [favoritas, setFavoritas] = useState<string[]>([]);
   const [especialidadId, setEspecialidadId] = useState<string | null>(null);
@@ -110,12 +93,11 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
   const [libres, setLibres] = useState<HorarioLibre[] | null>(null);
   const [reservando, setReservando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Copia de lo reservado para el aviso: al refrescar la disponibilidad ese horario deja de estar entre las opciones.
   const [reservado, setReservado] = useState<{ turno: Turno; medico: Medico; lugar?: SedeConInstitucion } | null>(null);
 
-  const hoy = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
-  const limite = useMemo(() => format(addDays(new Date(), DIAS_RESERVABLES), "yyyy-MM-dd"), []);
-  // Los 91 días de la tira, con sus textos ya armados (una sola vez).
+  const hoy = useMemo(hoyIso, []);
+  const limite = useMemo(() => fechaEnDiasIso(DIAS_RESERVABLES), []);
+
   const dias = useMemo<DiaTira[]>(
     () =>
       Array.from({ length: DIAS_RESERVABLES + 1 }, (_, i) => {
@@ -130,7 +112,7 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
     [],
   );
 
-  // A quiénes se les piden los horarios: a los que le aparecen al paciente por su plan (regla 18) y, si viene
+  // A quiénes se les piden los horarios: a los que le aparecen al paciente por su plan y, si viene
   // del perfil de un profesional, solo a él.
   const filtro = useMemo<FiltroDisponibilidad | null>(
     () => (planMedicoId ? { medicoIds: medicoIdInicial ? [medicoIdInicial] : undefined } : null),
@@ -153,7 +135,6 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
     (async () => {
       const [esp, lista] = await Promise.all([
         listEspecialidades(),
-        // Si vienen del perfil de un profesional, la reserva es solo con él.
         medicoIdInicial
           ? getMedico(medicoIdInicial).then((m) => (m ? [m] : []))
           : searchMedicos(),
@@ -316,13 +297,13 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
       const turno = turnoAReprogramarId
         ? await reprogramarTurno(turnoAReprogramarId, { sedeId: elegida.sedeId, fecha, hora })
         : await crearTurno({
-            pacienteId,
-            especialidadId: especialidadEfectivaId,
-            medicoId: medico.id,
-            sedeId: elegida.sedeId,
-            fecha,
-            hora,
-          });
+          pacienteId,
+          especialidadId: especialidadEfectivaId,
+          medicoId: medico.id,
+          sedeId: elegida.sedeId,
+          fecha,
+          hora,
+        });
       setReservado({ turno, medico, lugar: sedes[elegida.sedeId] });
       // El horario reservado ya no está libre: se actualizan los horarios.
       if (filtro) listHorariosLibres(filtro, fecha).then(setLibres);
@@ -339,7 +320,6 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
   const cerrarAviso = () => {
     const turno = reservado?.turno;
     setReservado(null);
-    // Queda la pantalla lista para otra reserva.
     setHora(null);
     setSedeId(null);
     soltarDesdeEspecialidad();
@@ -370,11 +350,9 @@ export function ReservaTurno({ medicoIdInicial, turnoAReprogramarId, sedeDelMapa
         return {
           value: sede.id,
           label: institucion.nombre,
-          description: `${ETIQUETA_TIPO[institucion.tipo]}${
-            institucion.origen === "publico" ? " público" : ""
-          } · ${sede.direccion} · ${cantidad} ${
-            cantidad === 1 ? "profesional" : "profesionales"
-          }`,
+          description: `${ETIQUETA_TIPO[institucion.tipo]}${institucion.origen === "publico" ? " público" : ""
+            } · ${sede.direccion} · ${cantidad} ${cantidad === 1 ? "profesional" : "profesionales"
+            }`,
           group: esFav ? "Tus favoritos" : "Otros lugares",
           destacada: esFav,
           ayudaGrupo: esFav ? AYUDA_FAVORITOS : undefined,

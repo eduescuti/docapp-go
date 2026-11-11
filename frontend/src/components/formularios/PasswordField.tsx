@@ -9,7 +9,6 @@ import { Text } from "../base/Text";
 import { TextField, TextFieldProps } from "./TextField";
 
 interface PasswordFieldProps extends Omit<TextFieldProps, "secureTextEntry" | "right"> {
-  /** Muestra el checklist de requisitos de seguridad (para registro, no para login). */
   mostrarRequisitos?: boolean;
 }
 

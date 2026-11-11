@@ -36,7 +36,7 @@ Se ingresa con **DNI + contraseña**. El rol lo define la cuenta, no se elige en
 - Las cuentas están en `backend/prisma/datos/demo.json` (contraseñas en `backend/src/seed.ts`); en la base solo
   queda el hash de la contraseña.
 
-### Qué ve cada uno según su cobertura (reglas 15 y 18)
+### Qué ve cada uno según su cobertura
 
 Un paciente ve los establecimientos **públicos** y los privados que aceptan **su obra social y plan**, y los
 turnos de profesionales que atienden su cobertura en esos lugares. Con el seed de coberturas, además de los

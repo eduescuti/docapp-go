@@ -13,7 +13,6 @@ const ZOOMS = [1, 1.5, 2, 3];
 interface VisorPdfModalProps {
   visible: boolean;
   titulo: string;
-  /** PDF como string binario. Null mientras se carga. */
   datos: string | null;
   onClose: () => void;
 }

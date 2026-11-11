@@ -9,8 +9,6 @@ import { usePuenteMapa } from "./usePuenteMapa";
 
 /**
  * Mapa de centros en web: la misma página de MapLibre que usa el celular, dentro de un <iframe>.
- * Excepción aprobada a "sin etiquetas HTML" (CLAUDE.md §2): solo en este archivo, que Expo usa
- * únicamente en el navegador.
  */
 export function MapaCentros(props: MapaCentrosProps) {
   const { theme } = useTheme();

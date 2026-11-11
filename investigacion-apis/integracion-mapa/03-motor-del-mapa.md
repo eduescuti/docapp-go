@@ -38,7 +38,7 @@ Lo que implica para la entrega del Sprint 1:
 - El mapa dejó de ser un componente nativo. Los dos componentes nativos de la consigna 1.4 pasan
   a ser **GPS** (`expo-location`) y **notificaciones push** (`expo-notifications`, planificado).
 - "Cómo llegar" sigue abriendo **la app de Google Maps** con la ruta.
-- **A confirmar con el docente:** CLAUDE.md decía que Google Maps era obligatorio. Si lo exige, se
+- **A confirmar con el docente:** supuestamente Google Maps era obligatorio. Si lo exige, se
   suma para la app compilada (con clave propia) sin rehacer la pantalla. `react-native-maps` sigue
   instalado para eso.
 

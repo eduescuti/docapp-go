@@ -10,7 +10,6 @@
 const PDFJS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174";
 
 interface OpcionesVisor {
-  /** PDF como string binario (un carácter por byte). */
   datos: string;
   fondo: string;
 }

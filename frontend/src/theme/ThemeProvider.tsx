@@ -14,7 +14,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
- * Minimalista (A) es el modo claro y Premium (C) el modo oscuro (CLAUDE.md §7).
+ * Minimalista (A) es el modo claro y Premium (C) el modo oscuro.
  * La app arranca siempre en modo claro, aunque el teléfono esté en modo oscuro; el modo oscuro
  * se elige en Configuración (en memoria: se pierde al cerrar la app).
  */

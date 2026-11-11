@@ -15,10 +15,10 @@ interface NotificacionesSheetProps {
   onClose: () => void;
   onPressNotificacion: (n: Notificacion) => void;
   onMarcarTodas: () => void;
-  onVerTodas: () => void;
+  onVerTodas?: () => void;
 }
 
-/** Panel inferior que abre la campana del Inicio con las notificaciones recientes. */
+/** Panel inferior que abre la campana del Inicio (paciente o profesional) con las notificaciones recientes. */
 export function NotificacionesSheet({
   visible,
   notificaciones,
@@ -79,9 +79,11 @@ export function NotificacionesSheet({
             <PrimaryButton label="Marcar leídas" variant="outline" onPress={onMarcarTodas} />
           </View>
         )}
-        <View style={{ flex: 1 }}>
-          <PrimaryButton label="Ver todas" onPress={onVerTodas} />
-        </View>
+        {onVerTodas ? (
+          <View style={{ flex: 1 }}>
+            <PrimaryButton label="Ver todas" onPress={onVerTodas} />
+          </View>
+        ) : null}
       </View>
     </SheetModal>
   );

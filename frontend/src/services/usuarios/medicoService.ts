@@ -36,8 +36,8 @@ export async function getMedicoActual(): Promise<Medico> {
 }
 
 /**
- * Hace un PUT de las coberturas que atiende el profesional de la sesión y reemplaza la lista entera (regla 17). Los
- * turnos ya tomados no cambian.
+ * Hace un PUT de las coberturas que atiende el profesional de la sesión y reemplaza la lista entera.
+ * Los turnos ya tomados no cambian.
  */
 export async function guardarMisCoberturas(coberturas: CoberturaAceptada[]): Promise<Medico> {
   return api<Medico>("/api/medicos/yo/coberturas", { metodo: "PUT", cuerpo: { coberturas } });

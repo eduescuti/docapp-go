@@ -4,10 +4,6 @@ import { Animated, Easing, View } from "react-native";
 interface ColapsableProps {
   abierto: boolean;
   children: React.ReactNode;
-  /**
-   * Deja el contenido armado (y medido) aunque esté cerrado, plegado a alto 0. Abrir es entonces solo la
-   * animación: armar el contenido en el mismo momento en que arranca es lo que hace que se entrecorte.
-   */
   conservarMontado?: boolean;
 }
 
@@ -19,7 +15,6 @@ const DURACION_MS = 280;
  */
 export function Colapsable({ abierto, children, conservarMontado = false }: ColapsableProps) {
   const progreso = useRef(new Animated.Value(abierto ? 1 : 0)).current;
-  // Alto natural del contenido, medido: el alto animado es progreso × alto.
   const alto = useRef(new Animated.Value(0)).current;
   const [montado, setMontado] = useState(abierto);
 
@@ -29,7 +24,7 @@ export function Colapsable({ abierto, children, conservarMontado = false }: Cola
       toValue: abierto ? 1 : 0,
       duration: DURACION_MS,
       easing: abierto ? Easing.out(Easing.cubic) : Easing.inOut(Easing.cubic),
-      useNativeDriver: false, // el alto no se anima con el driver nativo
+      useNativeDriver: false,
     });
     animacion.start(({ finished }) => {
       if (finished && !abierto && !conservarMontado) setMontado(false);
@@ -42,12 +37,10 @@ export function Colapsable({ abierto, children, conservarMontado = false }: Cola
   return (
     <Animated.View
       style={{ height: Animated.multiply(progreso, alto), opacity: progreso, overflow: "hidden" }}
-      // Cerrado pero armado: no se toca ni lo leen los lectores de pantalla.
       pointerEvents={abierto ? "auto" : "none"}
       aria-hidden={!abierto}
       importantForAccessibility={abierto ? "auto" : "no-hide-descendants"}
     >
-      {/* Absoluto para que el contenido mida su alto real sin importar el alto animado del contenedor. */}
       <Animated.View
         style={{
           position: "absolute",

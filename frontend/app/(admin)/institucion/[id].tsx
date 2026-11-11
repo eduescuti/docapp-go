@@ -22,8 +22,8 @@ import { hoyIso, ETIQUETA_TIPO } from "@/utils/format";
 const FUENTE_VACIA: FuenteEditable = { fuente: "web_institucion", fuenteUrl: "" };
 
 /**
- * El admin edita las coberturas de una institución (regla 17): qué obras sociales acepta (enteras o algunos
- * planes) y de dónde sale el dato. Las públicas no tienen coberturas: las ven todos los pacientes (regla 15).
+ * El admin edita las coberturas de una institución: qué obras sociales acepta (enteras o algunos
+ * planes) y de dónde sale el dato. Las públicas no tienen coberturas: las ven todos los pacientes.
  */
 export default function AdminInstitucionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -63,8 +63,8 @@ export async function registrarPushToken(): Promise<string | null> {
   }
 }
 
-/** Hace un GET de las notificaciones del usuario de la sesión, de la más nueva a la más vieja. */
-export async function listNotificacionesPaciente(): Promise<Notificacion[]> {
+/** Hace un GET de las notificaciones del usuario de la sesión (paciente o profesional), de la más nueva a la más vieja. */
+export async function listNotificaciones(): Promise<Notificacion[]> {
   return api<Notificacion[]>("/api/notificaciones");
 }
 

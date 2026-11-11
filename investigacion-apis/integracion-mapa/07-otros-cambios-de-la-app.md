@@ -64,7 +64,7 @@ Cambios hechos en la misma etapa (09/10/2026) que no son del mapa, pero conviene
 `NotificacionesSheet` y `SelectField` también usan ahora `SheetModal`. `PrimaryButton` sumó la
 variante `danger` y el tema el token `dangerForeground`.
 
-## 6. Excepción a "sin HTML" (CLAUDE.md §2)
+## 6. Excepción a "sin HTML"
 
 Las únicas partes con HTML son el **mapa** (`src/components/mapa/`) y el **visor de PDF**
 (`src/components/visorPdf/`): páginas con una librería web dentro de un WebView. En web se

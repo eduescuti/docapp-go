@@ -4,6 +4,7 @@ import { Square, SquareCheck } from "lucide-react-native";
 
 import type { CoberturaAceptada, ObraSocialConPlanes } from "@/domain";
 import { useTheme } from "@/theme";
+import { normalizar } from "@/utils/format";
 import { CampoBusqueda } from "./CampoBusqueda";
 import { Chip } from "../base/Chip";
 import { Text } from "../base/Text";
@@ -13,9 +14,6 @@ interface SelectorCoberturasProps {
   value: CoberturaAceptada[];
   onChange: (coberturas: CoberturaAceptada[]) => void;
 }
-
-/** Sin tildes ni mayúsculas, para que "medife" encuentre "Medifé". */
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /**
  * Qué coberturas acepta una institución (admin) o atiende un profesional (su Perfil). Se tilda la obra social

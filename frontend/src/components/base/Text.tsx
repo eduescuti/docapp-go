@@ -8,8 +8,7 @@ interface AppTextProps extends TextProps {
 
 /**
  * Reemplazo temático de `Text` de React Native: aplica la tipografía del tema
- * activo (Inter o Playfair+PlusJakarta según CLAUDE.md §7) por defecto, sin
- * que cada pantalla tenga que setear `fontFamily` a mano.
+ * activo (Inter o Playfair+PlusJakarta) por defecto, sin que cada pantalla tenga que setear `fontFamily` a mano.
  */
 export function Text({ variant = "body", style, ...rest }: AppTextProps) {
   const { theme } = useTheme();

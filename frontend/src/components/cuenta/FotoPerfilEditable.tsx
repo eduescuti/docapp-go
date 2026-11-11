@@ -12,15 +12,14 @@ import { Text } from "../base/Text";
 interface FotoPerfilEditableProps {
   avatarUrl?: string;
   iniciales: string;
-  /** Quién ve la foto (se aclara en la hoja). */
   quienLaVe: string;
-  /** Mientras no llegaron los datos de la persona. */
   deshabilitado?: boolean;
-  /** Color de lo que hay detrás, para el borde del ícono de cámara. */
   colorFondo?: string;
-  size?: number;
   onCambio: (avatarUrl: string | undefined) => void;
 }
+
+const TAMANIO_FOTO = 88;
+const TAMANIO_INSIGNIA = 32;
 
 type Paso = "opciones" | "eligiendo" | "subiendo" | "quitando";
 
@@ -35,7 +34,6 @@ export function FotoPerfilEditable({
   quienLaVe,
   deshabilitado = false,
   colorFondo,
-  size = 88,
   onCambio,
 }: FotoPerfilEditableProps) {
   const { theme } = useTheme();
@@ -79,8 +77,6 @@ export function FotoPerfilEditable({
     }
   };
 
-  const insignia = Math.max(28, Math.round(size * 0.36));
-
   return (
     <>
       <Pressable
@@ -91,20 +87,20 @@ export function FotoPerfilEditable({
         style={({ pressed }) => [styles.tocable, alPresionar(pressed)]}
       >
         <View>
-          <Avatar uri={avatarUrl} iniciales={iniciales} size={size} />
+          <Avatar uri={avatarUrl} iniciales={iniciales} size={TAMANIO_FOTO} />
           <View
             style={[
               styles.insignia,
               {
-                width: insignia,
-                height: insignia,
-                borderRadius: insignia / 2,
+                width: TAMANIO_INSIGNIA,
+                height: TAMANIO_INSIGNIA,
+                borderRadius: TAMANIO_INSIGNIA / 2,
                 backgroundColor: theme.colors.primary,
                 borderColor: colorFondo ?? theme.colors.background,
               },
             ]}
           >
-            <Camera size={insignia * 0.5} color={theme.colors.primaryForeground} />
+            <Camera size={TAMANIO_INSIGNIA / 2} color={theme.colors.primaryForeground} />
           </View>
         </View>
         <Text style={[styles.etiqueta, { color: theme.colors.primary }]}>{avatarUrl ? "Cambiar foto" : "Agregar foto"}</Text>

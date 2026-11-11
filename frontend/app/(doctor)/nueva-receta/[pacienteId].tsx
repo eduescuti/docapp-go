@@ -2,14 +2,13 @@ import { useCallback, useState } from "react";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Calendar } from "lucide-react-native";
-import { addDays, format } from "date-fns";
 
 import { BackHeader, Card, PrimaryButton, ScreenContainer, Text, TextField } from "@/components";
 import { Medico, Paciente } from "@/domain";
 import { crearReceta, getMedicoActual, getPaciente } from "@/services";
 import { useTheme } from "@/theme";
 import { dejarAviso } from "@/utils/ui";
-import { formatFechaLarga, hoyIso } from "@/utils/format";
+import { fechaEnDiasIso, formatFechaLarga, hoyIso } from "@/utils/format";
 
 /**
  * El profesional le asigna una receta al paciente: medicamento, dosis, cómo tomarla, duración e indicaciones.
@@ -112,7 +111,7 @@ export default function NuevaRecetaScreen() {
           error={duracion && !duracionValida ? "Tiene que ser de 1 a 365 días." : undefined}
           hint={
             duracionValida
-              ? `Activa hasta el ${formatFechaLarga(format(addDays(new Date(), dias), "yyyy-MM-dd"))}.`
+              ? `Activa hasta el ${formatFechaLarga(fechaEnDiasIso(dias))}.`
               : "Define hasta cuándo la receta está activa."
           }
         />

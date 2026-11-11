@@ -71,7 +71,7 @@ Los topes gratuitos son **por mes y por SKU**.
 - Los términos de Google limitan guardar sus resultados en una base propia.
 
 **Lo que sí usamos de Google:** el SDK nativo del mapa (gratis) y, opcionalmente, Geocoding como
-respaldo de Georef. La clave va en `.env`, nunca en el repo (CLAUDE.md §11).
+respaldo de Georef. La clave va en `.env`, nunca en el repo.
 
 ---
 

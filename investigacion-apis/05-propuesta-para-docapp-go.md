@@ -51,7 +51,7 @@ Relación cobertura ↔ institución
 | `PlanMedico { id, nombre, aseguradora }` | Conviene separar **Aseguradora** (con código RNAS/RNEMP) de **Plan** |
 | `planesAceptadosIds` en cada institución | Para públicos: no hace falta (atienden a todos). Para privados: carga manual |
 
-> Son cambios al dominio: se discuten antes de tocar código (CLAUDE.md §3).
+> Son cambios al dominio: se discuten antes de tocar código.
 
 ## 3. Relación cobertura ↔ institución
 
@@ -62,13 +62,12 @@ Como no existe fuente pública ([doc 3](03-relacion-cobertura-establecimiento.md
 2. **Privados → la relación se carga como dato propio:**
    - el **admin** desde el panel (el formulario "Obras sociales aceptadas" ya existe en
      `app/(admin)/instituciones.tsx`);
-   - y/o la **propia institución** con su usuario. Es la regla #9 del CLAUDE.md: cada institución
+   - y/o la **propia institución** con su usuario. Cada institución
      administra sus recursos. Haría falta un rol o permiso de "institución".
 3. **Para la demo:** sembrar a mano unas pocas instituciones privadas reales (por ejemplo de
    CABA) con las coberturas que figuran en las cartillas públicas de 3 o 4 prepagas u obras
    sociales.
-4. **A futuro:** integración con obras sociales, que ya figura en la "segunda etapa" del
-   CLAUDE.md.
+4. **A futuro:** integración con obras sociales, que ya figura en la "segunda etapa".
 
 ## 4. Próximo paso concreto (sin backend)
 
@@ -85,7 +84,7 @@ coordenadas, unos 500 registros.
 
 | # | Decisión | Opciones / comentario |
 |---|---|---|
-| 1 | **¿Los hospitales públicos se muestran a todos los pacientes**, sin importar la cobertura? | Recomendado: sí. Es una regla de negocio nueva para el CLAUDE.md §10 |
+| 1 | **¿Los hospitales públicos se muestran a todos los pacientes**, sin importar la cobertura? | Recomendado: sí. |
 | 2 | **Alcance geográfico de la demo** | CABA (~1.400 establecimientos útiles con coordenadas) · AMBA · todo el país (~19.000) |
 | 3 | **¿Qué coberturas se cargan con relaciones reales?** | Por ejemplo OSDE, Swiss Medical, Galeno y PAMI |
 | 4 | **¿Subconjunto del REFES en mocks ya** o esperar al backend? | Recomendado: ya, para la demo del mapa |

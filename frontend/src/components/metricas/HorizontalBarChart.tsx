@@ -11,13 +11,11 @@ export interface BarDatum {
 interface HorizontalBarChartProps {
   data: BarDatum[];
   unidad?: string;
-  /** Color de las barras (por defecto `primary`). Cada gráfico de una pantalla lleva el suyo. */
   color?: string;
 }
 
 /**
- * Gráfico de barras horizontal hecho con `View` (sin librería extra, para no sumar
- * dependencias con versiones congeladas — CLAUDE.md §2).
+ * Gráfico de barras horizontal hecho con `View`.
  */
 export function HorizontalBarChart({ data, unidad = "", color }: HorizontalBarChartProps) {
   const { theme } = useTheme();
@@ -39,7 +37,6 @@ export function HorizontalBarChart({ data, unidad = "", color }: HorizontalBarCh
             </Text>
             <Text style={[styles.value, { color: tono }]}>{d.value}</Text>
           </View>
-          {/* La pista es el mismo color, muy suave (alfa 1F), para que cada gráfico se lea de un solo tono. */}
           <View style={[styles.track, { backgroundColor: `${tono}1F`, borderRadius: theme.radii.sm }]}>
             <View
               style={[

@@ -8,7 +8,6 @@ export interface TextFieldProps extends TextInputProps {
   label: string;
   error?: string;
   hint?: string;
-  /** Elemento a la derecha del input (p. ej. botón de mostrar contraseña). */
   right?: React.ReactNode;
 }
 

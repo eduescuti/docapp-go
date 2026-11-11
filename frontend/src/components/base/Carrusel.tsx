@@ -18,34 +18,24 @@ import { Text } from "./Text";
 
 export interface PaginaCarrusel {
   clave: string;
-  /** Título de la sección mientras se ve esta página ("Próximo turno", "Mi plan médico"). */
   titulo: string;
-  /** Para lectores de pantalla en el punto indicador ("Ver próximo turno"). */
   etiqueta: string;
   contenido: React.ReactNode;
 }
 
 interface CarruselProps {
   paginas: PaginaCarrusel[];
-  /** false: la pantalla no está a la vista y la pista de deslizamiento no corre. */
   activo?: boolean;
-  /** Ancho estimado antes de medir, para que el primer cuadro no se vea aplastado. */
   anchoInicial?: number;
 }
 
-/** Cuánto se corren las tarjetas durante la pista, en px. */
 const PISTA_DESPLAZAMIENTO = 36;
-/** Separación entre tarjetas: en reposo la siguiente queda fuera de la vista y durante la pista asoma separada. */
 const SEPARACION = 16;
-/** Espera en el Inicio antes de mostrar la pista. */
 const PISTA_ESPERA_MS = 1000;
-// Lento y con arranque y frenado suaves: tiene que insinuar que se puede deslizar, no llamar la atención.
 const PISTA_IDA_MS = 600;
 const PISTA_VUELTA_MS = 600;
 const PISTA_PAUSA_MS = 250;
 
-// react-native-web no convierte `snapToInterval` en scroll-snap: sin esto, en web una tarjeta podía
-// quedar a medio camino dejando ver un pedazo de la otra. En el celular se encarga `snapToInterval`.
 const snapWeb = Platform.OS === "web" ? ({ scrollSnapType: "x mandatory" } as object) : undefined;
 const alineacionWeb = Platform.OS === "web" ? ({ scrollSnapAlign: "start" } as object) : undefined;
 
@@ -60,7 +50,7 @@ export function Carrusel({ paginas, activo = true, anchoInicial = 0 }: CarruselP
   const { theme } = useTheme();
   const scroll = useRef<ScrollView>(null);
   const desplazamientoX = useRef(new Animated.Value(0)).current;
-  // Desplazamiento visual de la pista (negativo = las tarjetas se corren a la izquierda).
+
   const pistaX = useRef(new Animated.Value(0)).current;
   const [ancho, setAncho] = useState(anchoInicial);
   const [indice, setIndice] = useState(0);
@@ -95,7 +85,7 @@ export function Carrusel({ paginas, activo = true, anchoInicial = 0 }: CarruselP
     if (!activo || !hayVarias || !ancho || pistaYaMostrada()) return;
     let cancelado = false;
     const temporizador = setTimeout(async () => {
-      // Con "reducir movimiento" activado no se anima nada.
+
       const reducir = await AccessibilityInfo.isReduceMotionEnabled().catch(() => false);
       if (cancelado) return;
       marcarPistaMostrada();
@@ -203,8 +193,6 @@ export function Carrusel({ paginas, activo = true, anchoInicial = 0 }: CarruselP
             onTouchStart={cortarPista}
           >
             {paginas.map((pagina, i) => (
-              // La pista corre las tarjetas con una transformación (no con el scroll) y el punto de snap
-              // queda en el contenedor de afuera, que no se mueve, para que la pista no lo altere.
               <View
                 key={pagina.clave}
                 style={[{ width: ancho, marginRight: i === paginas.length - 1 ? 0 : SEPARACION }, alineacionWeb]}

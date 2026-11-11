@@ -15,7 +15,7 @@ interface AvisoProfesionalProps {
 
 /**
  * Aviso del profesional que todavía no cargó coberturas u horarios: sin coberturas no le aparece a ningún
- * paciente (regla 18) y sin franjas no tiene turnos para ofrecer. Va en su Inicio y su Perfil.
+ * paciente y sin franjas no tiene turnos para ofrecer. Va en su Inicio y su Perfil.
  */
 export function AvisoProfesional({ sinCoberturas, sinHorarios, onCargarCoberturas, onCargarHorarios, style }: AvisoProfesionalProps) {
   const { theme } = useTheme();

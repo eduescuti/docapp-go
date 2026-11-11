@@ -5,7 +5,7 @@ import { BellOff } from "lucide-react-native";
 
 import { BackHeader, Card, EmptyState, NotificacionItem, PrimaryButton, ScreenContainer, Text } from "@/components";
 import { Notificacion, Paciente } from "@/domain";
-import { getPacienteActual, listNotificacionesPaciente, marcarNotificacionLeida, marcarTodasLeidas } from "@/services";
+import { getPacienteActual, listNotificaciones, marcarNotificacionLeida, marcarTodasLeidas } from "@/services";
 import { useTheme } from "@/theme";
 
 /** Todas las notificaciones del paciente. Tocar una la marca como leída. */
@@ -17,7 +17,7 @@ export default function NotificacionesScreen() {
   const cargar = useCallback(async () => {
     const p = await getPacienteActual();
     setPaciente(p);
-    setNotificaciones(await listNotificacionesPaciente());
+    setNotificaciones(await listNotificaciones());
   }, []);
 
   useFocusEffect(

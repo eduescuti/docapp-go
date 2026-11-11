@@ -7,9 +7,7 @@ import { Text } from "../base/Text";
 
 interface EncabezadoTabProps {
   titulo: string;
-  /** Botón a la derecha del título (p. ej. Historial, Archivados). Debería medir 44 px. */
   accion?: React.ReactNode;
-  /** Si se pasa, el título lleva un botón de volver a la izquierda (vistas internas de una pestaña). */
   onVolver?: () => void;
   etiquetaVolver?: string;
 }

@@ -8,7 +8,7 @@ import { crearHtmlVisorPdf } from "./visorPdfHtml";
 
 /**
  * Visor de PDF en web: la misma página de pdf.js dentro de un <iframe>. Misma excepción a "sin
- * etiquetas HTML" que el mapa (CLAUDE.md §2): solo en este archivo, que Expo usa en el navegador.
+ * etiquetas HTML" que el mapa: solo en este archivo, que Expo usa en el navegador.
  */
 export function VisorPdf({ datos, zoom, onListo, onError, style }: VisorPdfProps) {
   const { theme } = useTheme();

@@ -41,7 +41,7 @@ const config: ExpoConfig = {
     [
       "expo-notifications",
       {
-        icon: "./assets/icon.png",
+        icon: "./assets/splash-icon.png",
         color: "#0284c7",
       },
     ],
@@ -92,7 +92,7 @@ const config: ExpoConfig = {
     },
   },
 
-  
+
 };
 
 export default config;

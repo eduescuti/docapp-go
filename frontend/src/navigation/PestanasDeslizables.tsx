@@ -4,34 +4,18 @@ import { withLayoutContext } from "expo-router";
 import { createNavigatorFactory, TabRouter, useNavigationBuilder } from "expo-router/react-navigation";
 
 /**
- * Navegador de pestañas que se recorren deslizando (con la pantalla siguiendo al dedo) o tocando la
- * barra. Es propio, en vez del pager nativo de `react-native-pager-view`, por una razón: el pager
- * nativo de Android toma el gesto en cuanto el dedo se corre unos píxeles hacia el costado, sin fijarse
- * si el movimiento es mayormente vertical, así que un scroll hacia arriba o abajo con un poco de deriva
- * lateral cambiaba de pestaña. Acá el gesto solo cuenta como "deslizar de pestaña" si es claramente
- * horizontal (ver las constantes de abajo), y cualquier scroll vertical queda para la pantalla.
- *
- * Los scrolls horizontales de adentro (carrusel del Inicio, tira de días, chips) siguen funcionando:
- * el sistema los toma antes de que el movimiento llegue al mínimo que pide el pager.
+ * Pestañas que se pasan deslizando o tocando la barra. Es propio porque el pager nativo de Android cambiaba de pestaña
+ * con scrolls verticales algo torcidos: acá solo cuenta un gesto claramente horizontal, y los scrolls horizontales de
+ * adentro (carrusel, días, chips) siguen andando. Las animaciones corren en el hilo nativo para no entrecortarse.
  */
 
-/**
- * Las animaciones corren en el hilo nativo (UI): mientras el dedo arrastra, JS solo le pasa la posición,
- * y el movimiento de la pantalla y de la barra (indicador, íconos, etiquetas) lo calcula el sistema.
- * Si corrieran en JS, cada cuadro necesitaría varias actualizaciones desde el hilo de JS y se entrecortarían
- * en cuanto ese hilo se ocupa (por ejemplo, al cargar los datos de la pestaña nueva). Web no tiene driver nativo.
- */
+// Web no tiene hilo nativo para las animaciones.
 const NATIVO = Platform.OS !== "web";
 
-/** Cuánto tiene que moverse el dedo en horizontal (px) antes de que el pager reclame el gesto. */
 const MOVIMIENTO_MINIMO = 14;
-/** El movimiento horizontal tiene que ser al menos esta cantidad de veces el vertical (≈ 22° de inclinación como máximo). */
 const RAZON_HORIZONTAL = 2.5;
-/** Fracción del ancho que hay que arrastrar para pasar de pestaña al soltar. */
 const UMBRAL_DISTANCIA = 0.3;
-/** Velocidad (px/ms) a partir de la cual un gesto corto también pasa de pestaña (un "latigazo"). */
 const UMBRAL_VELOCIDAD = 0.45;
-/** Cuánto del arrastre se transmite al intentar pasar del borde (primera/última pestaña). */
 const RESISTENCIA_BORDE = 0.25;
 
 interface RutaPestana {
@@ -68,16 +52,14 @@ interface NavegadorProps {
   children?: React.ReactNode;
   screenOptions?: OpcionesPestana;
   screenListeners?: unknown;
-  /** Barra de pestañas, abajo. */
   tabBar: (props: PropsBarraPestanas) => React.ReactNode;
-  /** false: no se puede pasar de pestaña deslizando (solo tocando la barra). */
   swipeEnabled?: boolean;
 }
 
 const limitar = (valor: number, min: number, max: number) => Math.min(Math.max(valor, min), max);
 
 function NavegadorPestanas({ id, initialRouteName, backBehavior, children, screenOptions, screenListeners, tabBar, swipeEnabled = true }: NavegadorProps) {
-  // Los tipos de `useNavigationBuilder` son muy genéricos: se usan los de este archivo.
+
   const { state, descriptors, navigation, NavigationContent } = useNavigationBuilder(TabRouter, {
     id,
     initialRouteName,

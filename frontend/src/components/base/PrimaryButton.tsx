@@ -9,12 +9,11 @@ interface PrimaryButtonProps {
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  /** danger: confirmaciones destructivas (cancelar un turno, eliminar). */
   variant?: "primary" | "outline" | "danger";
   accessibilityLabel?: string;
 }
 
-/** Equivalente RN de `.theme-btn-primary` del prototipo Figma. Alto ≥ 44px (CLAUDE.md §3). */
+/** Equivalente RN de `.theme-btn-primary` del prototipo Figma. Alto ≥ 44px. */
 export function PrimaryButton({
   label,
   onPress,

@@ -17,7 +17,6 @@ export function Avatar({ uri, iniciales, size = 48 }: AvatarProps) {
   const { theme } = useTheme();
   const radius = size / 2;
   const fuente = urlDeLaApi(uri);
-  // Se guarda cuál falló (y no un sí/no) para que una foto nueva se vuelva a intentar.
   const [fallida, setFallida] = useState<string | null>(null);
 
   if (fuente && fuente !== fallida) {

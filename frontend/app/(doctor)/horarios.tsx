@@ -25,7 +25,6 @@ const NOMBRE_DIA: Record<DiaSemana, string> = {
   6: "Sábado",
 };
 const ABREVIATURA: Record<DiaSemana, string> = { 0: "Dom", 1: "Lun", 2: "Mar", 3: "Mié", 4: "Jue", 5: "Vie", 6: "Sáb" };
-/** La semana empieza el lunes. */
 const DIAS: DiaSemana[] = [1, 2, 3, 4, 5, 6, 0];
 
 /** "06:00", "06:30", … "23:00": los turnos son de 30 min. */

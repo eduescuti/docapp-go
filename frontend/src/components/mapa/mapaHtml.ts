@@ -3,8 +3,7 @@ import type { ThemeMapa } from "@/theme";
 
 /**
  * Página que dibuja el mapa con MapLibre GL JS dentro de un WebView (celular) o un iframe (web).
- * Es la única parte de la app escrita en HTML: MapLibre es una librería web (decisión del
- * 09/10/2026, ver `DocApp Go/investigacion-apis/08-motor-del-mapa.md`).
+ * Es la única parte de la app escrita en HTML: MapLibre es una librería web.
  *
  * - Motor: MapLibre GL JS 5.x (la 6 viene solo como módulos ES con un worker aparte, que no
  *   funciona en un WebView con HTML en línea).

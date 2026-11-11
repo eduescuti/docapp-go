@@ -4,8 +4,8 @@ import { Especialidad, Institucion, Medico, Paciente, Sede, Turno } from "@/doma
 
 import { api } from "../apiClient";
 
-// Turnos contra el backend (`docs/04-api.md#turnos`). El backend cierra solos los que ya pasaron (confirmado →
-// completado, pendiente → rechazado) antes de devolverlos.
+// Turnos contra el backend (`docs/04-api.md#turnos`). El backend cierra solos los que ya pasaron
+// (confirmado → completado, pendiente → rechazado) antes de devolverlos.
 
 /** Hace un GET de todos los turnos del paciente, también los que sacó de su historial (historial médico). */
 export async function listTurnosPaciente(): Promise<Turno[]> {
@@ -80,7 +80,7 @@ export interface HorarioLibre {
 
 /**
  * A qué profesionales se refiere una consulta de disponibilidad: los que le aparecen al paciente por su plan
- * (regla 18; el backend lo toma de la sesión) y, si se indica, solo algunos puntuales (`medicoIds`).
+ * (el backend lo toma de la sesión) y, si se indica, solo algunos puntuales (`medicoIds`).
  */
 export interface FiltroDisponibilidad {
   medicoIds?: string[];
@@ -90,7 +90,7 @@ const conMedicos = (filtro: FiltroDisponibilidad) => (filtro.medicoIds ? `&medic
 
 /**
  * Hace un GET de los horarios libres de un día (turnos de 30 min dentro de las franjas de cada profesional, sin los
- * tomados ni los que ya pasaron), solo donde la sede y el profesional le aparecen al paciente (regla 18).
+ * tomados ni los que ya pasaron), solo donde la sede y el profesional le aparecen al paciente.
  */
 export async function listHorariosLibres(filtro: FiltroDisponibilidad, fechaIso: string): Promise<HorarioLibre[]> {
   return api<HorarioLibre[]>(`/api/turnos/disponibles?fecha=${fechaIso}${conMedicos(filtro)}`);
@@ -103,7 +103,6 @@ export async function listDiasConTurnos(filtro: FiltroDisponibilidad, desdeIso: 
 
 export interface DatosNuevoTurno {
   pacienteId: string;
-  /** Paso 4 de la reserva: el backend revisa que sea la del profesional. */
   especialidadId: string;
   medicoId: string;
   sedeId: string;
@@ -113,7 +112,7 @@ export interface DatosNuevoTurno {
 
 /**
  * Hace un POST de un turno nuevo para el paciente de la sesión. Nace `pendiente` hasta que el profesional lo confirme
- * o lo rechace, y bloquea el horario: no puede haber doble reserva (regla 4).
+ * o lo rechace, y bloquea el horario: no puede haber doble reserva.
  */
 export async function crearTurno({ pacienteId: _pacienteId, ...datos }: DatosNuevoTurno): Promise<Turno> {
   return api<Turno>("/api/turnos", { metodo: "POST", cuerpo: datos });
@@ -133,13 +132,12 @@ export async function rechazarTurno(turnoId: string): Promise<Turno> {
   return cambiarEstado(turnoId, "rechazado");
 }
 
-/** Hasta cuántas horas antes del turno se puede cancelar o reprogramar (regla 5, igual para toda la app). */
+/** Hasta cuántas horas antes del turno se puede cancelar o reprogramar (igual para toda la app). */
 export const HORAS_MINIMAS_CANCELACION = 24;
 
 /**
  * Por qué el paciente ya no puede cancelar ni reprogramar el turno, o `null` si puede: solo los activos (pendientes y
- * confirmados) y hasta 24 h antes (regla 5). La app lo usa para deshabilitar los botones; el backend lo vuelve a
- * controlar.
+ * confirmados) y hasta 24 h antes. La app lo usa para deshabilitar los botones; el backend lo vuelve a controlar.
  */
 export function motivoSinCambios(turno: Turno): string | null {
   if (turno.estado !== "pendiente" && turno.estado !== "confirmado") return "Este turno ya no está activo.";
@@ -158,10 +156,11 @@ export async function cancelarTurno(turnoId: string): Promise<Turno> {
 export type DatosReprogramacion = Pick<DatosNuevoTurno, "sedeId" | "fecha" | "hora">;
 
 /**
- * Hace un POST que cancela el turno y reserva otro con el mismo profesional, en una sola operación (si el nuevo horario
- * no se puede reservar, el viejo queda como estaba). El nuevo nace `pendiente` y guarda de qué turno viene.
+ * Hace un POST que crea un turno nuevo con el mismo profesional a partir de otro (`reprogramadoDesdeId`) y cancela el
+ * viejo, en una sola operación (si el nuevo horario no se puede reservar, el viejo queda como estaba). El nuevo nace
+ * `pendiente` y al profesional le llega el aviso.
  */
 export async function reprogramarTurno(turnoId: string, datos: DatosReprogramacion): Promise<Turno> {
-  return api<Turno>(`/api/turnos/${encodeURIComponent(turnoId)}/reprogramar`, { metodo: "POST", cuerpo: datos });
+  return api<Turno>("/api/turnos", { metodo: "POST", cuerpo: { ...datos, reprogramadoDesdeId: turnoId } });
 }
 

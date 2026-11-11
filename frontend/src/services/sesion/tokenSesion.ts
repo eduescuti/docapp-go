@@ -2,10 +2,8 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 /**
- * El token de sesión que devuelve el backend. En el celular queda cifrado por el sistema operativo
- * (`expo-secure-store`: Keychain en iOS, Keystore en Android) para que la sesión siga iniciada al volver a abrir
- * la app. En web no existe: ahí vive solo en memoria y al recargar se pide login (decidido el 27/10/2026).
- * Nunca se guarda la contraseña.
+ * Token de sesión del backend, guardado cifrado en el celular (`expo-secure-store`) para seguir logueado al reabrir la app.
+ * En web vive solo en memoria y al recargar se pide login. Nunca se guarda la contraseña.
  */
 const CLAVE = "docapp.token";
 const GUARDA_EN_TELEFONO = Platform.OS !== "web";

@@ -17,7 +17,7 @@
 
 | Tema | Detalle |
 |---|---|
-| **Google Maps y la consigna** | CLAUDE.md decía que Google Maps era obligatorio. Confirmar con el docente si alcanza con MapLibre + "Cómo llegar" a Google Maps, o si exige el SDK dibujado en la app (en ese caso, sumarlo para la app compilada con clave propia) |
+| **Google Maps y la consigna** | decían que Google Maps era obligatorio. Confirmar con el docente si alcanza con MapLibre + "Cómo llegar" a Google Maps, o si exige el SDK dibujado en la app (en ese caso, sumarlo para la app compilada con clave propia) |
 | FFAA/Seguridad como `seguridad_social` | Decisión tomada al ver los datos (buques, cuarteles). Si se prefiere mostrar los hospitales militares a todos, se cambia en el script |
 | Centros públicos internos | Algunos "centros" públicos son servicios internos (por ejemplo el CENARD o consultorios de un ministerio). Si molestan, se pueden excluir con una lista en el script |
 

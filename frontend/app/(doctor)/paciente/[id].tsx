@@ -5,7 +5,6 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   Calendar,
-  CheckCircle2,
   ChevronDown,
   ClipboardList,
   ClipboardPlus,
@@ -19,6 +18,7 @@ import type { LucideIcon } from "lucide-react-native";
 
 import {
   Avatar,
+  AvisoTemporal,
   BackHeader,
   BottomSheet,
   Card,
@@ -47,6 +47,7 @@ import {
   TurnoDeAgenda,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { useAviso } from "@/hooks/useAviso";
 import { tomarAviso } from "@/utils/ui";
 import { nombrePlan } from "@/utils/cobertura";
 import { formatFechaCorta, formatFechaHora, formatFechaLarga, hoyIso, iniciales } from "@/utils/format";
@@ -121,7 +122,7 @@ function armarLibreta(historial: TurnoDeAgenda[], recetas: Receta[], ordenes: Or
 
 /**
  * Ficha del paciente vista por el profesional. Solo muestra lo que ese profesional generó (turnos, recetas,
- * órdenes y notas propias) y solo si existe un vínculo real por turnos (CLAUDE.md §10, regla 8). Desde acá
+ * órdenes y notas propias) y solo si existe un vínculo real por turnos. Desde acá
  * confirma o rechaza las solicitudes de turno y le asigna órdenes y recetas al paciente.
  */
 export default function DoctorPacienteScreen() {
@@ -138,7 +139,7 @@ export default function DoctorPacienteScreen() {
   const [filtroLibreta, setFiltroLibreta] = useState<TipoEntrada | null>(null);
   const [aRechazar, setARechazar] = useState<TurnoDeAgenda | null>(null);
   const [procesando, setProcesando] = useState<string | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const { aviso, mostrarAviso } = useAviso();
   const [errorTurno, setErrorTurno] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
@@ -164,7 +165,7 @@ export default function DoctorPacienteScreen() {
       cargar();
       // Al volver de asignar una orden o una receta, se avisa que quedó guardada.
       const texto = tomarAviso();
-      if (texto) setAviso(texto);
+      if (texto) mostrarAviso(texto);
     }, [cargar]),
   );
 
@@ -177,12 +178,6 @@ export default function DoctorPacienteScreen() {
     setFiltroLibreta(null);
     setErrorTurno(null);
   }, [id]);
-
-  useEffect(() => {
-    if (!aviso) return;
-    const t = setTimeout(() => setAviso(null), 3500);
-    return () => clearTimeout(t);
-  }, [aviso]);
 
   const handleGuardarNota = async () => {
     if (!ficha) return;
@@ -205,7 +200,7 @@ export default function DoctorPacienteScreen() {
     try {
       if (accion === "confirmar") await confirmarTurno(item.turno.id);
       else await rechazarTurno(item.turno.id);
-      setAviso(
+      mostrarAviso(
         accion === "confirmar"
           ? `Confirmaste el turno del ${formatFechaLarga(item.turno.fecha)} a las ${item.turno.hora}.`
           : "Rechazaste el turno. El horario quedó libre.",
@@ -254,12 +249,7 @@ export default function DoctorPacienteScreen() {
     <ScreenContainer>
       <BackHeader titulo="Ficha del paciente" />
 
-      {aviso ? (
-        <View style={[styles.aviso, { backgroundColor: `${theme.colors.success}1F` }]} accessibilityLiveRegion="polite">
-          <CheckCircle2 size={16} color={theme.colors.success} />
-          <Text style={[styles.avisoTexto, { color: theme.colors.foreground }]}>{aviso}</Text>
-        </View>
-      ) : null}
+      <AvisoTemporal aviso={aviso} />
 
       <Card style={{ marginBottom: 16 }}>
         <View style={styles.perfilRow}>
@@ -549,8 +539,6 @@ function Vacio({ texto }: { texto: string }) {
 }
 
 const styles = StyleSheet.create({
-  aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  avisoTexto: { flex: 1, fontSize: 13 },
   perfilRow: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 },
   nombre: { fontSize: 18, fontWeight: "700" },
   meta: { fontSize: 12, marginTop: 2 },

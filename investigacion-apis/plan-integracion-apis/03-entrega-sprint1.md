@@ -9,11 +9,11 @@ Ing. Ignacio Parravicini e Ing. Martín Buzzetti. Leída el 08/10/2026.
 
 | Criterio de la consigna | Qué piden | Dónde lo tenemos |
 |---|---|---|
-| 1.1 Temática | Problema, público objetivo, diferencial, modelo de negocio | CLAUDE.md §1 y §12 → hay que redactarlo para el PDF |
-| 1.2 Branding | Nombre, paleta en HEX, tipografías, isotipo/logotipo | CLAUDE.md §7 (temas A y C, Inter / Playfair Display / Plus Jakarta Sans). **Falta un isologo definitivo** |
+| 1.1 Temática | Problema, público objetivo, diferencial, modelo de negocio | Hay que redactarlo para el PDF |
+| 1.2 Branding | Nombre, paleta en HEX, tipografías, isotipo/logotipo | Temas A y C, Inter / Playfair Display / Plus Jakarta Sans. **Falta un isologo definitivo** |
 | 1.3 Mockup | Pantallas con información estática **que muestren los flujos de navegación**, con URL pública | **`DocApp Go/mockup/index.html`** — emulador interactivo (ver abajo) |
 | 1.4 Componentes nativos | Al menos 2, con justificación técnica | **GPS** (`expo-location`, en el mapa y el Inicio) y **notificaciones push** (`expo-notifications`, planificado). El mapa pasó a MapLibre en un WebView (no es un componente nativo); ver [doc 8](../08-motor-del-mapa.md). Si el docente exige el SDK de Google Maps, se suma para la app compilada |
-| 1.5 Desarrollo | Expo inicializado, router, navegación y pantallas en base al mockup | `DocApp Go/frontend/` (CLAUDE.md §13) |
+| 1.5 Desarrollo | Expo inicializado, router, navegación y pantallas en base al mockup | `DocApp Go/frontend/`  |
 | Formato | **Un único PDF** con URL pública del mockup y URL pública del repositorio | Ver "Pendientes" |
 
 ## 2. El mockup interactivo
@@ -44,7 +44,7 @@ incluir el link al mockup y algunas capturas del emulador.
 
 | # | Pendiente | Comentario |
 |---|---|---|
-| 1 | **URL pública del mockup** | El mockup está publicado como artifact privado de claude.ai: hay que compartirlo con acceso público desde el menú *Compartir*. Alternativa: GitHub Pages desde un repo público |
+| 1 | **URL pública del mockup** | El mockup está publicado |
 | 2 | **URL pública del repositorio** | `github.com/eduescuti/docapp-go` hoy es **privado**. La consigna pide el repo del frontend público: hacerlo público o pedirle a los docentes acceso |
 | 3 | **Grupo en EVA** | La página de la tarea dice "No perteneces a ningún grupo": hay que pedirle al docente que te agregue a un grupo para poder entregar |
 | 4 | Isologo | Definir el isotipo de la app (hoy es un ícono de estetoscopio) |

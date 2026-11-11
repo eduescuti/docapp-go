@@ -13,11 +13,8 @@ import { PrimaryButton } from "../base/PrimaryButton";
 import { Text } from "../base/Text";
 
 interface VerificarDniProps {
-  /** El DNI ya leído (se muestra como verificado) o null. */
   verificado: DniLeido | null;
-  /** Se leyó un DNI válido y sin cuenta: `codigo` es el texto del código, que se manda al crear la cuenta. */
   onVerificado: (codigo: string, datos: DniLeido) => void;
-  /** "Escanear de nuevo": se descarta el DNI leído. */
   onReiniciar: () => void;
 }
 
@@ -25,7 +22,7 @@ interface VerificarDniProps {
 const conPuntos = (dni: string) => dni.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 /**
- * Verificación de identidad del registro (decidido el 28/10/2026): se escanea con la cámara el código PDF417 del
+ * Verificación de identidad del registro: se escanea con la cámara el código PDF417 del
  * frente del DNI. El backend lo lee, devuelve DNI, nombre y apellido y avisa si ese DNI ya tiene cuenta. No se
  * guarda ninguna imagen: la cámara solo lee el código, y en la base queda la fecha de verificación y un hash del
  * número de trámite (para que un mismo DNI no abra dos cuentas).

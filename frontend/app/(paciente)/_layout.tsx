@@ -18,11 +18,9 @@ export default function PacienteLayout() {
   const { theme } = useTheme();
   const { rol } = useAuth();
 
-  // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
   if (rol !== "paciente") return <Redirect href={rutaInicio(rol)} />;
 
   return (
-    // Las pantallas de este Stack no tienen la barra de pestañas abajo (las pestañas la vuelven a poner).
     <BarraInferiorContext.Provider value={false}>
       <Stack
         screenOptions={{ ...OPCIONES_STACK, contentStyle: { backgroundColor: theme.colors.background } }}

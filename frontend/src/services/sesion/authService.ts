@@ -49,14 +49,12 @@ export async function restaurarSesion(): Promise<Sesion> {
 
 /** Hace un POST que revoca el token en el backend y borra la sesión del teléfono, aunque no haya conexión. */
 export async function cerrarSesion(): Promise<void> {
-  try {
-    await api<void>("/api/auth/logout", { metodo: "POST" });
-  } catch {
-    // Sin conexión igual se sale: el token se borra del teléfono y vence solo.
-  }
+  // Sin conexión igual se sale: el token se borra del teléfono y vence solo.
+  await api<void>("/api/auth/logout", { metodo: "POST" }).catch(() => undefined);
   await borrarToken();
   sesionActual = null;
 }
+
 
 /** Olvida la sesión sin llamar al backend (cuando el backend ya dijo que venció). */
 export function olvidarSesion(): void {
@@ -99,12 +97,12 @@ function validarDatosProfesional(datos: DatosRegistroMedico): void {
 }
 
 /**
- * Hace un POST que busca la terna DNI + matrícula + profesión en el padrón y devuelve la ficha (regla 13). El backend
+ * Hace un POST que busca la terna DNI + matrícula + profesión en el padrón y devuelve la ficha. El backend
  * mira su copia del padrón y, si no está, el buscador nacional REFEPS en línea.
  */
 export async function verificarProfesional(datos: DatosRegistroMedico): Promise<ProfesionalPadron> {
   validarDatosProfesional(datos);
-  return api<ProfesionalPadron>("/api/auth/registro/profesional/verificar", {
+  return api<ProfesionalPadron>("/api/auth/registro/profesional/verificacion", {
     metodo: "POST",
     cuerpo: { dni: normalizarDni(datos.dni), matricula: datos.matricula.trim(), profesion: datos.profesion },
     conSesion: false,
@@ -131,7 +129,7 @@ export async function leerDni(codigo: string): Promise<DniLeido> {
   return api<DniLeido>("/api/auth/registro/dni", { metodo: "POST", cuerpo: { codigo }, conSesion: false });
 }
 
-/** Hace un POST que crea la cuenta del paciente (con el DNI escaneado) y entra directo (regla 12). */
+/** Hace un POST que crea la cuenta del paciente (con el DNI escaneado) y entra directo. */
 export async function registrarPaciente(datos: DatosRegistroPaciente): Promise<Sesion> {
   if (!datos.codigoDni) throw new Error("Escaneá tu DNI para verificar tu identidad.");
   if (!datos.planMedicoId) throw new Error("Elegí tu obra social y tu plan.");

@@ -2,16 +2,25 @@ import { useCallback, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { CalendarCheck, CalendarDays, Clock, Hourglass, MapPin, Users } from "lucide-react-native";
-import { addDays, format } from "date-fns";
 
-import { AvisoProfesional, Card, ScreenContainer, SectionHeader, StatCard, StatusBadge, Text } from "@/components";
-import { Especialidad, Medico } from "@/domain";
-import { getEspecialidad, getMedicoActual, listAgendaMedico, listMisFranjas, listPacientesAsignados, TurnoDeAgenda } from "@/services";
+import { AvisoProfesional, CampanaNotificaciones, Card, ScreenContainer, SectionHeader, StatCard, StatusBadge, Text } from "@/components";
+import { Especialidad, Medico, Notificacion } from "@/domain";
+import {
+  getEspecialidad,
+  getMedicoActual,
+  listAgendaMedico,
+  listMisFranjas,
+  listPacientesAsignados,
+  TurnoDeAgenda,
+} from "@/services";
 import { useTheme } from "@/theme";
 import { conservarSiIgual } from "@/utils/ui";
-import { formatFechaCorta, hoyIso } from "@/utils/format";
+import { fechaEnDiasIso, formatFechaCorta, hoyIso } from "@/utils/format";
 
-/** Inicio del profesional: resumen del día y próximos turnos agrupados por fecha. El calendario está en Agenda. */
+/**
+ * Inicio del profesional: resumen del día y próximos turnos agrupados por fecha. El calendario está en Agenda. La
+ * campana muestra sus avisos (turno pedido, reprogramado o cancelado): tocar uno abre la ficha de ese paciente.
+ */
 export default function DoctorInicioScreen() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -21,6 +30,8 @@ export default function DoctorInicioScreen() {
   const [proximos, setProximos] = useState<TurnoDeAgenda[]>([]);
   const [cantidadAsignados, setCantidadAsignados] = useState(0);
   const [sinHorarios, setSinHorarios] = useState(false);
+  // Turno → paciente, de toda la agenda: para abrir la ficha desde el aviso de un turno.
+  const [pacientePorTurno, setPacientePorTurno] = useState<Record<string, string>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -45,6 +56,7 @@ export default function DoctorInicioScreen() {
         setProximos((anterior) => conservarSiIgual(anterior, futuros));
         setCantidadAsignados(asignados.length);
         setSinHorarios(franjas.length === 0);
+        setPacientePorTurno(Object.fromEntries(agenda.map(({ turno }) => [turno.id, turno.pacienteId])));
       })();
       return () => {
         activo = false;
@@ -52,8 +64,13 @@ export default function DoctorInicioScreen() {
     }, []),
   );
 
+  const fichaDelAviso = (n: Notificacion) => {
+    const pacienteId = n.referenciaTipo === "turno" && n.referenciaId ? pacientePorTurno[n.referenciaId] : undefined;
+    return pacienteId ? (`/(doctor)/paciente/${pacienteId}` as const) : undefined;
+  };
+
   const hoy = hoyIso();
-  const enUnaSemana = format(addDays(new Date(), 7), "yyyy-MM-dd");
+  const enUnaSemana = fechaEnDiasIso(7);
   const turnosHoy = proximos.filter(({ turno }) => turno.fecha === hoy).length;
   const turnosSemana = proximos.filter(({ turno }) => turno.fecha <= enUnaSemana).length;
   const pendientes = proximos.filter(({ turno }) => turno.estado === "pendiente").length;
@@ -65,10 +82,15 @@ export default function DoctorInicioScreen() {
 
   return (
     <ScreenContainer>
-      <Text style={[styles.saludo, { color: theme.colors.mutedForeground }]}>Hola,</Text>
-      <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
-        {medico ? `${medico.nombre} ${medico.apellido}` : "Cargando..."}
-      </Text>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.saludo, { color: theme.colors.mutedForeground }]}>Hola,</Text>
+          <Text variant="heading" style={[styles.nombre, { color: theme.colors.foreground }]}>
+            {medico ? `${medico.nombre} ${medico.apellido}` : "Cargando..."}
+          </Text>
+        </View>
+        <CampanaNotificaciones destinoDe={fichaDelAviso} />
+      </View>
       {medico && (
         <Text style={[styles.sub, { color: theme.colors.mutedForeground }]}>
           {medico.profesion}
@@ -154,6 +176,7 @@ export default function DoctorInicioScreen() {
 }
 
 const styles = StyleSheet.create({
+  header: { flexDirection: "row", alignItems: "center", gap: 12 },
   saludo: { fontSize: 14 },
   nombre: { fontSize: 24, fontWeight: "700", marginTop: 2 },
   sub: { fontSize: 13, marginTop: 4 },

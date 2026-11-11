@@ -11,14 +11,9 @@ export interface ThemeColors {
   border: string;
   accent: string;
   accentForeground: string;
-  /**
-   * Fondo suave de lo elegido o destacado, con texto común encima (`foreground`, `mutedForeground`, `primary`).
-   * No es `accent`: en el modo oscuro `accent` es verde lleno y encima solo va `accentForeground`.
-   */
   highlight: string;
   success: string;
   danger: string;
-  /** Texto sobre `danger` (botones de confirmación destructiva). */
   dangerForeground: string;
 }
 
@@ -47,7 +42,6 @@ export interface ThemeFonts {
  * y cada tipo de institución tiene su color de marcador.
  */
 export interface ThemeMapa {
-  /** Estilo base de OpenFreeMap que se repinta encima. */
   estiloBase: "positron" | "dark";
   tierra: string;
   manzana: string;
@@ -81,7 +75,7 @@ export interface Theme {
   shadow: ThemeShadow;
 }
 
-/** Tema A — Minimalista clínico (claro, sobrio, institucional). CLAUDE.md §7. */
+/** Tema A — Minimalista clínico (claro, sobrio, institucional). */
 const themeA: Theme = {
   id: "A",
   isDark: false,
@@ -132,7 +126,7 @@ const themeA: Theme = {
   },
 };
 
-/** Tema C — Moderno premium (oscuro — es el modo oscuro de la app). CLAUDE.md §7. */
+/** Tema C — Moderno premium (oscuro — es el modo oscuro de la app). */
 const themeC: Theme = {
   id: "C",
   isDark: true,

@@ -5,7 +5,7 @@ import { Text } from "./Text";
 
 interface StepIndicatorProps {
   pasos: string[];
-  actual: number; // índice base 0
+  actual: number;
 }
 
 /** Indicador de pasos para flujos tipo carrusel (registro de profesional). */

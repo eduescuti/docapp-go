@@ -16,16 +16,10 @@ import { useTheme } from "@/theme";
 import { Text } from "../base/Text";
 
 interface CalendarioProps {
-  /** Fecha elegida ("yyyy-MM-dd"). */
   valor: string | null;
   onChange: (fechaIso: string) => void;
-  /**
-   * Primer y último día que se pueden elegir ("yyyy-MM-dd"). Todos los del medio se pueden elegir,
-   * sábados y domingos incluidos: qué días atienden lo decide el backend, no el calendario.
-   */
   desde: string;
   hasta: string;
-  /** Días ("yyyy-MM-dd") que llevan un punto debajo del número (p. ej. los que tienen turnos en la agenda). */
   diasMarcados?: string[];
 }
 
@@ -183,7 +177,6 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 16, fontWeight: "600", textTransform: "capitalize" },
   fila: { flexDirection: "row" },
   grilla: { flexDirection: "row", flexWrap: "wrap" },
-  // 7 columnas iguales: el ancho de la celda es 1/7 del calendario.
   celda: { width: `${100 / 7}%`, alignItems: "center", paddingVertical: 2 },
   diaSemana: { fontSize: 12, fontWeight: "600", paddingVertical: 6 },
   dia: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },

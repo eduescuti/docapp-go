@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { addDays, format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 import type { Medico, TipoInstitucion } from "@/domain";
@@ -8,8 +8,7 @@ import type { ThemeMapa } from "@/theme";
 
 /** "2026-08-24" -> "Lun 24 Ago" */
 export function formatFechaCorta(fechaIso: string): string {
-  const capitalizada = format(parseISO(fechaIso), "EEE dd MMM", { locale: es });
-  return capitalizada.replace(/^\w/, (c) => c.toUpperCase());
+  return capitalizar(format(parseISO(fechaIso), "EEE dd MMM", { locale: es }));
 }
 
 /** "2026-08-24" -> "24 de agosto de 2026" */
@@ -24,7 +23,23 @@ export function formatFechaHora(fechaHoraIso: string): string {
 
 /** Fecha local de hoy en ISO "yyyy-MM-dd" (sin el corrimiento de zona horaria de toISOString). */
 export function hoyIso(): string {
-  return format(new Date(), "yyyy-MM-dd");
+  return fechaEnDiasIso(0);
+}
+
+/** Como `hoyIso`, corrida esa cantidad de días: `fechaEnDiasIso(7)` es dentro de una semana. */
+export function fechaEnDiasIso(dias: number): string {
+  return format(addDays(new Date(), dias), "yyyy-MM-dd");
+}
+
+// ---------- Texto ----------
+
+/** Sin tildes ni mayúsculas, para buscar sin importar cómo se escribió: "cardiologia" encuentra "Cardiología". */
+export function normalizar(texto: string): string {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+export function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 // ---------- Nombres ----------

@@ -8,7 +8,6 @@ export interface Coordenada {
 
 export type EstadoUbicacion = "cargando" | "concedida" | "denegada" | "error";
 
-/** Si no hay permiso, el mapa arranca en el Obelisco (centro de CABA). */
 export const CENTRO_CABA: Coordenada = { latitud: -34.6037, longitud: -58.3816 };
 
 /**

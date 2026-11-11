@@ -1,9 +1,7 @@
 import type { StyleProp, ViewStyle } from "react-native";
 
 export interface VisorPdfProps {
-  /** PDF como string binario (un carácter por byte). */
   datos: string;
-  /** 1 = ancho de la pantalla. */
   zoom: number;
   onListo?: () => void;
   onError?: (detalle: string) => void;

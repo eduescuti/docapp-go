@@ -13,9 +13,6 @@ export interface Paciente {
 
 // ---------- Obras sociales y planes ----------
 
-/** Registro oficial de la Superintendencia de Servicios de Salud donde figura la cobertura. */
-export type RegistroCobertura = "RNAS" | "RNEMP" | "otro";
-
 /** Obra social o prepaga (OSDE, Swiss Medical, OSPJN, ...). Tiene uno o más planes. */
 export interface ObraSocial {
   id: string;
@@ -51,8 +48,8 @@ export interface ObraSocialConPlanes extends ObraSocial {
 export type TipoInstitucion = "hospital" | "clinica" | "centro_medico" | "laboratorio";
 
 /**
- * Quién financia el establecimiento, según el REFES. Decide la regla 15 (CLAUDE.md §10):
- * los públicos se muestran a todos los pacientes; el resto, solo si acepta su cobertura.
+ * Quién financia el establecimiento, según el REFES.
+ * Los públicos se muestran a todos los pacientes; el resto, solo si acepta su cobertura.
  */
 export type OrigenFinanciamiento = "publico" | "privado" | "seguridad_social";
 
@@ -165,7 +162,7 @@ export type EstadoTurno = "confirmado" | "pendiente" | "cancelado" | "completado
 
 /**
  * Turno reservado. Lo identifica la combinación fecha + hora + sede (hospital) + profesional (que define la
- * especialidad): no puede haber dos turnos activos con la misma (regla 4).
+ * especialidad): no puede haber dos turnos activos con la misma.
  */
 export interface Turno {
   id: string;
@@ -249,8 +246,13 @@ export interface Feedback {
 
 // ---------- Notificaciones ----------
 
+/**
+ * Al paciente: recordatorio, confirmado, rechazado, resultado, receta y orden. Al profesional: solicitado (un
+ * paciente pidió un turno), reprogramado y cancelado.
+ */
 export type TipoNotificacion =
   | "recordatorio_turno"
+  | "turno_solicitado"
   | "turno_confirmado"
   | "turno_rechazado"
   | "turno_cancelado"
@@ -266,11 +268,14 @@ export interface Notificacion {
   mensaje: string;
   fecha: string;
   leida: boolean;
+  /** A qué apunta (p. ej. el turno pedido): el profesional, al tocarla, va a la ficha de ese paciente. */
+  referenciaTipo?: "turno" | "orden" | "resultado" | "receta";
+  referenciaId?: string;
 }
 
 // ---------- Sesión y registro ----------
 
-/** Roles de la app (CLAUDE.md §6). El id "doctor" coincide con el grupo de rutas `app/(doctor)`. */
+/** Roles de la app. El id "doctor" coincide con el grupo de rutas `app/(doctor)`. */
 export type Rol = "paciente" | "doctor" | "admin";
 
 /**
@@ -343,7 +348,7 @@ export interface ProfesionalPadron {
 
 /**
  * Nota que un profesional registra sobre un paciente. Queda asociada al profesional
- * que la escribió y solo ese profesional la ve (CLAUDE.md §10, reglas 7 y 8).
+ * que la escribió y solo ese profesional la ve.
  */
 export interface NotaPaciente {
   id: string;

@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const KEY_BIOMETRIA_HABILITADA = "@docapp:biometria_habilitada";
 const KEY_ULTIMO_DNI = "@docapp:ultimo_dni";
-const KEY_ULTIMO_ROL = "@docapp:ultimo_rol";
 
 /** Se borra la contraseña al abrir la app (esto es por lo de la huella). */
 export async function borrarContrasenaGuardada(): Promise<void> {
@@ -49,24 +48,20 @@ export async function habilitarBiometriaAutomatica(forzar: boolean): Promise<voi
  * Recuerda el DNI de la última cuenta que entró en este teléfono (para el ingreso con huella). La contraseña no
  * se guarda nunca: la huella desbloquea el token de sesión, que vive cifrado en `tokenSesion.ts`.
  */
-export async function guardarSesionBiometrica(dni: string, rol?: string): Promise<void> {
+export async function guardarSesionBiometrica(dni: string): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY_ULTIMO_DNI, dni);
-    if (rol) {
-      await AsyncStorage.setItem(KEY_ULTIMO_ROL, rol);
-    }
   } catch (e) {
     console.error("Error guardando credenciales locales", e);
   }
 }
 
-export async function obtenerDatosSesionBiometrica(): Promise<{ dni: string | null; rol: string | null }> {
+/** El DNI de la última cuenta que entró en este teléfono, o `null` si no hay. */
+export async function obtenerDniBiometrico(): Promise<string | null> {
   try {
-    const dni = await AsyncStorage.getItem(KEY_ULTIMO_DNI);
-    const rol = await AsyncStorage.getItem(KEY_ULTIMO_ROL);
-    return { dni, rol };
+    return await AsyncStorage.getItem(KEY_ULTIMO_DNI);
   } catch {
-    return { dni: null, rol: null };
+    return null;
   }
 }
 
@@ -75,7 +70,6 @@ export async function limpiarSesionBiometrica(): Promise<void> {
     await AsyncStorage.setItem(KEY_BIOMETRIA_HABILITADA, "false");
     await AsyncStorage.removeItem(KEY_ULTIMO_DNI);
     await AsyncStorage.removeItem("@docapp:ultima_clave");
-    await AsyncStorage.removeItem(KEY_ULTIMO_ROL);
   } catch (e) {
     console.error("Error limpiando credenciales biométricas", e);
   }

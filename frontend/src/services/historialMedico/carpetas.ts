@@ -1,6 +1,8 @@
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
+import { capitalizar } from "@/utils/format";
+
 export interface CarpetaMes<T> {
   clave: string;
   nombre: string;
@@ -28,10 +30,9 @@ export function agruparEnCarpetas<T>(archivados: T[], datos: DatosArchivo<T>): C
   }
   const anios = new Map<string, CarpetaMes<T>[]>();
   for (const [clave, lista] of [...porMes].sort((a, b) => b[0].localeCompare(a[0]))) {
-    const nombre = format(parseISO(`${clave}-01`), "LLLL", { locale: es });
     const mes: CarpetaMes<T> = {
       clave,
-      nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1),
+      nombre: capitalizar(format(parseISO(`${clave}-01`), "LLLL", { locale: es })),
       items: [...lista].sort((x, y) => datos(y).fecha.localeCompare(datos(x).fecha)),
     };
     const anio = clave.slice(0, 4);

@@ -9,10 +9,8 @@ import { Text } from "../base/Text";
 
 interface CredencialPlanProps {
   plan?: PlanConObraSocial;
-  /** "Sofía Martínez" */
   afiliado: string;
   dni: string;
-  /** Si se pasa, la credencial es un botón (en el Inicio abre "Mi plan médico"). */
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -69,7 +67,6 @@ const styles = StyleSheet.create({
   encabezado: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   aseguradora: { fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, opacity: 0.9 },
   plan: { fontSize: 24, fontWeight: "700", marginBottom: 16 },
-  // marginTop auto: si la tarjeta queda más alta (carrusel del Inicio), el pie va abajo de todo.
   pie: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginTop: "auto" },
   etiqueta: { fontSize: 11, opacity: 0.8 },
   valor: { fontSize: 14, fontWeight: "700", marginTop: 2 },

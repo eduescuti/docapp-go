@@ -5,11 +5,8 @@ import { useNavigationState } from "expo-router/react-navigation";
 
 import { useTheme } from "@/theme";
 
-/** Escala de la pantalla que quedó abajo (se achica apenas, como si retrocediera). */
 const ESCALA_ATRAS = 0.95;
-/** Cuánto se aclara la pantalla que quedó abajo (0 = nada, 1 = desaparece en el color de fondo). No se oscurece. */
 const VELO_ATRAS = 0.45;
-/** Parecida a la de la animación nativa de la pantalla que entra y sale, para que se muevan juntas. */
 const DURACION_MS = 300;
 
 /**
@@ -28,7 +25,6 @@ const DURACION_MS = 300;
 export function CapaProfundidad({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const ruta = useRoute();
-  // ¿Hay otra pantalla abierta encima de esta, en el mismo stack?
   const cubierta = useNavigationState((estado: { index: number; routes: { key: string }[] }) => {
     const posicion = estado.routes.findIndex((r) => r.key === ruta.key);
     return posicion >= 0 && estado.index > posicion;

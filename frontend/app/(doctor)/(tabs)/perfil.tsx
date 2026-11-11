@@ -27,7 +27,7 @@ import { resumenPlanes } from "@/utils/cobertura";
 import { iniciales } from "@/utils/format";
 
 /**
- * Perfil profesional: los datos del registro (padrón), las coberturas que atiende (las elige él, regla 17), los
+ * Perfil profesional: los datos del registro (padrón), las coberturas que atiende (las elige él), los
  * lugares de atención (filtrados por esas coberturas) y los ajustes de seguridad. Sus horarios se cargan en la
  * Agenda, no acá. La ruedita de arriba abre Configuración (modo claro u oscuro).
  */

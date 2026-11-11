@@ -5,6 +5,7 @@ import { es } from "date-fns/locale";
 import { CalendarDays, ChevronDown } from "lucide-react-native";
 
 import { useTheme } from "@/theme";
+import { capitalizar } from "@/utils/format";
 import { Calendario } from "../formularios/Calendario";
 import { Colapsable } from "../base/Colapsable";
 import { ANCHO_MINI_CARD, estilosMiniCard, SEPARACION_MINI_CARDS } from "./miniCards";
@@ -27,8 +28,6 @@ interface PasoFechaProps {
   onElegirFecha: (fechaIso: string) => void;
 }
 
-const capitalizar = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
-
 /**
  * Paso 1 de la reserva: tira de días y mini calendario que se despliega. Es un componente aparte, con el
  * estado de "calendario abierto" adentro, para que abrirlo no obligue a volver a dibujar toda la reserva
@@ -37,7 +36,6 @@ const capitalizar = (texto: string) => texto.charAt(0).toUpperCase() + texto.sli
 export const PasoFecha = React.memo(function PasoFecha({ fecha, hoy, limite, dias, onElegirFecha }: PasoFechaProps) {
   const { theme } = useTheme();
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
-  // El calendario se arma de antemano, cuando la pantalla ya está quieta: abrirlo es solo la animación.
   const [calendarioListo, setCalendarioListo] = useState(false);
 
   useEffect(() => {

@@ -12,7 +12,7 @@ import { formatFechaLarga, hoyIso } from "@/utils/format";
 
 /**
  * El profesional le asigna una orden médica al paciente: qué estudios, con qué indicaciones y dónde hacerlos
- * (uno de sus lugares de atención que le aparezca al paciente: público o que acepte su cobertura, regla 18). La
+ * (uno de sus lugares de atención que le aparezca al paciente: público o que acepte su cobertura). La
  * fecha es la de hoy. El paciente la ve en Estudios › Órdenes.
  */
 export default function NuevaOrdenScreen() {

@@ -48,10 +48,9 @@ async function fetchConTiempoLimite(url: string, init: RequestInit): Promise<Res
   try {
     return await fetch(url, { ...init, signal: control.signal });
   } catch {
-    // Sin red, servidor caído o timeout: al usuario le damos el mismo mensaje.
     throw new ErrorApi(0, "No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.");
   } finally {
-    clearTimeout(temporizador); // siempre se limpia, haya salido bien o mal
+    clearTimeout(temporizador);
   }
 }
 
@@ -65,15 +64,7 @@ async function leerMensajeDeError(respuesta: Response): Promise<string> {
   return MENSAJE_POR_DEFECTO;
 }
 
-/**
- * Se usa en "api()" y "apiArchivo()"
- * 
- * Hace el pedido HTTP (fetch) y espera la respuesta del BACKEND.
- * Si la sesión venció, borra el token y llama a `avisarSesionRechazada()`.
- * @param ruta La ruta de la API, p. ej. `/api/auth/login`.
- * @param opciones Método, cuerpo y si manda el token.
- * @param acepta Qué tipo de respuesta espera: `application/json` o `/` (para archivos).
-*/
+/** Hace el pedido con el token de la sesión y tira ErrorApi si falla. Con 401 borra el token y avisa a la app. */
 async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }: OpcionesPedido, acepta: string): Promise<Response> {
 
   if (!API_URL) {
@@ -90,7 +81,6 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
 
   if (respuesta.ok) return respuesta;
 
-  // 401 con token = la sesión venció o fue rechazada: se limpia y se avisa a la app.
   if (respuesta.status === 401 && token) {
     await borrarToken();
     avisarSesionRechazada?.();

@@ -12,7 +12,7 @@ import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
 /**
  * Feedback: turnos cumplidos para calificar y opiniones ya enviadas. Solo se puede
- * opinar sobre un turno real cumplido con ese profesional (regla #6).
+ * opinar sobre un turno real cumplido con ese profesional.
  */
 export default function FeedbackScreen() {
   const { theme } = useTheme();

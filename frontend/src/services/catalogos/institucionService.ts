@@ -144,5 +144,5 @@ export async function listLugaresDeAtencion(sedeIds: string[]): Promise<LugarDeA
  * solo los públicos y los que aceptan alguna de sus coberturas.
  */
 export async function buscarLugares(texto: string): Promise<LugarDeAtencion[]> {
-  return api<LugarDeAtencion[]>(`/api/sedes/buscar?q=${encodeURIComponent(texto.trim())}`);
+  return api<LugarDeAtencion[]>(`/api/sedes?q=${encodeURIComponent(texto.trim())}`);
 }

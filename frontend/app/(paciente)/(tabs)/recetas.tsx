@@ -1,15 +1,13 @@
-import { ReactNode, useCallback, useEffect, useState } from "react";
-import { useFocusEffect } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { differenceInCalendarDays,format ,parseISO } from "date-fns";
+import { useCallback, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { FlatList, StyleSheet, View } from "react-native";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import {
   Archive,
   Calendar,
-  CheckCircle2,
   ChevronRight,
   ClipboardList,
   Clock,
-  Folder,
   Pill,
   Repeat,
   Stethoscope,
@@ -17,7 +15,7 @@ import {
   Timer,
 } from "lucide-react-native";
 
-import { BottomSheet, Card, EmptyState, EncabezadoTab, IconBadge, PrimaryButton, ScreenContainer, TabSwitch, Text } from "@/components";
+import { AvisoTemporal, BotonIcono, BottomSheet, Card, CarpetasArchivo, EmptyState, EncabezadoTab, FilaProfesional, IconBadge, PrimaryButton, ScreenContainer, SeccionDetalle, TabSwitch, Text } from "@/components";
 import { Receta } from "@/domain";
 import {
   archivarReceta,
@@ -28,6 +26,8 @@ import {
   RecetaConDetalle,
 } from "@/services";
 import { useTheme } from "@/theme";
+import { useAviso } from "@/hooks/useAviso";
+import { useCarpetasArchivo } from "@/hooks/useCarpetasArchivo";
 import { conservarSiIgual } from "@/utils/ui";
 import { formatFechaLarga, nombreConTitulo } from "@/utils/format";
 
@@ -53,21 +53,28 @@ function nombreCarpeta(archivo: CarpetaAnio<RecetaConDetalle>[], archivadoEl: st
 /**
  * Pestaña Recetas: las que el paciente tiene que tomar ahora (Activas) y las que ya pasaron su fecha
  * límite de consumo (Pasadas). Las pasadas se pueden archivar, en carpetas año → mes como los estudios.
- * Cada receta queda asociada al profesional que la emitió (regla #7).
+ * Cada receta queda asociada al profesional que la emitió.
  */
 export default function RecetasScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("activas");
   const [activas, setActivas] = useState<RecetaConDetalle[]>([]);
   const [pasadas, setPasadas] = useState<RecetaConDetalle[]>([]);
   const [archivo, setArchivo] = useState<CarpetaAnio<RecetaConDetalle>[]>([]);
   const [abierta, setAbierta] = useState<RecetaConDetalle | null>(null);
-  // Los archivados se abren desde el botón de arriba, aparte de las pestañas.
+
   const [verArchivados, setVerArchivados] = useState(false);
-  const [anio, setAnio] = useState<string | null>(null);
-  const [mes, setMes] = useState<string | null>(null);
+  const carpetas = useCarpetasArchivo(archivo);
   const [procesando, setProcesando] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const { aviso, mostrarAviso } = useAviso();
+
+  /** Cierra el detalle y abre el perfil del profesional que la emitió (como en el detalle de un turno). */
+  const irAlPerfil = (medicoId: string) => {
+    if (procesando) return;
+    setAbierta(null);
+    router.push(`/medico/${medicoId}`);
+  };
 
   const cargar = useCallback(async () => {
     // Un solo pedido: las recetas ya vienen con el profesional y su especialidad.
@@ -83,29 +90,9 @@ export default function RecetasScreen() {
     }, [cargar]),
   );
 
-  useEffect(() => {
-    if (!aviso) return;
-    const t = setTimeout(() => setAviso(null), 3500);
-    return () => clearTimeout(t);
-  }, [aviso]);
-
-  // Si una carpeta queda vacía (por desarchivar), se vuelve al nivel de arriba.
-  const carpetaAnio = archivo.find((a) => a.anio === anio);
-  const carpetaMes = carpetaAnio?.meses.find((m) => m.clave === mes);
-  useEffect(() => {
-    if (anio && !carpetaAnio) {
-      setAnio(null);
-      setMes(null);
-    } else if (mes && !carpetaMes) {
-      setMes(null);
-    }
-  }, [anio, mes, carpetaAnio, carpetaMes]);
-
   /** Un nivel hacia arriba dentro de Archivados; desde la raíz, sale de Archivados. */
   const volver = () => {
-    if (mes) setMes(null);
-    else if (anio) setAnio(null);
-    else setVerArchivados(false);
+    if (!carpetas.subir()) setVerArchivados(false);
   };
 
   const alternarArchivo = async () => {
@@ -115,11 +102,11 @@ export default function RecetasScreen() {
     try {
       if (receta.archivadoEl) {
         await desarchivarReceta(receta.id);
-        setAviso(`"${receta.medicacion}" volvió a Pasadas.`);
+        mostrarAviso(`"${receta.medicacion}" volvió a Pasadas.`);
       } else {
         const archivada = await archivarReceta(receta.id);
         const mis = await listMisRecetas();
-        setAviso(`Archivada en ${nombreCarpeta(mis.archivadas, archivada.archivadoEl ?? "")}.`);
+        mostrarAviso(`Archivada en ${nombreCarpeta(mis.archivadas, archivada.archivadoEl ?? "")}.`);
       }
       setAbierta(null);
       await cargar();
@@ -175,66 +162,8 @@ export default function RecetasScreen() {
     );
   };
 
-  const tarjetaCarpeta = (titulo: string, cantidad: number, onPress: () => void) => (
-    <Card style={styles.tarjeta} onPress={onPress} accessibilityLabel={`Carpeta ${titulo}, ${cantidad} ${cantidad === 1 ? "receta" : "recetas"}`}>
-      <View style={styles.fila}>
-        <View style={[styles.icono, { backgroundColor: theme.colors.accent }]}>
-          <Folder size={18} color={theme.colors.accentForeground} />
-        </View>
-        <View style={styles.flex}>
-          <Text style={[styles.nombreCarpeta, { color: theme.colors.foreground }]}>{titulo}</Text>
-          <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
-            {cantidad} {cantidad === 1 ? "receta" : "recetas"}
-          </Text>
-        </View>
-        <ChevronRight size={18} color={theme.colors.mutedForeground} />
-      </View>
-    </Card>
-  );
-
-  /** Lo que se ve dentro de Archivados, según el nivel: año → mes → recetas. */
-  const contenidoArchivados = () => {
-    if (archivo.length === 0) {
-      return (
-        <EmptyState
-          icon={Archive}
-          titulo="Todavía no archivaste recetas"
-          descripcion="Desde una receta pasada tocá Archivar: la vas a encontrar acá, ordenada en carpetas por año y mes."
-        />
-      );
-    }
-    if (!carpetaAnio) {
-      return (
-        <FlatList
-          data={archivo}
-          keyExtractor={(a) => a.anio}
-          contentContainerStyle={styles.lista}
-          renderItem={({ item }) => tarjetaCarpeta(item.anio, item.cantidad, () => setAnio(item.anio))}
-        />
-      );
-    }
-    if (!carpetaMes) {
-      return (
-        <FlatList
-          data={carpetaAnio.meses}
-          keyExtractor={(m) => m.clave}
-          contentContainerStyle={styles.lista}
-          renderItem={({ item }) => tarjetaCarpeta(item.nombre, item.items.length, () => setMes(item.clave))}
-        />
-      );
-    }
-    return (
-      <FlatList
-        data={carpetaMes.items}
-        keyExtractor={(d) => d.receta.id}
-        contentContainerStyle={styles.lista}
-        renderItem={({ item }) => tarjetaReceta(item)}
-      />
-    );
-  };
-
   const lista = tab === "activas" ? activas : pasadas;
-  const tituloArchivados = ["Archivados", anio, carpetaMes?.nombre].filter(Boolean).join(" › ");
+  const tituloArchivados = ["Archivados", carpetas.ruta].filter(Boolean).join(" › ");
   // Solo las pasadas se pueden archivar (las archivadas, desarchivar); las activas no tienen acción.
   const puedeArchivar = !!abierta && (!!abierta.receta.archivadoEl || !esRecetaActiva(abierta.receta));
 
@@ -243,18 +172,10 @@ export default function RecetasScreen() {
       <EncabezadoTab
         titulo={verArchivados ? tituloArchivados : "Mis recetas"}
         onVolver={verArchivados ? volver : undefined}
-        etiquetaVolver={anio ? "Volver a la carpeta anterior" : "Volver a Recetas"}
+        etiquetaVolver={carpetas.carpetaAnio ? "Volver a la carpeta anterior" : "Volver a Recetas"}
         accion={
           verArchivados ? undefined : (
-            <Pressable
-              onPress={() => setVerArchivados(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Ver las recetas archivadas"
-              hitSlop={8}
-              style={[styles.botonArchivados, { borderColor: theme.colors.border, backgroundColor: theme.colors.card }]}
-            >
-              <Archive size={20} color={theme.colors.primary} />
-            </Pressable>
+            <BotonIcono icono={Archive} accessibilityLabel="Ver las recetas archivadas" onPress={() => setVerArchivados(true)} />
           )
         }
       />
@@ -270,15 +191,24 @@ export default function RecetasScreen() {
         />
       )}
 
-      {aviso ? (
-        <View style={[styles.aviso, { backgroundColor: `${theme.colors.success}1F` }]} accessibilityLiveRegion="polite">
-          <CheckCircle2 size={16} color={theme.colors.success} />
-          <Text style={[styles.avisoTexto, { color: theme.colors.foreground }]}>{aviso}</Text>
-        </View>
-      ) : null}
+      <AvisoTemporal aviso={aviso} />
 
       {verArchivados ? (
-        <View style={styles.flex}>{contenidoArchivados()}</View>
+        <View style={styles.flex}>
+          <CarpetasArchivo
+            navegacion={carpetas}
+            unidad={["receta", "recetas"]}
+            vacio={
+              <EmptyState
+                icon={Archive}
+                titulo="Todavía no archivaste recetas"
+                descripcion="Desde una receta pasada tocá Archivar: la vas a encontrar acá, ordenada en carpetas por año y mes."
+              />
+            }
+            keyExtractor={(d) => d.receta.id}
+            renderItem={tarjetaReceta}
+          />
+        </View>
       ) : (
         <FlatList
           data={lista}
@@ -318,44 +248,43 @@ export default function RecetasScreen() {
       >
         {abierta ? (
           <View>
-            <Seccion icono={Repeat} titulo="Cómo tomarla">
+            <SeccionDetalle icono={Repeat} titulo="Cómo tomarla">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>{abierta.receta.dosis}</Text>
               <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>{abierta.receta.frecuencia}</Text>
-            </Seccion>
-            <Seccion icono={Timer} titulo="Duración del tratamiento">
+            </SeccionDetalle>
+            <SeccionDetalle icono={Timer} titulo="Duración del tratamiento">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>{abierta.receta.duracion}</Text>
               <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
                 Hasta el {formatFechaLarga(abierta.receta.vigenteHasta)} · {textoVigencia(abierta.receta)}
               </Text>
-            </Seccion>
+            </SeccionDetalle>
             {abierta.receta.indicaciones ? (
-              <Seccion icono={ClipboardList} titulo="Indicaciones del profesional">
+              <SeccionDetalle icono={ClipboardList} titulo="Indicaciones del profesional">
                 <Text style={[styles.valor, styles.parrafo, { color: theme.colors.foreground }]}>{abierta.receta.indicaciones}</Text>
-              </Seccion>
+              </SeccionDetalle>
             ) : null}
             {abierta.receta.observaciones ? (
-              <Seccion icono={StickyNote} titulo="Observaciones">
+              <SeccionDetalle icono={StickyNote} titulo="Observaciones">
                 <Text style={[styles.valor, styles.parrafo, { color: theme.colors.foreground }]}>{abierta.receta.observaciones}</Text>
-              </Seccion>
+              </SeccionDetalle>
             ) : null}
-            <Seccion icono={Stethoscope} titulo="Emitida por">
-              <Text style={[styles.valor, { color: theme.colors.foreground }]}>
-                {abierta.medico ? nombreConTitulo(abierta.medico) : "Profesional"}
-              </Text>
-              {abierta.especialidad ? (
-                <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>{abierta.especialidad.nombre}</Text>
-              ) : null}
-            </Seccion>
-            <Seccion icono={Calendar} titulo="Fecha de emisión">
+            <SeccionDetalle icono={Stethoscope} titulo="Emitida por">
+              {abierta.medico ? (
+                <FilaProfesional medico={abierta.medico} detalle={abierta.especialidad?.nombre} onPress={() => abierta.medico && irAlPerfil(abierta.medico.id)} />
+              ) : (
+                <Text style={[styles.valor, { color: theme.colors.foreground }]}>Profesional</Text>
+              )}
+            </SeccionDetalle>
+            <SeccionDetalle icono={Calendar} titulo="Fecha de emisión">
               <Text style={[styles.valor, { color: theme.colors.foreground }]}>{formatFechaLarga(abierta.receta.fecha)}</Text>
-            </Seccion>
+            </SeccionDetalle>
             {abierta.receta.archivadoEl ? (
-              <Seccion icono={Archive} titulo="Archivada">
+              <SeccionDetalle icono={Archive} titulo="Archivada">
                 <Text style={[styles.valor, { color: theme.colors.foreground }]}>{formatFechaLarga(abierta.receta.archivadoEl)}</Text>
                 <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
                   Carpeta {nombreCarpeta(archivo, abierta.receta.archivadoEl)}
                 </Text>
-              </Seccion>
+              </SeccionDetalle>
             ) : null}
           </View>
         ) : null}
@@ -375,29 +304,11 @@ function EstadoReceta({ activa }: { activa: boolean }) {
   );
 }
 
-function Seccion({ icono: Icono, titulo, children }: { icono: typeof Calendar; titulo: string; children: ReactNode }) {
-  const { theme } = useTheme();
-  return (
-    <View style={[styles.seccion, { borderTopColor: theme.colors.border }]}>
-      <View style={styles.dato}>
-        <Icono size={14} color={theme.colors.primary} />
-        <Text style={[styles.seccionTitulo, { color: theme.colors.mutedForeground }]}>{titulo}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  botonArchivados: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  aviso: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  avisoTexto: { flex: 1, fontSize: 13 },
   lista: { paddingBottom: 32 },
   tarjeta: { marginBottom: 12 },
   fila: { flexDirection: "row", alignItems: "center", gap: 12 },
-  icono: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  nombreCarpeta: { fontSize: 15, fontWeight: "600" },
   medicacion: { fontSize: 16, fontWeight: "700" },
   meta: { fontSize: 12, marginTop: 2 },
   estado: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" },
@@ -405,9 +316,6 @@ const styles = StyleSheet.create({
   pie: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
   dato: { flexDirection: "row", alignItems: "center", gap: 6 },
   datoTexto: { fontSize: 13 },
-  fechaTexto: {fontSize: 11},
-  seccion: { borderTopWidth: 1, marginTop: 14, paddingTop: 14, gap: 4 },
-  seccionTitulo: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
   valor: { fontSize: 15, fontWeight: "500" },
   parrafo: { lineHeight: 22 },
 });

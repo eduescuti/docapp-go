@@ -3,9 +3,6 @@
 App móvil de gestión de turnos y servicios médicos multi-hospital. Trabajo práctico de
 **Programación de Apps Móviles (UCA)**.
 
-El contexto completo del proyecto (modelo de dominio, reglas de negocio, sistema de diseño,
-alcance del MVP) vive en [`CLAUDE.md`](../../CLAUDE.md), dos niveles arriba de esta carpeta (en el workspace). Léelo
-antes de tocar código.
 
 ## Stack
 
@@ -107,21 +104,7 @@ Las instituciones de la app son los **1.077 establecimientos de salud de CABA** 
 CC BY 4.0): hospitales, clínicas y sanatorios, centros médicos y laboratorios. Los carga el **seed del
 backend** (`backend/prisma/datos/demo.json`); la app los pide a la API.
 
-El script `scripts/importar-refes.mjs` procesa el CSV del REFES y genera `src/mocks/data/refes-caba.json`. Es un
-archivo de trabajo: la app no lo importa y no está en el repo. Para generarlo con una versión nueva:
-
-```bash
-# 1. Bajar el CSV (~9 MB) a scripts/.cache/, que está en .gitignore.
-#    La URL de cada versión sale de DocApp Go/investigacion-apis/06-como-reproducir.md.
-curl -skL -o scripts/.cache/refes-20251215.csv "<URL del CSV>"
-
-# 2. Generar el JSON. Imprime cuántos quedaron por tipo y por qué se descartó el resto.
-node scripts/importar-refes.mjs scripts/.cache/refes-20251215.csv
-```
-
-Después hay que pasar esos establecimientos a `demo.json` del backend: hoy no hay un paso automático para eso.
-
-Los públicos se muestran a todos los pacientes (CLAUDE.md §10, regla 15). Los privados, solo
+Los públicos se muestran a todos los pacientes. Los privados, solo
 si aceptan la obra social del paciente (entera o su plan). Esa relación no existe como dato
 público: la carga el admin desde la app (Instituciones → tocar una), y el seed trae las coberturas
 verificadas de 9 hospitales y el catálogo de 26 obras sociales (detalle en
@@ -132,7 +115,7 @@ verificadas de 9 hospitales y el catálogo de 26 obras sociales (detalle en
 El mapa es MapLibre + OpenFreeMap en un WebView (en web, en un `<iframe>`), así que **no necesita clave**.
 `react-native-maps` sigue instalado y `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` sigue en `.env.example` solo por si el
 docente exige el SDK de Google en la app compilada (pendiente de confirmar). Si alguna vez se usa la clave, va en
-`.env`, que está en `.gitignore` — **nunca la commitees** (CLAUDE.md §11). El detalle de la decisión está en
+`.env`, que está en `.gitignore` — **nunca la commitees**. El detalle de la decisión está en
 `investigacion-apis/08-motor-del-mapa.md`.
 
 ## Problemas comunes
@@ -143,15 +126,15 @@ docente exige el SDK de Google en la app compilada (pendiente de confirmar). Si 
 - **Cambios que no se reflejan**: `npx expo start -c` para limpiar caché de Metro.
 - **Versión de SDK no coincide con Expo Go**: confirmá `npx expo-doctor` sin errores y que
   `package.json` tenga `"expo": "^57"`. No corras `npx expo upgrade` — el proyecto está
-  pineado a SDK 57 (CLAUDE.md §2); cualquier cambio de versión se confirma antes.
+  pineado a SDK 57; cualquier cambio de versión se confirma antes.
 
 ## Estructura
 
-Ver CLAUDE.md §4 para el detalle de `app/` y `src/`. En resumen:
+En resumen:
 
 - `app/` — rutas de Expo Router, agrupadas por rol: `(auth)`, `(paciente)`, `(doctor)`, `(admin)`.
 - `src/theme/` — los temas tipados del sistema de diseño: A (modo claro) y C (modo oscuro). El B se sacó del código
-  el 05/11/2026 (su tabla queda en CLAUDE.md §7).
+  el 05/11/2026.
 - `src/domain/index.ts` — todos los tipos del dominio médico, en un solo archivo.
 - `src/components/` — componentes reutilizables en carpetas (`base/`, `formularios/`, `pantalla/`, `modales/`, …),
   importados desde `@/components`.
@@ -182,4 +165,3 @@ La app está **conectada entera al backend** (28/10/2026): no quedan mocks de da
 - **Admin:** panel con métricas de uso y gráfico de pacientes por obra social, pestaña Métricas, alta de obras
   sociales e instituciones y edición de las coberturas de cada institución (con su fuente).
 
-Ver CLAUDE.md §13 para el detalle de qué falta.

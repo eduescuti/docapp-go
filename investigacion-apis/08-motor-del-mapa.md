@@ -87,7 +87,7 @@ como pide la app, MapLibre es mejor.
 
 ## 5. El punto a confirmar: Google Maps y la consigna
 
-El CLAUDE.md dice que Google Maps es **requisito obligatorio de la materia**, y en la entrega del
+Dicen que Google Maps es **requisito obligatorio de la materia**, y en la entrega del
 Sprint 1 figura como uno de los dos componentes nativos (consigna 1.4: "al menos 2, con
 justificación técnica"). Con un mapa en WebView:
 

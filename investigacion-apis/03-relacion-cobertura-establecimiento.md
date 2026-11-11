@@ -72,7 +72,7 @@ Municipal, Nacional, Universitario público, FFAA/Seguridad). Por eso **una part
 cobertura ↔ establecimiento sale automáticamente**: un hospital público le sirve a cualquier
 paciente.
 
-> Esto implica una **regla de negocio nueva** que hoy no está en el CLAUDE.md. Hay que
+> Esto implica una **regla de negocio nueva**. Hay que
 > confirmarla antes de implementarla (ver
 > [doc 5, decisiones](05-propuesta-para-docapp-go.md#5-decisiones-pendientes)).
 

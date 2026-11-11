@@ -18,12 +18,9 @@ import {
 } from "@/services";
 import { useTheme } from "@/theme";
 import { nombrePlan, textoFuente } from "@/utils/cobertura";
-import { formatDistancia, nombreConTitulo, colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL } from "@/utils/format";
+import { formatDistancia, nombreConTitulo, colorTipo, ETIQUETA_TIPO, ETIQUETA_TIPO_PLURAL, normalizar } from "@/utils/format";
 
 const TIPOS: TipoInstitucion[] = ["hospital", "clinica", "centro_medico", "laboratorio"];
-
-/** Sin tildes ni mayúsculas, para que "britanico" encuentre "Británico". */
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Lo que se busca de un centro: nombre, dirección y tipo ("hospital", "laboratorios"...). */
 const textoBuscable = (c: CentroCercano) =>
@@ -32,7 +29,7 @@ const textoBuscable = (c: CentroCercano) =>
   );
 
 /**
- * Centros de salud que acepta la cobertura del paciente, en mapa y en lista (CLAUDE.md §9).
+ * Centros de salud que acepta la cobertura del paciente, en mapa y en lista.
  * El mapa es MapLibre + OpenFreeMap: anda igual en Expo Go, en la app compilada y en web.
  *
  * Con `elegir=1` es el selector de hospital de la reserva de turnos: muestra solo las sedes de `sedes`
@@ -84,8 +81,8 @@ export default function MapaScreen() {
     let activo = true;
     const pedido = eligiendo
       ? listCentrosPorSedes(sedesParam ? sedesParam.split(",") : [], coordenada ?? undefined).then((todos) =>
-          tipo ? todos.filter((c) => c.institucion.tipo === tipo) : todos,
-        )
+        tipo ? todos.filter((c) => c.institucion.tipo === tipo) : todos,
+      )
       : buscarCentros({ tipos: tipo ? [tipo] : undefined, cerca: coordenada ?? undefined });
     pedido.then((resultado) => {
       if (activo) setCentrosCargados(resultado);
@@ -223,9 +220,8 @@ export default function MapaScreen() {
             <Card
               style={styles.itemLista}
               onPress={() => elegirDeLista(item.institucion.id)}
-              accessibilityLabel={`${item.institucion.nombre}, ${ETIQUETA_TIPO[item.institucion.tipo]}, ${item.sede.direccion}${
-                item.distanciaKm !== undefined ? `, ${formatDistancia(item.distanciaKm)}` : ""
-              }. Ver en el mapa`}
+              accessibilityLabel={`${item.institucion.nombre}, ${ETIQUETA_TIPO[item.institucion.tipo]}, ${item.sede.direccion}${item.distanciaKm !== undefined ? `, ${formatDistancia(item.distanciaKm)}` : ""
+                }. Ver en el mapa`}
             >
               <View style={styles.fila}>
                 <View style={[styles.punto, { backgroundColor: colorTipo(theme.mapa, item.institucion.tipo) }]} />
@@ -384,7 +380,7 @@ export default function MapaScreen() {
                 {seleccionado.sede.direccion}, {seleccionado.sede.ciudad}
                 {seleccionado.distanciaKm !== undefined ? ` · ${formatDistancia(seleccionado.distanciaKm)}` : ""}
               </Text>
-              {/* De dónde sale que acepta la cobertura: no hay fuente pública, la carga el admin (regla 17). */}
+              {/* De dónde sale que acepta la cobertura: no hay fuente pública, la carga el admin. */}
               {seleccionado.motivo === "cobertura" && seleccionado.institucion.fuenteCoberturas ? (
                 <Text style={[styles.meta, { color: theme.colors.mutedForeground }]}>
                   Coberturas: {textoFuente(seleccionado.institucion.fuenteCoberturas).toLowerCase()}

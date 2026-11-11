@@ -13,7 +13,7 @@ export type TipoEventoHistorial = "consulta" | "estudio" | "receta";
 export interface EventoHistorial {
   id: string;
   tipo: TipoEventoHistorial;
-  fecha: string; // ISO "yyyy-MM-dd"
+  fecha: string;
   titulo: string;
   detalle: string;
   estado?: EstadoTurno;

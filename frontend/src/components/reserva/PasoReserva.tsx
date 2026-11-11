@@ -9,7 +9,6 @@ interface PasoReservaProps {
   numero: number;
   titulo: string;
   completo: boolean;
-  /** A la derecha del título (p. ej. el botón del calendario). */
   accion?: React.ReactNode;
   children: React.ReactNode;
 }

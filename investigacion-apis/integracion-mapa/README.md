@@ -84,7 +84,7 @@ src/components/mapa/MapaCentros  ──►  WebView (Android/iOS)  ─┐
 
 | Fecha | Decisión | Dónde |
 |---|---|---|
-| 09/10/2026 | D1: los hospitales públicos se ven para todos → regla 15 de CLAUDE.md §10 | [doc 2](02-cobertura-y-busqueda.md) |
+| 09/10/2026 | D1: los hospitales públicos se ven para todos | [doc 2](02-cobertura-y-busqueda.md) |
 | 09/10/2026 | D2: OSDE 210 + Swiss Medical SMG20 + Galeno Oro (Medifé sin relaciones) | [doc 2](02-cobertura-y-busqueda.md) |
 | 09/10/2026 | D3: los sanatorios quedan como `clinica` | [doc 1](01-dominio-y-datos-refes.md) |
 | 09/10/2026 | D4: las instituciones inventadas se reemplazan por reales | [doc 1](01-dominio-y-datos-refes.md) |

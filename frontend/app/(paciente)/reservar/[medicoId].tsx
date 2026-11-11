@@ -20,7 +20,6 @@ export default function ReservarScreen() {
         medicoIdInicial={medicoId}
         turnoAReprogramarId={reprogramar}
         onReservado={() =>
-          // "ver" cambia en cada reserva para que Turnos abra la pestaña Próximos aunque ya estuviera montada.
           router.dismissTo({ pathname: "/turnos", params: { ver: `${reprogramar ? "reprogramado" : "proximos"}-${Date.now()}` } })
         }
       />

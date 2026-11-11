@@ -20,7 +20,6 @@ export function BackHeader({ titulo, subtitulo, onBack }: BackHeaderProps) {
   return (
     <View style={styles.row}>
       <Pressable
-        // Vuelve sin teclado (ver `sinTeclado`).
         onPress={onBack ?? (() => sinTeclado(() => router.back()))}
         accessibilityRole="button"
         accessibilityLabel="Volver"

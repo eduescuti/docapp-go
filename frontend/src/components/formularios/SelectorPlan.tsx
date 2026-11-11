@@ -6,10 +6,8 @@ import { SelectField } from "./SelectField";
 
 interface SelectorPlanProps {
   obrasSociales: ObraSocialConPlanes[];
-  /** Plan elegido (es lo que se guarda del paciente). */
   planId: string | null;
   onChange: (planId: string | null) => void;
-  /** Error del formulario (después de intentar enviar): se muestra en el campo que falta. */
   error?: string;
 }
 

@@ -5,9 +5,9 @@ import { api } from "../apiClient";
 import { actualizarFotoPacienteActual } from "./pacienteService";
 
 /**
- * Foto de perfil del paciente y del profesional (decidido el 27/10/2026). La del profesional la ven todos los
- * pacientes; la del paciente, él y los profesionales que lo tienen asignado por un turno. Sin foto se ven las
- * iniciales.
+ * Foto de perfil del paciente y del profesional. La del profesional la ven todos los
+ * pacientes; la del paciente, él y los profesionales que lo tienen asignado por un turno. 
+ * Sin foto se ven las iniciales.
  */
 export type OrigenFoto = "camara" | "galeria";
 

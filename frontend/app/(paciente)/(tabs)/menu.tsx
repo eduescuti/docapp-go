@@ -21,7 +21,7 @@ import {
   countFeedbacksPendientes,
   getPacienteActual,
   getPlanMedico,
-  listNotificacionesPaciente,
+  listNotificaciones,
 } from "@/services";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/theme";
@@ -95,7 +95,7 @@ export default function MenuScreen() {
         setPaciente(p);
         const [pl, notifs, pendientesFb] = await Promise.all([
           getPlanMedico(p.planMedicoId),
-          listNotificacionesPaciente(),
+          listNotificaciones(),
           countFeedbacksPendientes(),
         ]);
         setPlan(pl ?? null);

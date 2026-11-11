@@ -15,15 +15,12 @@ import {
 
 const DURACION_ENTRADA = 280;
 const DURACION_SALIDA = 220;
-// En web el driver nativo no existe: la animación corre en JS.
 const DRIVER_NATIVO = Platform.OS !== "web";
 
 interface SheetModalProps {
   visible: boolean;
   onClose: () => void;
-  /** Lectores de pantalla: qué hace tocar el fondo. */
   etiquetaFondo?: string;
-  /** Estilo del panel (fondo, bordes, padding). */
   style?: StyleProp<ViewStyle>;
   children: React.ReactNode;
 }
@@ -127,7 +124,6 @@ export function SheetModal({ visible, onClose, etiquetaFondo = "Cerrar", style, 
         <Animated.View style={[StyleSheet.absoluteFill, styles.fondo, { opacity: opacidadFondo }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={etiquetaFondo} />
         </Animated.View>
-        {/* Mientras baja no responde a toques: sus botones son del detalle que se está cerrando. */}
         <Animated.View
           onLayout={alMedir}
           style={[style, { transform: [{ translateY: desplazamiento }], pointerEvents: visible ? "auto" : "none" }]}

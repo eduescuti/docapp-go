@@ -2,7 +2,7 @@
 
 [← Volver al plan](README.md)
 
-Cada fase deja la app **funcionando** (CLAUDE.md §3: incremental). Al final de cada una:
+Cada fase deja la app **funcionando** (incremental). Al final de cada una:
 `npx tsc --noEmit` sin errores y prueba en el celular con Expo Go. Los commits los hace el
 alumno.
 
@@ -17,7 +17,7 @@ y juntar la materia prima.
 
 | Tarea | Detalle |
 |---|---|
-| 0.1 Confirmar D1–D6 | Anotar la respuesta en este documento y, si aplica, en CLAUDE.md §10 (regla de hospitales públicos) |
+| 0.1 Confirmar D1–D6 | Anotar la respuesta en este documento y, si aplica (regla de hospitales públicos) |
 | 0.2 Descargar REFES | XLSX ene-2026 o CSV dic-2025, con `curl -k` (ver [doc 6](../06-como-reproducir.md)). **No se commitea** el archivo crudo: va a `scripts/.cache/` (en `.gitignore`) |
 | 0.3 Relevar cartillas | Para cada cobertura, abrir su buscador público, filtrar CABA → "Sanatorios / Internación" y "Laboratorios", y anotar 10–15 prestadores con la URL y la fecha |
 | 0.4 Cruzar con el REFES | Buscar cada prestador anotado en el REFES de CABA y quedarse con su `establecimiento_id`. Si no aparece, descartarlo (no se inventan coordenadas) |
@@ -151,7 +151,7 @@ Y `src/mocks/instituciones.ts` pasa a:
 ```ts
 import refes from "./data/refes-caba.json";
 export const institucionesMock: Institucion[] = refes.instituciones as Institucion[];
-// el cast se valida con una función `esInstitucion()` en dev para no usar `any` (CLAUDE.md §2)
+// el cast se valida con una función `esInstitucion()` en dev para no usar `any`
 ```
 
 | Tarea | Detalle |
@@ -189,7 +189,7 @@ hospitales públicos aparecen en todos.
 
 ## Fase 4 — Services: regla de cobertura y cercanía
 
-**Objetivo:** que ninguna pantalla tenga lógica de filtrado (CLAUDE.md §4).
+**Objetivo:** que ninguna pantalla tenga lógica de filtrado.
 
 `src/services/institucionService.ts`:
 
@@ -218,7 +218,7 @@ export async function getFuenteCobertura(institucionId: string, planMedicoId: st
 |---|---|
 | 4.1 Filtro | Cobertura → tipos → radio (con `distanciaKm` de `src/utils/geo.ts`) → orden por distancia → límite |
 | 4.2 Firma estable | La firma es la que después va a exponer el backend (`GET /instituciones?plan=&tipos=&lat=&lng=&radio=`). Dejarlo comentado |
-| 4.3 Médicos | `searchMedicos` y la reserva deben respetar la misma regla al elegir sede (regla #1 de CLAUDE.md §10) |
+| 4.3 Médicos | `searchMedicos` y la reserva deben respetar la misma regla al elegir sede |
 | 4.4 Admin | `crearInstitucion` acepta `origen`; si es público no exige obras sociales |
 | 4.5 Estadísticas | El gráfico por obra social del admin no cambia |
 
@@ -248,9 +248,9 @@ entrega (GPS).
 | 5.2 Permisos | Texto de permiso en `app.config` (`NSLocationWhenInUseUsageDescription` y equivalente Android): "Usamos tu ubicación para mostrarte los centros de salud más cercanos que aceptan tu cobertura" |
 | 5.3 Marcadores | Color por tipo (hospital / clínica / laboratorio) tomado del tema, nunca color suelto. `tracksViewChanges={false}`. Solo los de la región visible (`onRegionChangeComplete`), tope 150 |
 | 5.4 Chips de filtro | `Todos · Hospitales · Clínicas · Centros médicos · Laboratorios` y `Más cercano`. Mismo componente `Chip` existente |
-| 5.5 Tarjeta del marcador | Nombre → tipo y "Público" / "Acepta OSDE 210" → dirección → distancia → botones **Ver turnos** y **Cómo llegar** (CLAUDE.md §9). Si hay fuente: "Según cartilla al dd/mm/aaaa" |
+| 5.5 Tarjeta del marcador | Nombre → tipo y "Público" / "Acepta OSDE 210" → dirección → distancia → botones **Ver turnos** y **Cómo llegar**. Si hay fuente: "Según cartilla al dd/mm/aaaa" |
 | 5.6 Cómo llegar | `Linking.openURL("https://www.google.com/maps/dir/?api=1&destination=lat,lng")` (abre la app de Google Maps con la ruta, gratis) |
-| 5.7 Lista ↔ mapa | Botón para alternar a una `FlatList` con los mismos resultados ordenados por distancia (CLAUDE.md §9: todo resultado como lista **y** como mapa) |
+| 5.7 Lista ↔ mapa | Botón para alternar a una `FlatList` con los mismos resultados ordenados por distancia (todo resultado como lista **y** como mapa) |
 | 5.8 Atribución | D6: solo en Menú → Ayuda, no en el mapa: "Establecimientos: REFES — Ministerio de Salud de la Nación (CC BY 4.0)" |
 | 5.9 Home | La card "Instituciones cercanas" usa `listInstituciones({ cerca, limite: 3 })` y muestra los 3 más cercanos con su distancia |
 | 5.10 Accesibilidad | `accessibilityLabel` en marcadores, chips y botones; áreas táctiles ≥ 44 px; probar en 375 px de ancho |
@@ -301,7 +301,7 @@ aparece en el mapa del paciente en ese punto.
 | 7.1 Tipos | `npx tsc --noEmit` limpio |
 | 7.2 Prueba manual | Con cada usuario de prueba: Home, Mapa (con y sin permiso de ubicación), Buscar → Médico → Reservar, admin → alta con Georef. Probar modo claro y oscuro |
 | 7.3 Rendimiento | Mover el mapa por toda CABA en un Android de gama media sin trabas notables |
-| 7.4 CLAUDE.md | Actualizar §5 (campos nuevos), §10 (regla de públicos), §13 (marcar "Siguiente" como hecho y dejar pendientes) |
+| 7.4  | Actualizar §5 (campos nuevos), §10 (regla de públicos), §13 (marcar "Siguiente" como hecho y dejar pendientes) |
 | 7.5 README | Cómo regenerar la foto del REFES, usuarios de prueba por cobertura, atribuciones |
 | 7.6 Mockup | Actualizar el mockup interactivo del Sprint 1 si cambió alguna pantalla ([03](03-entrega-sprint1.md)) |
 

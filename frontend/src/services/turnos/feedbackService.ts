@@ -4,7 +4,7 @@ import { api } from "../apiClient";
 
 /**
  * Hace un GET de los turnos completados del paciente que todavía no calificó, del más reciente al más viejo. Solo se
- * puede opinar sobre un turno real cumplido, una vez (regla 6).
+ * puede opinar sobre un turno real cumplido, una vez.
  */
 export async function listTurnosParaCalificar(): Promise<Turno[]> {
   return api<Turno[]>("/api/pacientes/yo/feedback/pendientes");

@@ -6,13 +6,13 @@ import { useTheme } from "@/theme";
 const AMARILLO = "#EAB308";
 
 interface StarRatingProps {
-  value: number; // 0 = sin calificar
+  value: number;
   onChange?: (value: 1 | 2 | 3 | 4 | 5) => void;
   size?: number;
   label?: string;
 }
 
-/** Estrellas de 1 a 5. Con `onChange` es editable (cada estrella tiene área táctil de 44px). */
+/** Estrellas de 1 a 5. Con `onChange` es editable. */
 export function StarRating({ value, onChange, size = 24, label = "Calificación" }: StarRatingProps) {
   const { theme } = useTheme();
   const valores = [1, 2, 3, 4, 5] as const;

@@ -13,7 +13,7 @@ Confirmadas el 09/10/2026. Detalle en
 
 | # | Pregunta | Respuesta |
 |---|---|---|
-| D1 | ¿Los hospitales públicos se ven para todos, sin importar la obra social? | **Sí.** En Argentina atienden a toda la población. Es la regla 15 de CLAUDE.md §10 |
+| D1 | ¿Los hospitales públicos se ven para todos, sin importar la obra social? | **Sí.** En Argentina atienden a toda la población. |
 | D2 | ¿Qué coberturas? | **OSDE 210, Swiss Medical SMG20 y Galeno Oro**, "de momento". Medifé queda sin relaciones |
 | D3 | ¿Tipo "sanatorio"? | No: quedan como `clinica`. El nombre ya dice "Sanatorio" |
 | D4 | ¿Las instituciones inventadas? | Se reemplazan por reales ([doc 1](01-dominio-y-datos-refes.md#5-reemplazo-de-las-instituciones-inventadas-d4)) |

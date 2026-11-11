@@ -4,7 +4,6 @@ import { useTheme } from "@/theme";
 import { Text } from "../base/Text";
 
 interface TabSwitchProps<T extends string> {
-  /** `avisos`: cuántas novedades tiene la pestaña (p. ej. resultados nuevos). Con 0 o sin pasarlo no se muestra nada. */
   opciones: { valor: T; etiqueta: string; avisos?: number }[];
   valor: T;
   onChange: (valor: T) => void;

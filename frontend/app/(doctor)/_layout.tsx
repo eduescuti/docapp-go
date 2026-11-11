@@ -18,7 +18,7 @@ export default function DoctorLayout() {
   const { theme } = useTheme();
   const { rol } = useAuth();
 
-  // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
+  // Control de permisos por rol: cada grupo solo es accesible para su rol.
   if (rol !== "doctor") return <Redirect href={rutaInicio(rol)} />;
 
   return (

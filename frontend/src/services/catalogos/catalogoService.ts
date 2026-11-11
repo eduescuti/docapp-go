@@ -1,5 +1,5 @@
 import { Especialidad, ObraSocialConPlanes, PlanConObraSocial, PreguntaFrecuente } from "@/domain";
-import { preguntasFrecuentesMock } from "@/mocks";
+import { preguntasFrecuentesMock } from "@/mocks/ayuda";
 
 import { api } from "../apiClient";
 

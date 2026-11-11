@@ -3,8 +3,8 @@ import { format, parseISO } from "date-fns";
 import { CoberturaAceptada, FuenteCobertura, ObraSocialConPlanes, PLAN_GENERAL, PlanConObraSocial, PlanMedico } from "@/domain";
 
 /**
- * ¿Alguna de estas coberturas incluye el plan? Una cobertura sin planes acepta todos los de su obra social
- * (reglas 1 y 18). Es la misma condición que la consulta del backend.
+ * ¿Alguna de estas coberturas incluye el plan? Una cobertura sin planes acepta todos los de su obra social.
+ * Es la misma condición que la consulta del backend.
  */
 export function cubrePlan(coberturas: CoberturaAceptada[], plan: Pick<PlanMedico, "id" | "obraSocialId">): boolean {
   return coberturas.some(

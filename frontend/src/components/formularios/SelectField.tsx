@@ -4,6 +4,7 @@ import { Check, ChevronDown, Heart, HelpCircle, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
+import { normalizar } from "@/utils/format";
 import { CampoBusqueda } from "./CampoBusqueda";
 import { Colapsable } from "../base/Colapsable";
 import { SheetModal } from "../modales/SheetModal";
@@ -13,14 +14,8 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
-  /** Título de la sección en que se agrupa la opción en la lista (las de un mismo grupo van juntas). */
   group?: string;
-  /** Se marca más que el resto (fondo suave, barra lateral y un corazón): p. ej. los hospitales favoritos. */
   destacada?: boolean;
-  /**
-   * Explicación del grupo: junto al título del grupo aparece un "?" que despliega este texto
-   * (se toma de la primera opción del grupo).
-   */
   ayudaGrupo?: { titulo: string; lineas: string[] };
 }
 
@@ -31,25 +26,20 @@ interface SelectFieldProps {
   value: string | null;
   onChange: (value: string) => void;
   error?: string;
-  /** Botón a la derecha del campo (p. ej. elegir en el mapa). Debería medir 48 px de alto, como el campo. */
   accion?: React.ReactNode;
-  /** Listas largas: arriba de las opciones aparece un buscador con este texto de ayuda (p. ej. especialidades). */
   buscador?: string;
 }
-
-/** Sin tildes ni mayúsculas, para que "cardio" encuentre "Cardiología". */
-const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /** Selector de una opción: campo que abre un bottom sheet con la lista (equivalente RN de un `<select>`). */
 export function SelectField({ label, placeholder = "Seleccionar", options, value, onChange, error, accion, buscador }: SelectFieldProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [abierto, setAbierto] = useState(false);
-  // Grupo cuyo "?" está desplegado.
+
   const [ayudaAbierta, setAyudaAbierta] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const seleccionada = options.find((o) => o.value === value);
-  // Cada palabra escrita tiene que estar en el nombre o la descripción de la opción.
+
   const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
   const visibles =
     buscador && palabras.length > 0
@@ -97,7 +87,6 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
         etiquetaFondo="Cerrar selector"
         style={[
           styles.sheet,
-          // Con buscador, alto fijo: la hoja no salta mientras la lista se achica al escribir.
           buscador ? styles.sheetConBuscador : null,
           {
             backgroundColor: theme.colors.card,
@@ -188,7 +177,6 @@ export function SelectField({ label, placeholder = "Seleccionar", options, value
                   style={[
                     styles.option,
                     { borderBottomColor: theme.colors.border },
-                    // Las destacadas: fondo suave del color primario y una barra a la izquierda, sin la línea de abajo.
                     item.destacada && [
                       styles.optionDestacada,
                       { backgroundColor: `${theme.colors.primary}14`, borderLeftColor: theme.colors.primary },

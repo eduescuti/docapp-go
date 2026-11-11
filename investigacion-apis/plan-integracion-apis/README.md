@@ -63,6 +63,6 @@ pantallas no cambian.
 | 4 | Services con la regla de cobertura y búsqueda por cercanía | `src/services/` |
 | 5 | Mapa real: GPS, filtros por tipo, tarjeta, lista ↔ mapa, atribución | `app/(paciente)/mapa.tsx`, Home |
 | 6 | Georef en vivo en el alta de instituciones del admin | `app/(admin)/instituciones.tsx` |
-| 7 | Verificación, documentación y limpieza | `CLAUDE.md`, `README.md` |
+| 7 | Verificación, documentación y limpieza | `README.md` |
 
 Detalle de cada una en [02-fases.md](02-fases.md).

@@ -7,7 +7,6 @@ interface CardProps extends ViewProps {
   onPress?: () => void;
   accessibilityLabel?: string;
   padded?: boolean;
-  /** Ocupa todo el alto de su contenedor (p. ej. tarjetas lado a lado que tienen que medir lo mismo). */
   llenar?: boolean;
 }
 

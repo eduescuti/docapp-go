@@ -17,7 +17,7 @@ export default function AdminLayout() {
   const { theme } = useTheme();
   const { rol } = useAuth();
 
-  // Control de permisos por rol (CLAUDE.md §11): cada grupo solo es accesible para su rol.
+  // Control de permisos por rol: cada grupo solo es accesible para su rol.
   if (rol !== "admin") return <Redirect href={rutaInicio(rol)} />;
 
   return (
