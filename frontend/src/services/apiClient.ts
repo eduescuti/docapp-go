@@ -71,12 +71,13 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
     throw new ErrorApi(0, "Falta configurar EXPO_PUBLIC_API_URL en el archivo .env de la app.");
   }
 
-  const token = conSesion ? tokenActual() : null;
+  const token = conSesion ? tokenActual() : null; // Obtenemos el token de la sesion actual (si hay)
+  const hayCuerpo = cuerpo !== undefined; // Comprueba si tiene body
 
   const respuesta = await fetchConTiempoLimite(`${API_URL}${ruta}`, {
     method: metodo,
-    headers: armarHeaders(acepta, cuerpo !== undefined, token),
-    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    headers: armarHeaders(acepta, hayCuerpo, token),
+    body: !hayCuerpo ? undefined : JSON.stringify(cuerpo),
   });
 
   if (respuesta.ok) return respuesta;
@@ -91,19 +92,17 @@ async function pedir(ruta: string, { metodo = "GET", cuerpo, conSesion = true }:
 /** MAIN: es el "fetch" de nuestros REQUEST (devuelve el JSON con la consulta). */
 export async function api<T>(ruta: string, opciones: OpcionesPedido = {}): Promise<T> {
 
-  const respuesta = await pedir(ruta, opciones, "application/json");
+  const respuesta = await pedir(ruta, opciones, "application/json"); // Espera recibir un "application/json" (un JSON)
 
-  if (respuesta.status === 204) return undefined as T;
+  if (respuesta.status === 204) return undefined as T; // Si no trae nada, codigo 204 (funciona, pero no trajo nada)
 
   // Intentamos leer el JSON de la respuesta.
   let datos;
   try {
     datos = await respuesta.json();
   } catch {
-    datos = null;
+    datos = null; // Si no hay nada, igualamos a null
   }
-
-  // Le decimos a TypeScript que `datos` tiene la forma T.
   return datos as T;
 }
 
@@ -131,11 +130,12 @@ function binarioDeBytes(bytes: Uint8Array): string {
 }
 
 /**
- * Un archivo (p. ej. el PDF de un resultado) como string binario, un carácter por byte: lo que espera el visor de
- * PDF. Usa `arrayBuffer()` y, si el entorno no lo tiene, lee el archivo como base64.
+ * Un archivo como string binario, un carácter por byte: lo que espera el visor de PDF.
  */
 export async function apiArchivo(ruta: string): Promise<string> {
-  const respuesta = await pedir(ruta, {}, "*/*");
+
+  const respuesta = await pedir(ruta, {}, "*/*"); // Espera recibir un "*/*" (un archivo)
+
   if (typeof respuesta.arrayBuffer === "function") {
     try {
       return binarioDeBytes(new Uint8Array(await respuesta.arrayBuffer()));
