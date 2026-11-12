@@ -26,8 +26,8 @@ interface AuthState {
   rol: Rol | null;
   login: (dni: string, password: string) => Promise<Sesion>;
   loginBiometrico: () => Promise<Sesion>;
-  registrarPaciente: (datos: DatosRegistroPaciente) => Promise<Sesion>;
-  registrarMedico: (datos: DatosCuentaMedico) => Promise<Sesion>;
+  registrarPacienteYEntrar: (datos: DatosRegistroPaciente) => Promise<Sesion>;
+  registrarMedicoYEntrar: (datos: DatosCuentaMedico) => Promise<Sesion>;
   logout: () => void;
 }
 
@@ -121,8 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       rol: sesion?.rol ?? null,
       login,
       loginBiometrico,
-      registrarPaciente: registrarPacienteYEntrar,
-      registrarMedico: registrarMedicoYEntrar,
+      registrarPacienteYEntrar,
+      registrarMedicoYEntrar,
       logout,
     }),
     [listo, avisoInicio, sesion, login, loginBiometrico, registrarPacienteYEntrar, registrarMedicoYEntrar, logout],

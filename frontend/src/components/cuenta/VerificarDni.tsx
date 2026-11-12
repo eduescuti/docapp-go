@@ -109,7 +109,6 @@ function EscanerDni({ onCerrar, onLeido }: { onCerrar: () => void; onLeido: (cod
       onLeido(data, await leerDni(data));
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos leer tu DNI. Probá de nuevo.");
-      // Se vuelve a intentar después de un momento, para que se alcance a leer el aviso.
       setTimeout(() => {
         ocupado.current = false;
       }, 2000);
@@ -126,7 +125,7 @@ function EscanerDni({ onCerrar, onLeido }: { onCerrar: () => void; onLeido: (cod
             style={StyleSheet.absoluteFill}
             facing="back"
             enableTorch={linterna}
-            barcodeScannerSettings={{ barcodeTypes: ["pdf417"] }}
+            barcodeScannerSettings={{ barcodeTypes: ["pdf417"] }} // Lo lee con ese formato PDF417
             onBarcodeScanned={alLeer}
           />
         ) : null}

@@ -40,7 +40,7 @@ const esGenero = (v: string): v is Genero => GENEROS.some((g) => g.value === v);
 export default function RegistroMedicoScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { registrarMedico } = useAuth();
+  const { registrarMedicoYEntrar } = useAuth();
 
   const [paso, setPaso] = useState(0);
   const [profesiones, setProfesiones] = useState<string[]>([]);
@@ -103,7 +103,7 @@ export default function RegistroMedicoScreen() {
     setCargando(true);
     if (!genero || !especialidadId || !documento) return;
     try {
-      await registrarMedico({ ...datos(), codigoDni: documento.codigo, genero, especialidadId });
+      await registrarMedicoYEntrar({ ...datos(), codigoDni: documento.codigo, genero, especialidadId });
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");

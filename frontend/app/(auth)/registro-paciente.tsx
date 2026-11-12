@@ -28,7 +28,7 @@ import { esPasswordValida } from "@/utils/validation";
 export default function RegistroPacienteScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { registrarPaciente } = useAuth();
+  const { registrarPacienteYEntrar } = useAuth();
 
   const [obrasSociales, setObrasSociales] = useState<ObraSocialConPlanes[]>([]);
   const [documento, setDocumento] = useState<{ codigo: string; datos: DniLeido } | null>(null);
@@ -57,7 +57,7 @@ export default function RegistroPacienteScreen() {
     if (!valido || !planId || !documento) return;
     setCargando(true);
     try {
-      await registrarPaciente({ codigoDni: documento.codigo, password, planMedicoId: planId });
+      await registrarPacienteYEntrar({ codigoDni: documento.codigo, password, planMedicoId: planId });
       setCuentaCreada(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo crear la cuenta.");
