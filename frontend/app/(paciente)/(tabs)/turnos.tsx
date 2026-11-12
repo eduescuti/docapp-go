@@ -222,26 +222,27 @@ export default function TurnosScreen() {
   const estados = estadosFiltrables(verHistorial);
   const lista = origen.filter((t) => (!estadoFiltro || t.turno.estado === estadoFiltro) && coincide(t, busqueda));
 
-  const indicePorAbrir = porAbrir && !verHistorial && filtro === "proximos" ? lista.findIndex((x) => x.turno.id === porAbrir) : -1;
+  // El turno que pidió "Ver turno" del Inicio, pregunta si ya está en la lista.
+  const turnoPorAbrir =
+    porAbrir && !verHistorial && filtro === "proximos" ? lista.find((x) => x.turno.id === porAbrir) : undefined;
 
   const temporizadores = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => temporizadores.current.forEach(clearTimeout), []);
   useEffect(() => {
-    if (indicePorAbrir < 0) return;
-    const item = lista[indicePorAbrir];
-    const indice = indicePorAbrir;
+    if (!turnoPorAbrir) return;
+    const indice = lista.indexOf(turnoPorAbrir);
     setPorAbrir(null);
     temporizadores.current.forEach(clearTimeout);
     temporizadores.current = [
       setTimeout(() => {
         listaRef.current?.scrollToIndex({ index: indice, animated: true, viewPosition: 0.2 });
-        setDestacadoId(item.turno.id);
+        setDestacadoId(turnoPorAbrir.turno.id);
       }, 250),
-      setTimeout(() => abrir(item), 750),
+      setTimeout(() => abrir(turnoPorAbrir), 750),
       setTimeout(() => setDestacadoId(null), 2200),
     ];
-    // Solo cuando aparece el índice: `lista` se rearma en cada render.
-  }, [indicePorAbrir]);
+    // Solo cuando aparece el turno: `lista` se rearma en cada render.
+  }, [turnoPorAbrir?.turno.id]);
 
   const hayFiltros = busqueda.trim().length > 0 || estadoFiltro !== null;
 

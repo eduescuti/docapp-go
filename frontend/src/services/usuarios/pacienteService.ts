@@ -15,11 +15,12 @@ export async function getPacienteActual(): Promise<Paciente> {
   const sesion = getSesionActual();
   if (sesion?.rol !== "paciente") throw new Error("No hay paciente autenticado");
   if (pacienteActual?.id === sesion.pacienteId) return pacienteActual;
-  pedido ??= api<Paciente>("/api/pacientes/yo")
-    .then((p) => (pacienteActual = p))
-    .finally(() => {
-      pedido = null;
-    });
+
+  if (pedido === null || pedido === undefined) { // Checkea concurrencia de pedidos
+    pedido = api<Paciente>("/api/pacientes/yo")
+      .then((p) => (pacienteActual = p))
+      .finally(() => { pedido = null; }); // Cuando obtiene un pedido, lo borra para que el próximo pedido vuelva a pedirlo al backend.
+  }
   return pedido;
 }
 
